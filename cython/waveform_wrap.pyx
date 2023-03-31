@@ -64,7 +64,7 @@ cdef extern from "waveform.hpp":
 cdef class WaveformContainerNumpyWrapper:
     cdef WaveformContainer *hcpp
 
-    def __cinit__(self, np.ndarray[ndim=1, dtype=np.float64_t] plus, np.ndarray[ndim=1, dtype=np.float64_t] cross, int time_steps):
+    def __cinit__(self, np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] plus, np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] cross, int time_steps):
         self.hcpp = new WaveformContainer(&plus[0], &cross[0], time_steps)
 
     def __dealloc__(self):
@@ -74,7 +74,7 @@ cdef class WaveformContainerNumpyWrapper:
         return self.hcpp.getPlus(i)
     
     def cross_at_time_step(self, int i):
-        return self.hcpp.getPlus(i)
+        return self.hcpp.getCross(i)
 
     @property
     def size(self):
@@ -147,7 +147,7 @@ cdef class WaveformHarmonicGeneratorPyWrapper:
     def __dealloc__(self):
         del self.hcpp
  
-    cdef evaluate_harmonics(self, np.ndarray[ndim = 1, dtype = int] lmodes, np.ndarray[ndim = 1, dtype = int] mmodes, InspiralContainerWrapper inspiral, double theta, double phi):
+    cdef evaluate_harmonics(self, np.ndarray[ndim = 1, dtype = int, mode='c'] lmodes, np.ndarray[ndim = 1, dtype = int, mode='c'] mmodes, InspiralContainerWrapper inspiral, double theta, double phi):
         cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
         self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &lmodes[0], &mmodes[0], lmodes.shape[0], dereference(inspiral.inspiralcpp), theta, phi)
         return h
@@ -220,15 +220,16 @@ cdef class WaveformGeneratorPy:
             wOpts.num_threads = kwargs["num_threads"]
         # cdef WaveformContainerWrapper h = WaveformContainerWrapper(timeSteps)
 
-        cdef np.ndarray[ndim = 1, dtype = np.float64_t] plus = np.empty(timeSteps, dtype=np.float64)
-        cdef np.ndarray[ndim = 1, dtype = np.float64_t] cross = np.empty(timeSteps, dtype=np.float64)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t] waveform = np.empty(timeSteps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross, timeSteps)
         
         self.hcpp.computeWaveform(dereference(h.hcpp), M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
         waveform = -1.j*cross
         waveform += plus
-        return waveform 
+
+        return waveform
 
     def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False):
         cdef int timeSteps

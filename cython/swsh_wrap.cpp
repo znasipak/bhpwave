@@ -13,13 +13,16 @@
         ],
         "include_dirs": [
             "cpp/include",
-            "cpp/include/eigen-3.4.0",
+            "third_party/eigen-3.4.0",
             "/Users/znasipak/opt/anaconda3/envs/lisa_env/lib/python3.7/site-packages/numpy/core/include"
         ],
         "language": "c++",
         "libraries": [
             "gsl",
-            "gomp"
+            "gslcblas",
+            "lapack",
+            "lapacke",
+            "omp"
         ],
         "name": "bhpswshcy",
         "sources": [

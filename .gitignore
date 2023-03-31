@@ -130,3 +130,5 @@ dmypy.json
 
 # BHPWave
 .DS_Store
+tests/
+.vscode/

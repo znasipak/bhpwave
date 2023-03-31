@@ -75,6 +75,8 @@ public:
 	double amplitude_of_a_omega(int l, int m, double a, double omega);
   double phase_of_a_omega(int l, int m, double a, double omega);
 	double phase_of_a_omega_derivative(int l, int m, double a, double omega);
+  
+  HarmonicSpline2D* getPointer(int l, int m);
 
 private:
   int _modeNum;

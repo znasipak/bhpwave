@@ -6,7 +6,7 @@ from cython.operator import dereference
 import os
 import warnings
 
-cdef unicode default_harmonic_filebase = 'data/circ_data'
+cdef unicode default_harmonic_filebase = '../bhpwave/data/circ_data'
 
 include "trajectory_wrap.pyx"
 

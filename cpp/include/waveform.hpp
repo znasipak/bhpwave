@@ -6,6 +6,7 @@
 #include <gsl/gsl_const_mksa.h>
 #include <gsl/gsl_sf_trig.h>
 #include <chrono>
+#include <algorithm>
 #include "omp.h"
 
 #define G_const 6.67430e-11 // m^3/kg/s^2
@@ -74,6 +75,7 @@ public:
   void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
   void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
   void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+  void computeWaveformHarmonics(WaveformContainer &h, int m, HarmonicSpline2D *Alm, double plusY, double crossY, InspiralContainer &inspiral, double phi, WaveformHarmonicOptions opts);
 
   HarmonicSelector& getModeSelector();
   HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta);

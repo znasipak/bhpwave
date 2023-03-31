@@ -8,7 +8,7 @@ from cython.operator import dereference
 cimport openmp
 import os
 
-cdef unicode default_trajectory_file = 'data/trajectory.txt'
+cdef unicode default_trajectory_file = '../bhpwave/data/trajectory.txt'
 
 cdef extern from "Eigen/Dense" namespace "Eigen":
     cdef cppclass EigenArray "ArrayXd":
@@ -257,9 +257,9 @@ cdef class TrajectoryData:
     def time(self, double chi, double alpha):
         return self.trajcpp.time(chi, alpha)
 
-    cdef flux_parallel(self, double a, np.ndarray[ndim = 1, dtype=np.float64_t] omega):
-        cdef np.ndarray[ndim = 1, dtype=np.float64_t] flux = np.empty(omega.shape[0], dtype=np.float64)
-        cdef np.ndarray[ndim = 1, dtype=np.float64_t] anp = a*np.ones(omega.shape[0], dtype=np.float64)
+    cdef flux_parallel(self, double a, np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] omega):
+        cdef np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] flux = np.empty(omega.shape[0], dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] anp = a*np.ones(omega.shape[0], dtype=np.float64)
         self.trajcpp.flux_of_a_omega(&flux[0], &anp[0], &omega[0], omega.shape[0], 0)
         return flux
 

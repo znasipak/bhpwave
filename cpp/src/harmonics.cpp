@@ -172,6 +172,11 @@ double HarmonicAmplitudes::phase_of_a_omega_derivative(int l, int m, double a, d
 	return _harmonics[_position_map[key]]->phase_of_a_omega_derivative(a, omega);
 }
 
+HarmonicSpline2D* HarmonicAmplitudes::getPointer(int l, int m){
+	std::pair<int, int> key(l, m);
+	return _harmonics[_position_map[key]];
+}
+
 // double HarmonicAmplitudes::amplitude(int l, int m, double chi, double alpha){
 // 	std::pair<int, int> key(l, m);
 // 	if(key_check(key)){
