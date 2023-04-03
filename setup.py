@@ -4,19 +4,16 @@ from setuptools import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 import numpy as np
-from subprocess import run
 
 compiler_flags = ["-std=c++11", "-fopenmp", "-O2", "-march=native"]
 
 try:
-    CC_string = os.getenv("CC")
-except:
-    os.environ["CC"] = ""
+    CFLAGS = os.getenv("CFLAGS")
+except KeyError:
+    os.environ["CFLAGS"] = ""
 
-os.environ["CC"] += " "
-os.environ["CC"] += ' '.join(compiler_flags)
-
-print(os.environ["CC"])
+os.environ["CFLAGS"] += " "
+os.environ["CFLAGS"] += ' '.join(compiler_flags)
 
 spline_dependence = ["cpp/src/spline.cpp"]
 swsh_dependence = ["cpp/src/swsh.cpp"]
@@ -28,14 +25,15 @@ full_dependence = [*waveform_dependence]
 
 lib_extension = dict(
     sources = [*set(full_dependence)],
-    libraries=["gsl", "gslcblas", "lapack", "lapacke", "omp"],
+    # libraries=["gsl", "gslcblas", "lapack", "lapacke", "omp"],
+    libraries=["gsl", "omp"],
     language='c++',
     include_dirs = ["cpp/include"],
 )
 bhpwavecpp = ['bhpwavecpp', lib_extension]
 
 cpu_extension = dict(
-    libraries=["gsl", "gslcblas", "lapack", "lapacke", "omp"],
+    libraries=["gsl", "omp"],
     language='c++',
     include_dirs=["cpp/include", np.get_include()],
 )

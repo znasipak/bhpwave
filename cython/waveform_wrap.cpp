@@ -20,9 +20,6 @@
         "language": "c++",
         "libraries": [
             "gsl",
-            "gslcblas",
-            "lapack",
-            "lapacke",
             "omp"
         ],
         "name": "bhpwaveformcy",
