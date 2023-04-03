@@ -200,7 +200,7 @@ cdef class InspiralContainerWrapper:
 cdef class InspiralGeneratorPy:
     cdef InspiralGenerator *inspiralcpp
 
-    def __cinit__(self, TrajectoryData traj, int num_threads=0):
+    def __cinit__(self, TrajectoryDataPy traj, int num_threads=0):
         self.inspiralcpp = new InspiralGenerator(dereference(traj.trajcpp), num_threads)
 
     def __dealloc__(self):
@@ -227,7 +227,7 @@ cdef class InspiralGeneratorPy:
 
 import warnings
 
-cdef class TrajectoryData:
+cdef class TrajectoryDataPy:
     cdef TrajectorySpline2D *trajcpp
     cdef bint dealloc_flag
 
@@ -237,7 +237,7 @@ cdef class TrajectoryData:
 
     def __dealloc__(self):
         if self.dealloc_flag:
-            warnings.warn("Deallocating TrajectoryData object", UserWarning)
+            warnings.warn("Deallocating TrajectoryDataPy object", UserWarning)
         del self.trajcpp
 
     def time_to_merger(self, double a, double omega):
@@ -246,10 +246,10 @@ cdef class TrajectoryData:
     def phase_to_merger(self, double a, double omega):
         return -self.trajcpp.phase_of_a_omega(a, omega)
 
-    def phase(self, double chi, double alpha):
+    def phase_of_chi_alpha(self, double chi, double alpha):
         return self.trajcpp.phase(chi, alpha)
 
-    def time(self, double chi, double alpha):
+    def time_of_chi_alpha(self, double chi, double alpha):
         return self.trajcpp.time(chi, alpha)
 
     cdef flux_parallel(self, double a, np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] omega):

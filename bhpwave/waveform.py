@@ -1,7 +1,7 @@
 import numpy as np
 from bhpwaveformcy import (WaveformHarmonicGeneratorPyWrapper,
                            WaveformGeneratorPy,
-                           TrajectoryData,
+                           TrajectoryDataPy,
                            InspiralGeneratorPy,
                            HarmonicAmplitudesPy)
 
@@ -48,7 +48,7 @@ def scaled_amplitude(mu, dist):
 
 def source_angles(qS, phiS, qK, phiK):
     """
-    Calculate the sky location :math:`(theta, phi)` of the observor in the
+    Calculate the sky location :math:`(\theta, \phi)` of the observor in the
     source frame using the sky location and orientation of the source in
     the SSB frame
 
@@ -68,7 +68,7 @@ def source_angles(qS, phiS, qK, phiK):
 
 def polarization(qS, phiS, qK, phiK):
     """
-    Calculate the rotation of polarization angle :math:`exp(1j*psi)` due to transforming from
+    Calculate the rotation of polarization angle :math:`e^{i\psi}` due to transforming from
     the plus and cross polarizations in the source frame to the plus and
     cross polarization in the SSB frame.
 
@@ -92,7 +92,7 @@ class KerrCircularWaveformBase:
     """
     Base class that generates a gravitational waveform produced by an extreme-mass-ratio inspiral
     using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-    The waveform is generated in units G = c = 1, with time measured in units of mass 
+    The waveform is generated in units :math:`G = c = 1`, with time measured in units of mass 
     
     Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
     parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
@@ -106,7 +106,7 @@ class KerrCircularWaveformBase:
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
-            self.trajectory_data = TrajectoryData(dealloc_flag=False)
+            self.trajectory_data = TrajectoryDataPy(dealloc_flag=False)
         else:
             self.trajectory_data = trajectory_data
         if harmonic_data is None:
@@ -172,7 +172,7 @@ class KerrCircularWaveform:
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
-            self.trajectory_data = TrajectoryData(dealloc_flag=False)
+            self.trajectory_data = TrajectoryDataPy(dealloc_flag=False)
         else:
             self.trajectory_data = trajectory_data
         if harmonic_data is None:
@@ -186,6 +186,24 @@ class KerrCircularWaveform:
         self.waveform_generator = WaveformGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
 
     def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
+        """
+        Selects the harmonic modes that are used for calculating the waveform
+
+        args:
+            M (double): mass (in solar masses) of the massive black hole
+            mu (double): mass (in solar masses) of the (smaller) stellar-mass compact object
+            a (double): dimensionless black hole spin
+            r0 (double): initial orbital separation of the two objects
+            qS (double): polar angle of the source's sky location
+            phiS (double): azimuthal angle of the source's sky location
+            qK (double): polar angle of the Kerr spin vector
+            phiK (double): azimuthal angle of the Kerr spin vector
+            Phi_phi0 (double): Initial azimuthal position of the small compact object
+            T (double, optional): Duration of the waveform in years
+
+        returns:
+            1d-array (tuples of doubles)
+        """
         return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
 
     def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):

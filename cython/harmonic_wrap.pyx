@@ -11,16 +11,6 @@ cdef unicode default_harmonic_filebase = '../bhpwave/data/circ_data'
 include "trajectory_wrap.pyx"
 
 cdef extern from "harmonics.hpp":
-    # cdef cppclass HarmonicSpline:
-    #     HarmonicSpline(double spin, Spline amplitude_spline, Spline phase_spline)
-
-    #     double amplitude(double alpha)
-    #     double phase(double alpha)
-
-    #     double amplitude_of_omega(double omega)
-    #     double phase_of_omega(double omega)
-    #     double phase_of_omega_derivative(double omega)
-
     cdef cppclass HarmonicSpline2D:
         HarmonicSpline2D(int j, int m, string filebase)
 
@@ -85,24 +75,6 @@ cdef class HarmonicAmplitude2D:
 
     def phase_omega_derivative(self, double a, double omega):
         return self.harmcpp.phase_of_a_omega_derivative(a, omega)
-
-# cdef class HarmonicAmplitude1D:
-#     cdef HarmonicSpline *harmcpp
-
-#     def __cinit__(self, double a, HarmonicAmplitude2D harm2D):
-#         self.harmcpp = new HarmonicSpline(a, harm2D.harmcpp.getReducedAmplitudeSpline(a), harm2D.harmcpp.getReducedPhaseSpline(a))
-
-#     def __dealloc__(self):
-#         del self.harmcpp
-
-#     def amplitude(self, double omega):
-#         return self.harmcpp.amplitude_of_omega(omega)
-
-#     def phase(self, double omega):
-#         return self.harmcpp.phase_of_omega(omega)
-
-#     def phase_omega_derivative(self, double omega):
-#         return self.harmcpp.phase_of_omega_derivative(omega)
 
 cdef int[::1] default_lmodes():
     cdef int lmax = 15
@@ -198,9 +170,6 @@ cdef class HarmonicAmplitudesPy:
         else:
             amp_list = [[self.harmonicscpp.phase_of_a_omega(l, m, aa, abs(kerr_geo_orbital_frequency_circ(aa, rr))) for rr in r_array] for aa in a_array]
         return np.array(amp_list)
-    
-    # def __call__(self, int l, int m, double a, double r):
-    #     return self.amplitude(l, m, a, r)*np.exp(1.j*self.phase(l, m, a, r))
 
     def key_check(self, int l, int m):
         return self.harmonicscpp.key_check(pair[int, int](l, m))

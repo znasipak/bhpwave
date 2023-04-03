@@ -169,7 +169,7 @@ cdef class WaveformHarmonicGeneratorPyWrapper:
 cdef class WaveformGeneratorPy:
     cdef WaveformGenerator *hcpp
 
-    def __cinit__(self, TrajectoryData traj, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
+    def __cinit__(self, TrajectoryDataPy traj, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
         cdef WaveformHarmonicOptions wOpts
         cdef HarmonicOptions hOpts
         
@@ -197,13 +197,16 @@ cdef class WaveformGeneratorPy:
             hOpts.epsilon = kwargs["eps"]
         if "max_samples" in kwargs.keys():
             hOpts.max_samples = kwargs["max_samples"]
+
         cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts)
         cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
         modeWrap.wrap(modescpp)
+
         if pad_nmodes:
             select_modes = list(zip(modeWrap.lmodes, modeWrap.mmodes, 0*modeWrap.mmodes))
         else:
             select_modes = list(zip(modeWrap.lmodes, modeWrap.mmodes))
+
         return select_modes
 
     def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
