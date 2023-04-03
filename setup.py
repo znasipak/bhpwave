@@ -10,8 +10,9 @@ compiler_flags = ["-std=c++11", "-fopenmp", "-O2", "-march=native"]
 try:
     CFLAGS = os.getenv("CFLAGS")
 except KeyError:
-    os.environ["CFLAGS"] = ""
+    CFLAGS = ""
 
+os.environ["CFLAGS"] = CFLAGS
 os.environ["CFLAGS"] += " "
 os.environ["CFLAGS"] += ' '.join(compiler_flags)
 
