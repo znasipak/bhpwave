@@ -8,6 +8,11 @@ from subprocess import run
 
 compiler_flags = ["-std=c++11", "-fopenmp", "-O2", "-march=native"]
 
+try:
+    CC_string = os.getenv("CC")
+except:
+    os.environ["CC"] = ""
+
 os.environ["CC"] += " "
 os.environ["CC"] += ' '.join(compiler_flags)
 
