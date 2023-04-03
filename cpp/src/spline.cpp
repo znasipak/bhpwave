@@ -660,7 +660,7 @@ double BicubicInterpolator::evaluateDerivativeYInterval(int i, int j, const doub
 
 	double xvec[4] = {1, xbar, xbar*xbar, xbar*xbar*xbar};
 	double yvec[3] = {1., 2.*ybar, 3.*ybar*ybar};
-	double zvec[3] = {0., 0., 0.};
+	double zvec[4] = {0., 0., 0., 0.};
 	double result = 0.;
 
 	// zj = cij*yi

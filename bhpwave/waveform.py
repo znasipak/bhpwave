@@ -122,7 +122,7 @@ class KerrCircularWaveformBase:
 
     def generate_base_waveform(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
         """
-        Calculate the complex gravitational wave strain :math:`h = h_\plus - i h_\times` measured in the
+        Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\cross` measured in the
         solar system barycenter (SSB) frame
 
         args:
