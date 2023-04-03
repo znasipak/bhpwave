@@ -1,4 +1,7 @@
 name: bhpwave-env
+channels:
+  - defaults
+  - conda-forge
 dependencies:
   - gcc_linux-64
   - gxx_linux-64
