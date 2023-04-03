@@ -218,22 +218,32 @@ class KerrCircularWaveform:
         """
         Calculate the complex gravitational wave strain
 
-        args:
-            M (double): mass (in solar masses) of the massive black hole
-            mu (double): mass (in solar masses) of the (smaller) stellar-mass compact object
-            a (double): dimensionless black hole spin
-            r0 (double): initial orbital separation of the two objects
-            dist (double): luminosity distance to the source in Gpc
-            qK (double): polar angle of the Kerr spin vector
-            phiK (double): azimuthal angle of the Kerr spin vector
-            qS (double): polar angle of the source's sky location
-            phiS (double): azimuthal angle of the source's sky location
-            Phi_phi0 (double): Initial azimuthal position of the small compact object
-            dt (double, optional): Spacing of time samples in seconds
-            T (double, optional): Duration of the waveform in years
+        :param M: mass (in solar masses) of the massive black hole
+        :type M: double
+        :param mu: mass (in solar masses) of the (smaller) stellar-mass compact object
+        :type mu: double
+        :param a: dimensionless black hole spin
+        :type a: double
+        :param r0: initial orbital separation of the two objects
+        :type r0: double
+        :param dist: luminosity distance to the source in Gpc
+        :type dist: double
+        :param qS: polar angle of the source's sky location
+        :type qS: double
+        :param phiS: azimuthal angle of the source's sky location
+        :type phiS: double
+        :param qK: polar angle of the Kerr spin vector
+        :type qK: double
+        :param phiK: azimuthal angle of the Kerr spin vector
+        :type phiK: double
+        :param Phi_phi0: Initial azimuthal position of the small compact object
+        :type Phi_phi0: double
+        :param dt: Spacing of time samples in seconds
+        :type dt: double, optional
+        :param T: Duration of the waveform in years
+        :type T: double, optional
 
-        returns:
-            1d-array (complex)
+        :rtype: 1d-array[complex]
         """
         h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
         return h.plus - 1.j*h.cross
@@ -254,30 +264,47 @@ class KerrWaveform(KerrCircularWaveform):
         """
         Calculate the complex gravitational wave strain
 
-        args:
-            M (double): mass (in solar masses) of the massive black hole
-            mu (double): mass (in solar masses) of the (smaller) stellar-mass compact object
-            a (double): dimensionless black hole spin
-            p0 (double): initial semi-latus rectum
-            e0 (double): initial orbital eccentricity
-            x0 (double): intial cosine of the orbital inclination
-            dist (double): luminosity distance to the source in Gpc
-            qK (double): polar angle of the Kerr spin vector
-            phiK (double): azimuthal angle of the Kerr spin vector
-            qS (double): polar angle of the source's sky location
-            phiS (double): azimuthal angle of the source's sky location
-            Phi_phi0 (double): Initial azimuthal position of the small compact object
-            Phi_r0 (double): Phase describing the initial radial position and velocity of the small compact object
-            Phi_theta0 (double): Phase describing the initial polar position and velocity of the small compact object
-            dt (double, optional): Spacing of time samples in seconds
-            T (double, optional): Duration of the waveform in years
+        :param M: mass (in solar masses) of the massive black hole
+        :type M: double
+        :param mu: mass (in solar masses) of the (smaller) stellar-mass compact object
+        :type mu: double
+        :param a: dimensionless black hole spin
+        :type a: double
+        :param p0: initial semi-latus rectum
+        :type p0: double
+        :param e0: initial orbital eccentricity
+        :type e0: double
+        :param x0: intial cosine of the orbital inclination
+        :type x0: double
+        :param dist: luminosity distance to the source in Gpc
+        :type dist: double
+        :param qS: polar angle of the source's sky location
+        :type qS: double
+        :param phiS: azimuthal angle of the source's sky location
+        :type phiS: double
+        :param qK: polar angle of the Kerr spin vector
+        :type qK: double
+        :param phiK: azimuthal angle of the Kerr spin vector
+        :type phiK: double
+        :param Phi_phi0: Initial azimuthal position of the small compact object
+        :type Phi_phi0: double
+        :param Phi_r0: Phase describing the initial radial position and velocity of the small compact object
+        :type Phi_r0: double
+        :param Phi_theta0: Phase describing the initial polar position and velocity of the small compact object
+        :type Phi_theta0: double
+        :param dt: Spacing of time samples in seconds
+        :type dt: double, optional
+        :param T: Duration of the waveform in years
+        :type T: double, optional
 
-            pad_output (bool, optional): True returns the waveform for the full duration T years even if the system merges before T years has elasped
-            select_modes (list or ndarray, optional): A list of tuples :math:`(l, m)` that select which modes to include in the waveform calculation
-            return_list (bool, optional): True returns the plus and cross polarizations of the waveform as separate ndarrays
-
-        returns:
-            1d-array (complex) or list of two 1d-arrays (double)
+        :param pad_output: True returns the waveform for the full duration T years even if the system merges before T years has elasped
+        :type pad_output: bool, optional
+        :param select_modes: A list of tuples :math:`(l, m)` that select which modes to include in the waveform calculation
+        :type select_modes: list[tuple(double)] or ndarray[tuple(double)], optional
+        :param return_list: True returns the plus and cross polarizations of the waveform as separate ndarrays
+        :type return_list: bool, optional
+        
+        :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
         """
         if "select_modes" in kwargs.keys():
             lmodes = []

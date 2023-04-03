@@ -13,20 +13,15 @@ instead, we pass them directly by changing the evironment variable CFLAGS
 """
 compiler_flags = ["-std=c++11", "-fopenmp", "-O2", "-march=native"]
 
-try:
-    CFLAGS = os.getenv("CFLAGS")
-    if CFLAGS is None:
-        CFLAGS = "$CFLAGS"
-    else:
-        CFLAGS = str(CFLAGS)
-    os.environ["CFLAGS"] = CFLAGS
-except KeyError:
-    os.environ["CFLAGS"] = "$CFLAGS"
-
-base_path = sys.prefix
-
+CFLAGS = os.getenv("CFLAGS")
+if CFLAGS is None:
+    CFLAGS = ""
+else:
+    CFLAGS = str(CFLAGS)
+os.environ["CFLAGS"] = CFLAGS
 os.environ["CFLAGS"] += " "
 os.environ["CFLAGS"] += ' '.join(compiler_flags)
+base_path = sys.prefix
 
 spline_dependence = ["cpp/src/spline.cpp"]
 swsh_dependence = ["cpp/src/swsh.cpp"]
