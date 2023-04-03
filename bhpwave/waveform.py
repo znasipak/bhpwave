@@ -189,20 +189,28 @@ class KerrCircularWaveform:
         """
         Selects the harmonic modes that are used for calculating the waveform
 
-        args:
-            M (double): mass (in solar masses) of the massive black hole
-            mu (double): mass (in solar masses) of the (smaller) stellar-mass compact object
-            a (double): dimensionless black hole spin
-            r0 (double): initial orbital separation of the two objects
-            qS (double): polar angle of the source's sky location
-            phiS (double): azimuthal angle of the source's sky location
-            qK (double): polar angle of the Kerr spin vector
-            phiK (double): azimuthal angle of the Kerr spin vector
-            Phi_phi0 (double): Initial azimuthal position of the small compact object
-            T (double, optional): Duration of the waveform in years
+        :param M: mass (in solar masses) of the massive black hole
+        :type M: double
+        :param mu: mass (in solar masses) of the (smaller) stellar-mass compact object
+        :type mu: double
+        :param a: dimensionless black hole spin
+        :type a: double
+        :param r0: initial orbital separation of the two objects
+        :type r0: double
+        :param qS: polar angle of the source's sky location
+        :type qS: double
+        :param phiS: azimuthal angle of the source's sky location
+        :type phiS: double
+        :param qK: polar angle of the Kerr spin vector
+        :type qK: double
+        :param phiK: azimuthal angle of the Kerr spin vector
+        :type phiK: double
+        :param Phi_phi0: Initial azimuthal position of the small compact object
+        :type Phi_phi0: double
+        :param T: Duration of the waveform in years
+        :type T: double, optional
 
-        returns:
-            1d-array (tuples of doubles)
+        :rtype: 1d-array[tuples(doubles)]
         """
         return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
 
