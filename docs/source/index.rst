@@ -11,11 +11,6 @@ of extreme-mass-ratio inspirals (EMRIs) using the adiabatic approximation of bla
 perturbation theory. The model is restricted to binaries in which the small body is 
 undergoing a quasi-circular, equatorial inspiral into a rotating massive black hole.
 
-Documentation test of ``bhpwave.waveform``:
-
-.. automodule:: bhpwave.waveform
-   :members:
-
 .. note::
    This project is under active development.
 
