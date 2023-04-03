@@ -8,7 +8,8 @@ import numpy as np
 compiler_flags = ["-std=c++11", "-fopenmp", "-O2", "-march=native"]
 
 try:
-    CFLAGS = os.getenv("CFLAGS")
+    CFLAGS = str(os.getenv("CFLAGS"))
+    print(CFLAGS)
 except KeyError:
     CFLAGS = ""
 
