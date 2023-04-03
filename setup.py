@@ -6,10 +6,19 @@ from Cython.Distutils import build_ext
 import numpy as np
 import sys
 
+
+"""
+For some reason, the libraries extension does not support extra compiler arguments. So
+instead, we pass them directly by changing the evironment variable CFLAGS
+"""
 compiler_flags = ["-std=c++11", "-fopenmp", "-O2", "-march=native"]
 
 try:
-    CFLAGS = str(os.getenv("CFLAGS"))
+    CFLAGS = os.getenv("CFLAGS")
+    if CFLAGS is None:
+        CFLAGS = "$CFLAGS"
+    else:
+        CFLAGS = str(CFLAGS)
     os.environ["CFLAGS"] = CFLAGS
 except KeyError:
     os.environ["CFLAGS"] = "$CFLAGS"

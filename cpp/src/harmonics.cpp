@@ -187,7 +187,7 @@ double HarmonicSelector::modePower(int l, int m, InspiralContainer &inspiral, Ha
 	double amp2;
 	for(int i = 0; i < max_samples; i++){
 		amp2 = pow(_harm.amplitude(l, m, chi, inspiral.getAlpha(timeSteps - 1 - i*stepSize)), 2);
-		power += _harm.amplitude(l, m, chi, inspiral.getAlpha(timeSteps - 1 - i*stepSize));
+		power += amp2;
 	}
 
 	return power;

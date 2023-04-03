@@ -15,7 +15,8 @@
         ],
         "include_dirs": [
             "cpp/include",
-            "/Users/znasipak/opt/anaconda3/envs/lisa_env/lib/python3.7/site-packages/numpy/core/include"
+            "/Users/znasipak/opt/anaconda3/envs/lisa_env/lib/python3.7/site-packages/numpy/core/include",
+            "/Users/znasipak/opt/anaconda3/envs/lisa_env/include"
         ],
         "language": "c++",
         "libraries": [
