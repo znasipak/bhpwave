@@ -9,18 +9,18 @@
 #include "omp.h"
 
 typedef struct HarmonicModeStruct{
-	EigenArray chi;
-	EigenArray alpha;
-	EigenArray A;
-	EigenArray Phi;
+	Vector chi;
+	Vector alpha;
+	Vector A;
+	Vector Phi;
 } HarmonicModeData;
 
 HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base = "data/circ_data");
 
 class HarmonicSpline{
 public:
-  HarmonicSpline(double chi, const EigenArray &alpha, const EigenArray &A, const EigenArray &Phi);
-  HarmonicSpline(double spin, EigenCubicInterpolator amplitude_spline, EigenCubicInterpolator phase_spline);
+  HarmonicSpline(double chi, const Vector &alpha, const Vector &A, const Vector &Phi);
+  HarmonicSpline(double spin, Spline amplitude_spline, Spline phase_spline);
   ~HarmonicSpline();
 
   double amplitude(double alpha);
@@ -32,15 +32,15 @@ public:
 
 private:
   double _spin;
-  EigenCubicInterpolator _amplitude_spline;
-  EigenCubicInterpolator _phase_spline;
+  Spline _amplitude_spline;
+  Spline _phase_spline;
 };
 
 class HarmonicSpline2D{
 public:
   HarmonicSpline2D(int L, int m, std::string filepath_base = "data/circ_data");
   HarmonicSpline2D(HarmonicModeData mode);
-  HarmonicSpline2D(const EigenArray &chi, const EigenArray &alpha, const EigenArray &Amp, const EigenArray &Phi);
+  HarmonicSpline2D(const Vector &chi, const Vector &alpha, const Vector &Amp, const Vector &Phi);
   ~HarmonicSpline2D();
 
   double amplitude(double chi, double alpha);
@@ -49,13 +49,6 @@ public:
 	double amplitude_of_a_omega(double a, double omega);
   double phase_of_a_omega(double a, double omega);
 	double phase_of_a_omega_derivative(double a, double omega);
-
-  // Spline2D getAmplitudeSpline();
-  // Spline2D getPhaseSpline();
-  // EigenCubicInterpolator getReducedAmplitudeSpline(double a);
-  // EigenCubicInterpolator getReducedPhaseSpline(double a);
-
-  // HarmonicSpline constant_spin_spline(double a);
 
 private:
   Spline2D _amplitude_spline;
@@ -125,22 +118,5 @@ private:
 double Yslm_plus_polarization(int l, int m, double theta);
 double Yslm_cross_polarization(int l, int m, double theta);
 void Yslm_plus_cross_polarization(double &plusY, double &crossY, int l, int m, double theta);
-
-// class HarmonicMode{
-// public:
-//   HarmonicMode(const Eigen::ArrayXi &lmodes, const Eigen::ArrayXi &mmodes);
-//   void generateModeData(EigenArray alpha);
-//   Eigen::ArrayXi getLModes();
-//   Eigen::ArrayXi getMModes();
-//   Eigen::ArrayXi getAmplitudes();
-//   Eigen::ArrayXi getPhases();
-
-// private:
-//   Eigen::ArrayXi lmodes;
-//   Eigen::ArrayXi mmodes;
-//   Eigen::MatrixXd Aplus;
-//   Eigen::MatrixXd Across;
-//   Eigen::MatrixXd phases;
-// };
 
 #endif

@@ -8,10 +8,6 @@ from subprocess import run
 
 compiler_flags = ["-std=c++11", "-fopenmp", "-O2", "-march=native"]
 
-# output = run(["uname", "-m"], capture_output=True)
-# if output.stdout.decode("utf-8") == "x86_64":
-#     compiler_flags.append("-march=x86-64")
-
 os.environ["CC"] += " "
 os.environ["CC"] += ' '.join(compiler_flags)
 
@@ -29,17 +25,14 @@ lib_extension = dict(
     sources = [*set(full_dependence)],
     libraries=["gsl", "gslcblas", "lapack", "lapacke", "omp"],
     language='c++',
-    include_dirs = ["cpp/include","third_party/eigen-3.4.0"],
-    define_macros = [("EIGEN_MPL2_ONLY", None)]
+    include_dirs = ["cpp/include"],
 )
 bhpwavecpp = ['bhpwavecpp', lib_extension]
 
 cpu_extension = dict(
     libraries=["gsl", "gslcblas", "lapack", "lapacke", "omp"],
     language='c++',
-    include_dirs=["cpp/include","third_party/eigen-3.4.0", np.get_include()],
-    # enable line profiling for memory profiling
-    # define_macros=[('CYTHON_TRACE_NOGIL', '1')],
+    include_dirs=["cpp/include", np.get_include()],
 )
 
 swsh_ext = Extension(
@@ -54,18 +47,17 @@ wave_ext = Extension(
     **cpu_extension,
 )
 
-# ext_modules = [swsh_ext, bhpwave_ext, traj_ext]
 ext_modules = [swsh_ext, wave_ext]
 
 setup(
-    name="bhpwave",
-    author="Zach Nasipak",
+    name = "bhpwave",
+    author = "Zach Nasipak",
     version = "0.1.0",
-    description="Adiabatic EMRI waveform generator",
+    description = "Adiabatic EMRI waveform generator",
     ext_modules = cythonize(ext_modules, language_level = "3"),
-    packages=["bhpwave", "bhpwave.swsh", "bhpwave.trajectory", "bhpwave.harmonics", "bhpwave.data"],
-    py_modules=["bhpwave.waveform"],
-    classifiers=[
+    packages = ["bhpwave", "bhpwave.swsh", "bhpwave.trajectory", "bhpwave.harmonics", "bhpwave.data"],
+    py_modules = ["bhpwave.waveform"],
+    classifiers = [
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Natural Language :: English",
@@ -74,7 +66,7 @@ setup(
     ],
     libraries = [bhpwavecpp],
     cmdclass = {'build_ext': build_ext},
-    package_data={"bhpwave.data": ["*.txt"]},
-    include_package_data=True,
-    zip_safe=False
+    package_data = {"bhpwave.data": ["*.txt"]},
+    include_package_data = True,
+    zip_safe = False
 )

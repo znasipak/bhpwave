@@ -10,25 +10,16 @@ cdef unicode default_harmonic_filebase = '../bhpwave/data/circ_data'
 
 include "trajectory_wrap.pyx"
 
-cdef extern from "spline.hpp":
-    cdef cppclass EigenCubicInterpolator:
-        pass
-
-    cdef cppclass EigenBicubicInterpolator:
-        EigenCubicInterpolator reduce_x(const double x)
-        EigenCubicInterpolator reduce_y(const double y)
-        pass
-
 cdef extern from "harmonics.hpp":
-    cdef cppclass HarmonicSpline:
-        HarmonicSpline(double spin, EigenCubicInterpolator amplitude_spline, EigenCubicInterpolator phase_spline)
+    # cdef cppclass HarmonicSpline:
+    #     HarmonicSpline(double spin, Spline amplitude_spline, Spline phase_spline)
 
-        double amplitude(double alpha)
-        double phase(double alpha)
+    #     double amplitude(double alpha)
+    #     double phase(double alpha)
 
-        double amplitude_of_omega(double omega)
-        double phase_of_omega(double omega)
-        double phase_of_omega_derivative(double omega)
+    #     double amplitude_of_omega(double omega)
+    #     double phase_of_omega(double omega)
+    #     double phase_of_omega_derivative(double omega)
 
     cdef cppclass HarmonicSpline2D:
         HarmonicSpline2D(int j, int m, string filebase)

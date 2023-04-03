@@ -13,21 +13,6 @@ Spline::Spline(Vector x, Vector f){
 	gsl_spline_init(_spline, &x[0], &f[0], x.size());
 }
 
-Spline::Spline(const EigenArray &xarray, const EigenArray &farray){
-	Vector x(xarray.size());
-	Vector f(farray.size());
-	Eigen::ArrayXd::Map(&x[0], xarray.size()) = xarray;
-	Eigen::ArrayXd::Map(&f[0], farray.size()) = farray;
-
-	_acc = gsl_interp_accel_alloc();
-	_spline = gsl_spline_alloc(gsl_interp_cspline, x.size());
-	if(x[0] > x[1]){
-		std::reverse(x.begin(), x.end());
-		std::reverse(f.begin(), f.end());
-	}
-	gsl_spline_init(_spline, &x[0], &f[0], x.size());
-}
-
 Spline::Spline(const Spline& obj){
 	_spline = new gsl_spline;
 	_acc = new gsl_interp_accel;
@@ -114,51 +99,51 @@ Spline2D::Spline2D(Vector y, Vector x, Vector f){
 	gsl_spline2d_init(_spline, &x[0], &y[0], &fnew[0], x.size(), y.size());
 }
 
-Spline2D::Spline2D(const EigenArray &yarray, const EigenArray &xarray, const EigenArray &farray){
-	Vector x(xarray.size());
-	Vector y(yarray.size());
-	Vector f(farray.size());
-	Eigen::ArrayXd::Map(&x[0], xarray.size()) = xarray;
-	Eigen::ArrayXd::Map(&y[0], yarray.size()) = yarray;
-	Eigen::ArrayXd::Map(&f[0], farray.size()) = farray;
+// Spline2D::Spline2D(const EigenArray &yarray, const EigenArray &xarray, const EigenArray &farray){
+// 	Vector x(xarray.size());
+// 	Vector y(yarray.size());
+// 	Vector f(farray.size());
+// 	Eigen::ArrayXd::Map(&x[0], xarray.size()) = xarray;
+// 	Eigen::ArrayXd::Map(&y[0], yarray.size()) = yarray;
+// 	Eigen::ArrayXd::Map(&f[0], farray.size()) = farray;
 
-	if(x.size()*y.size() != f.size()){
-		std::cout << "(SPLINE) Error: (x, y) array with dimensions (" << x.size() << ", " << y.size() << ") not compabitble with f(x, y) array of length " << f.size() << "\n";
-	}
+// 	if(x.size()*y.size() != f.size()){
+// 		std::cout << "(SPLINE) Error: (x, y) array with dimensions (" << x.size() << ", " << y.size() << ") not compabitble with f(x, y) array of length " << f.size() << "\n";
+// 	}
 
-	_xacc = gsl_interp_accel_alloc();
-	_yacc = gsl_interp_accel_alloc();
-	_spline = gsl_spline2d_alloc(gsl_interp2d_bicubic, x.size(), y.size());
-	Vector fnew(f.size());
-	if(x[0] > x[1] && y[0] > y[1]){
-		std::reverse(x.begin(), x.end());
-		std::reverse(y.begin(), y.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + x.size() - i - 1];
-			}
-		}
-	}else if(x[0] > x[1]){
-		std::reverse(x.begin(), x.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[j*x.size() + x.size() - i - 1];
-			}
-		}
-	}else if(y[0] > y[1]){
-		std::reverse(y.begin(), y.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + i];
-			}
-		}
-	}else{
-		for(size_t j = 0; j < f.size(); j++){
-			fnew[j] = f[j];
-		}
-	}
-	gsl_spline2d_init(_spline, &x[0], &y[0], &fnew[0], x.size(), y.size());
-}
+// 	_xacc = gsl_interp_accel_alloc();
+// 	_yacc = gsl_interp_accel_alloc();
+// 	_spline = gsl_spline2d_alloc(gsl_interp2d_bicubic, x.size(), y.size());
+// 	Vector fnew(f.size());
+// 	if(x[0] > x[1] && y[0] > y[1]){
+// 		std::reverse(x.begin(), x.end());
+// 		std::reverse(y.begin(), y.end());
+// 		for(size_t i = 0; i < x.size(); i++){
+// 			for(size_t j = 0; j < y.size(); j++){
+// 				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + x.size() - i - 1];
+// 			}
+// 		}
+// 	}else if(x[0] > x[1]){
+// 		std::reverse(x.begin(), x.end());
+// 		for(size_t i = 0; i < x.size(); i++){
+// 			for(size_t j = 0; j < y.size(); j++){
+// 				fnew[j*x.size() + i] = f[j*x.size() + x.size() - i - 1];
+// 			}
+// 		}
+// 	}else if(y[0] > y[1]){
+// 		std::reverse(y.begin(), y.end());
+// 		for(size_t i = 0; i < x.size(); i++){
+// 			for(size_t j = 0; j < y.size(); j++){
+// 				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + i];
+// 			}
+// 		}
+// 	}else{
+// 		for(size_t j = 0; j < f.size(); j++){
+// 			fnew[j] = f[j];
+// 		}
+// 	}
+// 	gsl_spline2d_init(_spline, &x[0], &y[0], &fnew[0], x.size(), y.size());
+// }
 
 Spline2D::Spline2D(const Spline2D& obj){
 	_spline = new gsl_spline2d;
@@ -288,6 +273,27 @@ Matrix Matrix::transpose() const{
 			}
 	}
 	return AT;
+}
+
+void Matrix::transposeInPlace(){
+	Vector AT(_A.size());
+	#pragma omp parallel
+	{
+		#pragma omp for collapse(2)
+		for(int i = 0; i < _n; i++){
+			for(int j = 0; j < _m; j++){
+				AT[j*_n + i] = _A[i*_m + j];
+			}
+		}
+
+		#pragma omp for
+		for(int i = 0; i < _n*_m; i++){
+			_A[i] = AT[i];
+		}
+	}
+	int m = _n;
+	_n = _m;
+	_m = m;
 }
 
 double& Matrix::operator()(int i, int j){
@@ -876,762 +882,6 @@ double CubicInterpolator::evaluateSecondDerivativeInterval(int i, const double x
 }
 
 int CubicInterpolator::findInterval(const double x){
-	int i = static_cast<int>((x-x0)/dx);
-    if(i >= nintervals){
-        return nintervals - 1;
-    }
-	if(i < 0){
-		return 0;
-	}
-	return i;
-}
-
-//////////////////////////////////////////////////////////////////
-//////////////          BicubicInterpolator       ////////////////
-//////////////////////////////////////////////////////////////////
-
-// I should edit this class so that all of the spline coefficients
-// for the same interval get stored next to one another in memory.
-// Unfortunately this is not the case at the moment.
-
-EigenBicubicInterpolator::EigenBicubicInterpolator(const EigenArray &x, const EigenArray &y, const EigenArray &z): EigenBicubicInterpolator(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z.matrix()) {}
-EigenBicubicInterpolator::EigenBicubicInterpolator(const EigenVector &x, const EigenVector &y, const Eigen::MatrixXd &z): EigenBicubicInterpolator(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z) {}
-EigenBicubicInterpolator::EigenBicubicInterpolator(double x0, double dx, int nx, double y0, double dy, int ny, const Eigen::MatrixXd &z): dx(dx), dy(dy), nx(nx), ny(ny), x0(x0), y0(y0), cij(4*nx, 4*ny) {
-	if(nx + 1 != z.rows() && ny + 1 != z.cols()){
-		if(nx + 1 == z.cols() && ny + 1 == z.rows()){
-			// switch x and y
-			cij.transposeInPlace();
-			computeSplineCoefficients(z);
-		}else if((nx + 1)*(ny + 1) == z.size()){
-			Eigen::MatrixXd m_z(ny + 1, nx + 1);
-			m_z.noalias() = z.reshaped(ny + 1, nx + 1);
-			m_z.transposeInPlace();
-
-			computeSplineCoefficients(m_z);
-		}else{
-			std::cout << "ERROR: Indices of vectors and matrices do not match \n";
-			std::cout << "ERROR: nx = "<<nx<< ",  ny = "<<ny<<", nx*ny = "<<(nx+1)*(ny+1)<<" and z.size() = "<<z.size()<<" \n";
-		}
-	}else{
-		computeSplineCoefficients(z);
-	}
-}
-
-double EigenBicubicInterpolator::evaluate(const double x, const double y){
-	int i = findXInterval(x);
-	int j = findYInterval(y);
-	return evaluateInterval(i, j, x, y);
-}
-
-double EigenBicubicInterpolator::derivative_x(const double x, const double y){
-	int i = findXInterval(x);
-	int j = findYInterval(y);
-	return evaluateDerivativeXInterval(i, j, x, y)/dx;
-}
-
-double EigenBicubicInterpolator::derivative_y(const double x, const double y){
-	int i = findXInterval(x);
-	int j = findYInterval(y);
-	return evaluateDerivativeYInterval(i, j, x, y)/dy;
-}
-
-double EigenBicubicInterpolator::derivative_xy(const double x, const double y){
-	int i = findXInterval(x);
-	int j = findYInterval(y);
-	return evaluateDerivativeXYInterval(i, j, x, y)/dx/dy;
-}
-
-double EigenBicubicInterpolator::derivative_xx(const double x, const double y){
-	int i = findXInterval(x);
-	int j = findYInterval(y);
-	return evaluateDerivativeXXInterval(i, j, x, y)/dx/dx;
-}
-
-double EigenBicubicInterpolator::derivative_yy(const double x, const double y){
-	int i = findXInterval(x);
-	int j = findYInterval(y);
-	return evaluateDerivativeYYInterval(i, j, x, y)/dy/dy;
-}
-
-void EigenBicubicInterpolator::evaluate(double z[], const double x[], int nx, const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < nx; i++){
-				for(int j = 0; j < ny; j++){
-					z[i*ny + j] = evaluate(x[i], y[j]);
-				}
-			}
-	}
-}
-
-void EigenBicubicInterpolator::derivative_x(double z[], const double x[], int nx, const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < nx; i++){
-				for(int j = 0; j < ny; j++){
-					z[i*ny + j] = derivative_x(x[i], y[j]);
-				}
-			}
-	}
-}
-
-void EigenBicubicInterpolator::derivative_y(double z[], const double x[], int nx, const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < nx; i++){
-				for(int j = 0; j < ny; j++){
-					z[i*ny + j] = derivative_y(x[i], y[j]);
-				}
-			}
-	}
-}
-
-void EigenBicubicInterpolator::derivative_xy(double z[], const double x[], int nx, const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < nx; i++){
-				for(int j = 0; j < ny; j++){
-					z[i*ny + j] = derivative_xy(x[i], y[j]);
-				}
-			}
-	}
-}
-
-void EigenBicubicInterpolator::derivative_xx(double z[], const double x[], int nx, const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < nx; i++){
-				for(int j = 0; j < ny; j++){
-					z[i*ny + j] = derivative_xx(x[i], y[j]);
-				}
-			}
-	}
-}
-
-void EigenBicubicInterpolator::derivative_yy(double z[], const double x[], int nx, const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < nx; i++){
-				for(int j = 0; j < ny; j++){
-					z[i*ny + j] = derivative_yy(x[i], y[j]);
-				}
-			}
-	}
-}
-
-void EigenBicubicInterpolator::evaluate(double z[], const double x[], const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel for
-		for(int j = 0; j < ny; j++){
-			z[j] = evaluate(x[j], y[j]);
-		}
-}
-
-void EigenBicubicInterpolator::derivative_x(double z[], const double x[], const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel for
-		for(int j = 0; j < ny; j++){
-			z[j] = derivative_x(x[j], y[j]);
-		}
-}
-
-void EigenBicubicInterpolator::derivative_y(double z[], const double x[], const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel for
-		for(int j = 0; j < ny; j++){
-			z[j] = derivative_y(x[j], y[j]);
-		}
-}
-
-void EigenBicubicInterpolator::derivative_xy(double z[], const double x[], const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel for
-		for(int j = 0; j < ny; j++){
-			z[j] = derivative_xy(x[j], y[j]);
-		}
-}
-
-void EigenBicubicInterpolator::derivative_xx(double z[], const double x[], const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel for
-		for(int j = 0; j < ny; j++){
-			z[j] = derivative_xx(x[j], y[j]);
-		}
-}
-
-void EigenBicubicInterpolator::derivative_yy(double z[], const double x[], const double y[], int ny, int num_threads){
-	if(num_threads > 1){
-        omp_set_num_threads(num_threads);
-    }
-	#pragma omp parallel for
-		for(int j = 0; j < ny; j++){
-			z[j] = derivative_yy(x[j], y[j]);
-		}
-}
-
-Eigen::MatrixXd EigenBicubicInterpolator::computeXDerivatives(const Eigen::MatrixXd &m_z){
-    int nsize = m_z.rows();
-    Eigen::MatrixXd diffopx = Eigen::MatrixXd::Zero(nsize, nsize);
-	diffopx.diagonal(1) = Eigen::VectorXd::Constant(nsize - 1, 8./12.);
-	diffopx.diagonal(-1) = Eigen::VectorXd::Constant(nsize - 1, -8./12.);
-    diffopx.diagonal(2) = Eigen::VectorXd::Constant(nsize - 2, -1./12.);
-	diffopx.diagonal(-2) = Eigen::VectorXd::Constant(nsize - 2, 1./12.);
-
-    // 4th-order forward difference coefficients
-    Eigen::Matrix<double, 1, 5> coeffs;
-    coeffs << -25./12., 4., -3., 4./3., -1./4;
-    for(int i = 0; i < 2; i++){
-        diffopx.row(i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopx(i, Eigen::seq(i, i + 4)) = coeffs;
-
-        diffopx.row(nsize - 1 - i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopx(nsize - 1 - i, Eigen::seq(nsize - 5 - i, nsize - 1 - i)) = -coeffs.reverse();
-    }
-
-	// generate x derivatives
-	Eigen::MatrixXd m_zdx(m_z.rows(), m_z.cols());
-	m_zdx.noalias() = diffopx*m_z/dx;
-    return m_zdx;
-}
-
-Eigen::MatrixXd EigenBicubicInterpolator::computeYDerivatives(const Eigen::MatrixXd &m_z){
-    int nsize = m_z.cols();
-    Eigen::MatrixXd diffopy = Eigen::MatrixXd::Zero(nsize, nsize);
-    diffopy.diagonal(1) = Eigen::VectorXd::Constant(nsize - 1, 8./12.);
-	diffopy.diagonal(-1) = Eigen::VectorXd::Constant(nsize - 1, -8./12.);
-    diffopy.diagonal(2) = Eigen::VectorXd::Constant(nsize - 2, -1./12.);
-	diffopy.diagonal(-2) = Eigen::VectorXd::Constant(nsize - 2, 1./12.);
-
-    // 4th-order forward difference coefficients
-    Eigen::Matrix<double, 1, 5> coeffs;
-    coeffs << -25./12., 4., -3., 4./3., -1./4;
-    for(int i = 0; i < 2; i++){
-        diffopy.row(i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopy(i, Eigen::seq(i, i + 4)) = coeffs;
-
-        diffopy.row(nsize - 1 - i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopy(nsize - 1 - i, Eigen::seq(nsize - 5 - i, nsize - 1 - i)) = -coeffs.reverse();
-    }
-    // std::cout << diffopy << "\n";
-    diffopy.transposeInPlace();
-
-	// generate y derivatives
-	Eigen::MatrixXd m_zdy(m_z.rows(), m_z.cols());
-	m_zdy.noalias() = m_z*diffopy/dy;
-    return m_zdy;
-}
-
-Eigen::MatrixXd EigenBicubicInterpolator::computeXYDerivatives(const Eigen::MatrixXd &m_z){
-    Eigen::MatrixXd diffopx = Eigen::MatrixXd::Zero(m_z.rows(), m_z.rows());
-	Eigen::MatrixXd diffopy = Eigen::MatrixXd::Zero(m_z.cols(), m_z.cols());
-	diffopx.diagonal(1) = Eigen::VectorXd::Constant(m_z.rows() - 1, 0.5);
-	diffopx.diagonal(-1) = Eigen::VectorXd::Constant(m_z.rows() - 1, -0.5);
-	diffopy.diagonal(-1) = Eigen::VectorXd::Constant(m_z.cols() - 1, 0.5);
-	diffopy.diagonal(1) = Eigen::VectorXd::Constant(m_z.cols() - 1, -0.5);
-	diffopx(0, 0) = -1.;
-	diffopx(0, 1) = 1.;
-	diffopx(diffopx.rows() - 1, diffopx.cols() - 2) = -1.;
-	diffopx(diffopx.rows() - 1, diffopx.cols() - 1) = 1.;
-	diffopy(0, 0) = -1.;
-	diffopy(1, 0) = 1.;
-	diffopy(diffopy.rows() - 2, diffopy.cols() - 1) = -1.;
-	diffopy(diffopy.rows() - 1, diffopy.cols() - 1) = 1.;
-    // std::cout << diffopy << "\n";
-
-	// generate y derivatives
-	// Eigen::MatrixXd m_zdy = m_z*diffopy/dy;
-	// generate xy derivatives
-	Eigen::MatrixXd m_zdxdy(m_z.rows(), m_z.cols());
-	m_zdxdy.noalias() = diffopx*m_z*diffopy/dy/dx;
-    return m_zdxdy;
-}
-
-Eigen::MatrixXd EigenBicubicInterpolator::computeDerivatives(const Eigen::MatrixXd &m_z){
-	// we approximate first derivatives using central finite differences
-	//		f_x(x, y) = [f(x + h, y) - f(x - h, y)]/(2h)
-	//		f_y(x, y) = [f(x, y + h) - f(x, y - h)]/(2h)
-	// and similarly for the second derivatives
-	//		f_xy(x, y) = [f(x + h, y + k) - f(x + h, y - k) - f(x - h, y + k) + f(x - h, y - k)]/(2hk)
-	
-	// define difference operators in x and y directions
-    int nsize = m_z.rows();
-    Eigen::MatrixXd diffopx = Eigen::MatrixXd::Zero(nsize, nsize);
-	diffopx.diagonal(1) = Eigen::VectorXd::Constant(nsize - 1, 8./12.);
-	diffopx.diagonal(-1) = Eigen::VectorXd::Constant(nsize - 1, -8./12.);
-    diffopx.diagonal(2) = Eigen::VectorXd::Constant(nsize - 2, -1./12.);
-	diffopx.diagonal(-2) = Eigen::VectorXd::Constant(nsize - 2, 1./12.);
-
-    // 4th-order forward difference coefficients
-    Eigen::Matrix<double, 1, 5> coeffs;
-    coeffs << -25./12., 4., -3., 4./3., -1./4;
-    for(int i = 0; i < 2; i++){
-        diffopx.row(i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopx(i, Eigen::seq(i, i + 4)) = coeffs;
-
-        diffopx.row(nsize - 1 - i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopx(nsize - 1 - i, Eigen::seq(nsize - 5 - i, nsize - 1 - i)) = -coeffs.reverse();
-    }
-    
-    nsize = m_z.cols();
-    Eigen::MatrixXd diffopy = Eigen::MatrixXd::Zero(nsize, nsize);
-    diffopy.diagonal(1) = Eigen::VectorXd::Constant(nsize - 1, 8./12.);
-	diffopy.diagonal(-1) = Eigen::VectorXd::Constant(nsize - 1, -8./12.);
-    diffopy.diagonal(2) = Eigen::VectorXd::Constant(nsize - 2, -1./12.);
-	diffopy.diagonal(-2) = Eigen::VectorXd::Constant(nsize - 2, 1./12.);
-
-    // 4th-order forward difference coefficients
-    for(int i = 0; i < 2; i++){
-        diffopy.row(i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopy(i, Eigen::seq(i, i + 4)) = coeffs;
-
-        diffopy.row(nsize - 1 - i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopy(nsize - 1 - i, Eigen::seq(nsize - 5 - i, nsize - 1 - i)) = -coeffs.reverse();
-    }
-    diffopy.transposeInPlace();
-
-	// std::cout << "Solve for X derivatives \n";
-	// generate x derivatives
-	Eigen::MatrixXd m_zdx(m_z.rows(), m_z.cols());
-	m_zdx.noalias() = diffopx*m_z;
-
-	// std::cout << "Solve for Y derivatives \n";
-	// generate y derivatives
-	Eigen::MatrixXd m_zdy(m_z.rows(), m_z.cols());
-	m_zdy.noalias() = m_z*diffopy;
-
-	// std::cout << "Solve for XY derivatives \n";
-	// generate xy derivatives
-	Eigen::MatrixXd m_zdxdy(m_z.rows(), m_z.cols());
-	m_zdxdy.noalias() = diffopx*m_zdy;
-
-    // std::cout << "Computed derivatives\n";
-	Eigen::MatrixXd derivmat(cij.rows(), cij.cols());
-
-	for(int j = 0; j < ny; j++){
-		for(int i = 0; i < nx; i++){
-			Eigen::Matrix4d dmat;
-			dmat(0, 0) = m_z(i, j); // f(0,0)
-			dmat(0, 1) = m_z(i, j + 1); // f(0,1)
-			dmat(0, 2) = m_zdy(i, j); // fy(0,0)
-			dmat(0, 3) = m_zdy(i, j + 1); // fy(0,1)
-			dmat(1, 0) = m_z(i + 1, j); // f(1,0)
-			dmat(1, 1) = m_z(i + 1, j + 1); // f(1,1)
-			dmat(1, 2) = m_zdy(i + 1, j); // fy(1,0)
-			dmat(1, 3) = m_zdy(i + 1, j + 1); // fy(1,1)
-			dmat(2, 0) = m_zdx(i, j); // fx(0,0)
-			dmat(2, 1) = m_zdx(i, j + 1); // fx(0,1)
-			dmat(2, 2) = m_zdxdy(i, j); // fxy(0,0)
-			dmat(2, 3) = m_zdxdy(i, j + 1); // fxy(0,1)
-			dmat(3, 0) = m_zdx(i + 1, j); // fx(1,0)
-			dmat(3, 1) = m_zdx(i + 1, j + 1); // fx(1,1)
-			dmat(3, 2) = m_zdxdy(i + 1, j); // fxy(1,0)
-			dmat(3, 3) = m_zdxdy(i + 1, j + 1); // fxy(1,1)
-            // std::cout << i << ", " << j << "\n";
-            // std::cout << dmat << "\n";
-			derivmat.block<4,4>(4*i, 4*j) = dmat;
-		}
-	}
-
-	return derivmat;
-}
-
-void EigenBicubicInterpolator::computeSplineCoefficients(const Eigen::MatrixXd &m_z){
-	Eigen::Matrix4d lmat;
-	Eigen::Matrix4d rmat;
-	Eigen::MatrixXd dmat;
-
-	lmat << 1, 0, 0, 0,
-			0, 0, 1, 0,
-			-3, 3, -2, -1,
-			2, -2, 1, 1;
-	rmat << 1, 0, -3, 2,
-			0, 0, 3, -2,
-			0, 1, -2, 1,
-			0, 0, -1, 1;
-	
-	// std::cout << "Create first differential matrix \n";
-	int nsize = m_z.rows();
-    Eigen::MatrixXd diffopx = Eigen::MatrixXd::Zero(nsize, nsize);
-	diffopx.diagonal(1) = Eigen::VectorXd::Constant(nsize - 1, 8./12.);
-	diffopx.diagonal(-1) = Eigen::VectorXd::Constant(nsize - 1, -8./12.);
-    diffopx.diagonal(2) = Eigen::VectorXd::Constant(nsize - 2, -1./12.);
-	diffopx.diagonal(-2) = Eigen::VectorXd::Constant(nsize - 2, 1./12.);
-
-	// 4th-order forward difference coefficients
-    Eigen::Matrix<double, 1, 5> coeffs;
-    coeffs << -25./12., 4., -3., 4./3., -1./4;
-    for(int i = 0; i < 2; i++){
-        diffopx.row(i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopx(i, Eigen::seq(i, i + 4)) = coeffs;
-
-        diffopx.row(nsize - 1 - i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopx(nsize - 1 - i, Eigen::seq(nsize - 5 - i, nsize - 1 - i)) = -coeffs.reverse();
-    }
-    
-	// std::cout << "Create second differential matrix \n";
-    nsize = m_z.cols();
-    Eigen::MatrixXd diffopy = Eigen::MatrixXd::Zero(nsize, nsize);
-    diffopy.diagonal(1) = Eigen::VectorXd::Constant(nsize - 1, 8./12.);
-	diffopy.diagonal(-1) = Eigen::VectorXd::Constant(nsize - 1, -8./12.);
-    diffopy.diagonal(2) = Eigen::VectorXd::Constant(nsize - 2, -1./12.);
-	diffopy.diagonal(-2) = Eigen::VectorXd::Constant(nsize - 2, 1./12.);
-
-    // 4th-order forward difference coefficients
-    for(int i = 0; i < 2; i++){
-        diffopy.row(i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopy(i, Eigen::seq(i, i + 4)) = coeffs;
-
-        diffopy.row(nsize - 1 - i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopy(nsize - 1 - i, Eigen::seq(nsize - 5 - i, nsize - 1 - i)) = -coeffs.reverse();
-    }
-    diffopy.transposeInPlace();
-
-	// std::cout << "Solve for X derivatives \n";
-	// generate x derivatives
-	Eigen::MatrixXd m_zdx(m_z.rows(), m_z.cols());
-	m_zdx.noalias() = diffopx*m_z;
-
-	// std::cout << "Solve for Y derivatives \n";
-	// generate y derivatives
-	Eigen::MatrixXd m_zdy(m_z.rows(), m_z.cols());
-	m_zdy.noalias() = m_z*diffopy;
-
-	// std::cout << "Solve for XY derivatives \n";
-	// generate xy derivatives
-	Eigen::MatrixXd m_zdxdy(m_z.rows(), m_z.cols());
-	m_zdxdy.noalias() = diffopx*m_zdy;
-
-	// std::cout << "Evaluate coefficients \n";
-	for(int j = 0; j < ny; j++){
-		for(int i = 0; i < nx; i++){
-			Eigen::Matrix4d dmat;
-			dmat(0, 0) = m_z(i, j); // f(0,0)
-			dmat(0, 1) = m_z(i, j + 1); // f(0,1)
-			dmat(0, 2) = m_zdy(i, j); // fy(0,0)
-			dmat(0, 3) = m_zdy(i, j + 1); // fy(0,1)
-			dmat(1, 0) = m_z(i + 1, j); // f(1,0)
-			dmat(1, 1) = m_z(i + 1, j + 1); // f(1,1)
-			dmat(1, 2) = m_zdy(i + 1, j); // fy(1,0)
-			dmat(1, 3) = m_zdy(i + 1, j + 1); // fy(1,1)
-			dmat(2, 0) = m_zdx(i, j); // fx(0,0)
-			dmat(2, 1) = m_zdx(i, j + 1); // fx(0,1)
-			dmat(2, 2) = m_zdxdy(i, j); // fxy(0,0)
-			dmat(2, 3) = m_zdxdy(i, j + 1); // fxy(0,1)
-			dmat(3, 0) = m_zdx(i + 1, j); // fx(1,0)
-			dmat(3, 1) = m_zdx(i + 1, j + 1); // fx(1,1)
-			dmat(3, 2) = m_zdxdy(i + 1, j); // fxy(1,0)
-			dmat(3, 3) = m_zdxdy(i + 1, j + 1); // fxy(1,1)
-			cij.block<4,4>(4*i, 4*j).noalias() = lmat*dmat*rmat;
-		}
-	}
-
-	// std::cout << "Coefficients evaluated \n";
-}
-
-double EigenBicubicInterpolator::evaluateInterval(int i, int j, const double x, const double y){
-	double xbar = (x - x0 - i*dx)/dx;
-	double ybar = (y - y0 - j*dy)/dy;
-	Eigen::RowVector4d xvec = {1., xbar, xbar*xbar, xbar*xbar*xbar};
-	Eigen::Vector4d yvec = {1., ybar, ybar*ybar, ybar*ybar*ybar};
-	
-	return xvec*(cij.block<4,4>(4*i, 4*j))*yvec;
-}
-
-double EigenBicubicInterpolator::evaluateDerivativeXInterval(int i, int j, const double x, const double y){
-	double xbar = (x - x0 - i*dx)/dx;
-	double ybar = (y - y0 - j*dy)/dy;
-	Eigen::RowVector4d xvec = {0., 1., 2.*xbar, 3.*xbar*xbar};
-	Eigen::Vector4d yvec = {1, ybar, ybar*ybar, ybar*ybar*ybar};
-	
-	return xvec*(cij.block<4,4>(4*i, 4*j))*yvec;
-}
-
-double EigenBicubicInterpolator::evaluateDerivativeYInterval(int i, int j, const double x, const double y){
-	double xbar = (x - x0 - i*dx)/dx;
-	double ybar = (y - y0 - j*dy)/dy;
-	Eigen::RowVector4d xvec = {1, xbar, xbar*xbar, xbar*xbar*xbar};
-	Eigen::Vector4d yvec = {0., 1., 2.*ybar, 3.*ybar*ybar};
-	
-	return xvec*(cij.block<4,4>(4*i, 4*j))*yvec;
-}
-
-double EigenBicubicInterpolator::evaluateDerivativeXYInterval(int i, int j, const double x, const double y){
-	double xbar = (x - x0 - i*dx)/dx;
-	double ybar = (y - y0 - j*dy)/dy;
-	Eigen::RowVector4d xvec = {0., 1., 2.*xbar, 3.*xbar*xbar};
-	Eigen::Vector4d yvec = {0., 1., 2.*ybar, 3.*ybar*ybar};
-	
-	return xvec*(cij.block<4,4>(4*i, 4*j))*yvec;
-}
-
-double EigenBicubicInterpolator::evaluateDerivativeXXInterval(int i, int j, const double x, const double y){
-	double xbar = (x - x0 - i*dx)/dx;
-	double ybar = (y - y0 - j*dy)/dy;
-	Eigen::RowVector4d xvec = {0., 0., 2., 6.*xbar};
-	Eigen::Vector4d yvec = {1, ybar, ybar*ybar, ybar*ybar*ybar};
-	
-	return xvec*(cij.block<4,4>(4*i, 4*j))*yvec;
-}
-
-double EigenBicubicInterpolator::evaluateDerivativeYYInterval(int i, int j, const double x, const double y){
-	double xbar = (x - x0 - i*dx)/dx;
-	double ybar = (y - y0 - j*dy)/dy;
-	Eigen::RowVector4d xvec = {1, xbar, xbar*xbar, xbar*xbar*xbar};
-	Eigen::Vector4d yvec = {0., 0., 2., 6.*ybar};
-	
-	return xvec*(cij.block<4,4>(4*i, 4*j))*yvec;
-}
-
-Eigen::MatrixXd EigenBicubicInterpolator::evaluateInterval(int i, int j, const Eigen::VectorXd &x, const Eigen::VectorXd &y){
-	Eigen::Array<double, Eigen::Dynamic, 1> xbar = ((x.array() - x0 - i*dx)/dx);
-	Eigen::Array<double, 1, Eigen::Dynamic> ybar = ((y.transpose().array() - y0 - j*dy)/dy);
-    Eigen::MatrixXd xmat = Eigen::MatrixXd::Constant(xbar.size(), 4, 1.);
-    Eigen::MatrixXd ymat = Eigen::MatrixXd::Constant(4, ybar.size(), 1.);
-    xmat.col(1) = xbar.matrix();
-    xmat.col(2) = xbar.square().matrix();
-    xmat.col(3) = xbar.cube().matrix();
-
-    ymat.row(1) = ybar.matrix();
-    ymat.row(2) = ybar.square().matrix();
-    ymat.row(3) = ybar.cube().matrix();
-	
-	return xmat*(cij.block<4,4>(4*i, 4*j))*ymat;
-}
-
-int EigenBicubicInterpolator::findXInterval(const double x){
-	// if(x < x0/(1. + ENDPOINT_TOL) || x > (x0 + nx*dx)*(1. + ENDPOINT_TOL)){
-	// 	std::cout << "(ERROR): Value x = "<<x<<" is out of bounds \n";
-    //     return 0;
-	// }
-	int i = static_cast<int>((x-x0)/dx);
-    if(i >= nx){
-        return nx - 1;
-    }
-	if( i < 0){
-		return 0;
-	}
-	return i;
-}
-
-Eigen::ArrayXi EigenBicubicInterpolator::findXInterval(const Eigen::VectorXd &x){
-	// if(x(0) < x0 || x(x.size() - 1) >  x0 + nx*dx){
-	// 	std::cout << "(ERROR): Value out of bounds \n";
-    //     return Eigen::ArrayXi(x.size());
-	// }
-	Eigen::ArrayXi i = ((x.array() - x0)/dx).floor().cast<int>();
-    // if(x(x.size() - 1) == x0 + nx*dx){
-    //     i(i.size() - 1) -= 1; // account for the case where we need to evaluate the interpolant at exactly the last boundary point
-    // }
-	return i;
-}
-
-int EigenBicubicInterpolator::findYInterval(const double y){
-	// if( y < y0/(1. + ENDPOINT_TOL) || y > (y0 + ny*dy)*(1. + ENDPOINT_TOL) ){
-	// 	std::cout << "(ERROR): Value y = "<<y<<" is out of bounds \n";
-    //     return 0;
-	// }
-	int i = static_cast<int>((y-y0)/dy);
-    if(i >= ny){
-        return ny - 1;
-    }
-	if( i < 0){
-		return 0;
-	}
-	return i;
-}
-
-Eigen::ArrayXi EigenBicubicInterpolator::findYInterval(const Eigen::VectorXd &y){
-	// if(y(0) < y0 || y(y.size() - 1) > y0 + ny*dy){
-	// 	std::cout << "(ERROR): Value out of bounds \n";
-    //     return Eigen::ArrayXi(y.size());
-	// }
-	Eigen::ArrayXi i = ((y.array()-y0)/dy).floor().cast<int>();
-    // if(i(y.size() - 1) >= ny){
-    //     i(y.size() - 1) = ny - 1; // account for the case where we need to evaluate the interpolant at exactly the last boundary point
-    // }
-	// if(y(0) == y0 + ny*dy){
-    //     i(i.size() - 1) -= 1; // account for the case where we need to evaluate the interpolant at exactly the last boundary point
-    // }
-	return i;
-}
-
-EigenCubicInterpolator EigenBicubicInterpolator::reduce_x(const double x){
-    int i = findXInterval(x);
-    double xbar = (x - x0 - i*dx)/dx;
-    Eigen::RowVector4d xvec = {1, xbar, xbar*xbar, xbar*xbar*xbar};
-
-    Eigen::MatrixXd cubicCij(4, ny);
-    for(int j = 0; j < ny; j++){
-        cubicCij.col(j) = (xvec*cij.block<4,4>(4*i, 4*j)).transpose();
-    }
-
-    return EigenCubicInterpolator(y0, dy, ny, cubicCij);
-}
-
-EigenCubicInterpolator EigenBicubicInterpolator::reduce_y(const double y){
-    int i = findYInterval(y);
-    double ybar = (y - y0 - i*dy)/dy;
-    Eigen::Vector4d yvec = {1, ybar, ybar*ybar, ybar*ybar*ybar};
-
-    Eigen::MatrixXd cubicCij(4, nx);
-    for(int j = 0; j < nx; j++){
-        cubicCij.col(j) = (cij.block<4,4>(4*j, 4*i)*yvec);
-    }
-
-    return EigenCubicInterpolator(x0, dx, nx, cubicCij);
-}
-
-//////////////////////////////////////////////////////////////////
-//////////////           CubicInterpolator        ////////////////
-//////////////////////////////////////////////////////////////////
-
-EigenCubicInterpolator::EigenCubicInterpolator(double x0, double dx, const EigenArray &y): dx(dx), nintervals(y.size()-1), x0(x0), cij(4, y.size()-1) {
-	computeSplineCoefficients(dx, y);
-}
-
-EigenCubicInterpolator::EigenCubicInterpolator(const EigenArray &x, const EigenArray &y): dx(x[1] - x[0]), nintervals(x.size() - 1), x0(x[0]), cij(4, x.size() - 1) {
-	if(x.size() != y.size()){
-		std::cout << "ERROR: Size of x and y vectors do not match \n";
-	}
-	computeSplineCoefficients(dx, y);
-}
-
-EigenCubicInterpolator::EigenCubicInterpolator(double x0, double dx, const Eigen::VectorXd &y): dx(dx), nintervals(y.size()-1), x0(x0), cij(4, y.size()-1) {
-	computeSplineCoefficients(dx, y.array());
-}
-
-EigenCubicInterpolator::EigenCubicInterpolator(const Eigen::VectorXd &x, const Eigen::VectorXd &y): dx(x[1] - x[0]), nintervals(x.size() - 1), x0(x[0]), cij(4, x.size() - 1) {
-	if(x.size() != y.size()){
-		std::cout << "ERROR: Size of x and y vectors do not match \n";
-	}
-	computeSplineCoefficients(dx, y.array());
-}
-
-EigenCubicInterpolator::EigenCubicInterpolator(double x0, double dx, int nx, const Eigen::MatrixXd &cij): dx(dx), nintervals(nx), x0(x0), cij(cij) {}
-
-double EigenCubicInterpolator::evaluate(const double x){
-	int i = findInterval(x);
-	return evaluateInterval(i, x);
-}
-
-double EigenCubicInterpolator::derivative(const double x){
-	int i = findInterval(x);
-	return evaluateDerivativeInterval(i, x)/dx;
-}
-
-double EigenCubicInterpolator::derivative2(const double x){
-	int i = findInterval(x);
-	return evaluateSecondDerivativeInterval(i, x)/(dx*dx);
-}
-
-Eigen::VectorXd EigenCubicInterpolator::computeDerivatives(double dx, const EigenVector &y){
-    int nsize = y.size();
-    Eigen::MatrixXd diffopx = Eigen::MatrixXd::Zero(nsize, nsize);
-	diffopx.diagonal(1) = Eigen::VectorXd::Constant(nsize - 1, 8./12.);
-	diffopx.diagonal(-1) = Eigen::VectorXd::Constant(nsize - 1, -8./12.);
-    diffopx.diagonal(2) = Eigen::VectorXd::Constant(nsize - 2, -1./12.);
-	diffopx.diagonal(-2) = Eigen::VectorXd::Constant(nsize - 2, 1./12.);
-
-    // 4th-order forward difference coefficients
-    Eigen::Matrix<double, 1, 5> coeffs;
-    coeffs << -25./12., 4., -3., 4./3., -1./4;
-    for(int i = 0; i < 2; i++){
-        diffopx.row(i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopx(i, Eigen::seq(i, i + 4)) = coeffs;
-
-        diffopx.row(nsize - 1 - i) = Eigen::MatrixXd::Zero(1, nsize); // zero out row
-        diffopx(nsize - 1 - i, Eigen::seq(nsize - 5 - i, nsize - 1 - i)) = -coeffs.reverse();
-    }
-
-	// generate x derivatives
-	Eigen::VectorXd m_ydx = diffopx*y/dx;
-    return m_ydx;
-}
-
-Eigen::MatrixXd EigenCubicInterpolator::computeDerivativeVector(double dx, const Eigen::VectorXd &y){
-	// generate x derivatives
-	Eigen::VectorXd m_ydx = computeDerivatives(dx, y).transpose();
-
-    // std::cout << "Computed derivatives\n";
-	Eigen::MatrixXd derivvec(4, m_ydx.size());
-
-	for(int j = 0; j < m_ydx.size() - 1; j++){
-        derivvec(0, j) = y(j);
-        derivvec(1, j) = y(j + 1);
-        derivvec(2, j) = m_ydx(j);
-        derivvec(3, j) = m_ydx(j + 1);
-	}
-
-	return derivvec;
-}
-
-void EigenCubicInterpolator::computeSplineCoefficients(double dx, const EigenArray &y){
-	Eigen::Matrix4d lmat;
-
-	lmat << 1, 0, 0, 0,
-			0, 0, 0, 1,
-			-3, 3, -1, -2,
-			2, -2, 1, 1;
-	Eigen::MatrixXd dmat = computeDerivativeVector(dx, y.matrix());
-    cij = lmat*dmat;
-}
-
-double EigenCubicInterpolator::evaluateInterval(int i, const double x){
-	double xbar = (x - x0 - i*dx)/dx;
-	Eigen::RowVector4d xvec = {1., xbar, xbar*xbar, xbar*xbar*xbar};
-	
-	return xvec*cij.col(i);
-}
-
-double EigenCubicInterpolator::evaluateDerivativeInterval(int i, const double x){
-	double xbar = (x - x0 - i*dx)/dx;
-	Eigen::RowVector4d xvec = {0., 1., 2.*xbar, 3.*xbar*xbar};
-	
-	return xvec*cij.col(i);
-}
-
-double EigenCubicInterpolator::evaluateSecondDerivativeInterval(int i, const double x){
-	double xbar = (x - x0 - i*dx)/dx;
-	Eigen::RowVector4d xvec = {0., 0., 2., 6.*xbar};
-	
-	return xvec*cij.col(i);
-}
-
-int EigenCubicInterpolator::findInterval(const double x){
 	int i = static_cast<int>((x-x0)/dx);
     if(i >= nintervals){
         return nintervals - 1;

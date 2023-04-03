@@ -10,11 +10,6 @@ import os
 
 cdef unicode default_trajectory_file = '../bhpwave/data/trajectory.txt'
 
-cdef extern from "Eigen/Dense" namespace "Eigen":
-    cdef cppclass EigenArray "ArrayXd":
-        double * data()
-        int size()
-
 cdef extern from "trajectory.hpp":
     cdef cppclass TrajectorySpline2D:
         TrajectorySpline2D(string filename) except +

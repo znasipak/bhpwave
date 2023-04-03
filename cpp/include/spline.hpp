@@ -1,10 +1,6 @@
 #ifndef SPLINE_HPP
 #define SPLINE_HPP
 
-#define EIGEN_USE_BLAS
-#define EIGEN_USE_LAPACKE
-
-#include "Eigen/Dense"
 #include <vector>
 #include <algorithm>
 #include <gsl/gsl_interp.h>
@@ -31,14 +27,11 @@ private:
 };
 
 typedef std::vector<double> Vector;
-typedef Eigen::VectorXd EigenVector;
-typedef Eigen::ArrayXd EigenArray;
 
 class Spline{
 	public:
 		// Constructor for cubic spline of f(x)
 		Spline(Vector x, Vector f);
-		Spline(const EigenArray &x, const EigenArray &f);
 		// Copy constructor
 		Spline(const Spline& spline);
 		// Destructor
@@ -75,7 +68,6 @@ class Spline2D{
 	public:
 		// Constructor for cubic spline of f(x)
 		Spline2D(Vector x, Vector y, Vector f);
-		Spline2D(const EigenArray &x, const EigenArray &y, const EigenArray &f);
 		// Copy constructor
 		Spline2D(const Spline2D& spline);
 		// Destructor
@@ -143,6 +135,7 @@ public:
 	void reshape(int n, int m);
 	Matrix reshaped(int n, int m) const;
 	Matrix transpose() const;
+	void transposeInPlace();
 
 	double& operator()(int i, int j);
 	const double& operator()(int i, int j) const;
@@ -213,96 +206,7 @@ private:
 	int ny;
 	double x0;
 	double y0;
-	Eigen::MatrixXd cij;
-};
-
-/////////////////////////////////////////////////////////
-////            Eigen-based Interpolators            ////
-/////////////////////////////////////////////////////////
-
-class EigenCubicInterpolator{
-public:
-	EigenCubicInterpolator(double x0, double dx, const EigenArray &y);
-	EigenCubicInterpolator(const EigenArray &x, const EigenArray &y);
-
-	EigenCubicInterpolator(double x0, double dx, const EigenVector &y);
-	EigenCubicInterpolator(const EigenVector &x, const EigenVector &y);
-
-    EigenCubicInterpolator(double x0, double dx, int nintervals, const Eigen::MatrixXd &cij);
-	
-    EigenVector computeDerivatives(double dx, const EigenVector &y);
-    Eigen::MatrixXd computeDerivativeVector(double dx, const EigenVector &y);
-	double evaluate(const double x);
-    double derivative(const double x);
-    double derivative2(const double x);
-
-private:
-	double evaluateInterval(int i, const double x);
-    double evaluateDerivativeInterval(int i, const double x);
-    double evaluateSecondDerivativeInterval(int i, const double x);
-	void computeSplineCoefficients(double dx, const EigenArray &y);
-	int findInterval(const double x);
-
-	double dx;
-	int nintervals;
-	double x0;
-	Eigen::MatrixXd cij;
-};
-
-class EigenBicubicInterpolator{
-public:
-	EigenBicubicInterpolator(const EigenArray &x, const EigenArray &y, const EigenArray &z);
-	EigenBicubicInterpolator(const EigenVector &x, const EigenVector &y, const Eigen::MatrixXd &z);
-	EigenBicubicInterpolator(double x0, double dx, int nx, double y0, double dy, int ny, const Eigen::MatrixXd &z);
-    Eigen::MatrixXd computeDerivatives(const Eigen::MatrixXd &z);
-    Eigen::MatrixXd computeXDerivatives(const Eigen::MatrixXd &z);
-    Eigen::MatrixXd computeYDerivatives(const Eigen::MatrixXd &z);
-    Eigen::MatrixXd computeXYDerivatives(const Eigen::MatrixXd &z);
-	double evaluate(const double x, const double y);
-    double derivative_x(const double x, const double y);
-    double derivative_y(const double x, const double y);
-    double derivative_xy(const double x, const double y);
-    double derivative_xx(const double x, const double y);
-    double derivative_yy(const double x, const double y);
-
-	void evaluate(double z[], const double x[], int nx, const double y[], int ny, int num_threads=0);
-	void derivative_x(double z[], const double x[], int nx, const double y[], int ny, int num_threads=0);
-	void derivative_y(double z[], const double x[], int nx, const double y[], int ny, int num_threads=0);
-	void derivative_xy(double z[], const double x[], int nx, const double y[], int ny, int num_threads=0);
-	void derivative_xx(double z[], const double x[], int nx, const double y[], int ny, int num_threads=0);
-	void derivative_yy(double z[], const double x[], int nx, const double y[], int ny, int num_threads=0);
-
-	void evaluate(double z[], const double x[], const double y[], int ny, int num_threads=0);
-	void derivative_x(double z[], const double x[], const double y[], int ny, int num_threads=0);
-	void derivative_y(double z[], const double x[], const double y[], int ny, int num_threads=0);
-	void derivative_xy(double z[], const double x[], const double y[], int ny, int num_threads=0);
-	void derivative_xx(double z[], const double x[], const double y[], int ny, int num_threads=0);
-	void derivative_yy(double z[], const double x[], const double y[], int ny, int num_threads=0);
-
-    EigenCubicInterpolator reduce_x(const double x);
-    EigenCubicInterpolator reduce_y(const double y);
-
-private:
-	double evaluateInterval(int i, int j, const double x, const double y);
-    double evaluateDerivativeXInterval(int i, int j, const double x, const double y);
-    double evaluateDerivativeYInterval(int i, int j, const double x, const double y);
-    double evaluateDerivativeXYInterval(int i, int j, const double x, const double y);
-    double evaluateDerivativeXXInterval(int i, int j, const double x, const double y);
-    double evaluateDerivativeYYInterval(int i, int j, const double x, const double y);
-    Eigen::MatrixXd evaluateInterval(int i, int j, const EigenVector &x, const EigenVector &y);
-	void computeSplineCoefficients(const Eigen::MatrixXd &z);
-	int findXInterval(const double x);
-	int findYInterval(const double y);
-    Eigen::ArrayXi findXInterval(const EigenVector &x);
-    Eigen::ArrayXi findYInterval(const EigenVector &y);
-
-	double dx;
-	double dy;
-	int nx;
-	int ny;
-	double x0;
-	double y0;
-	Eigen::MatrixXd cij;
+	Matrix cij;
 };
 
 #endif

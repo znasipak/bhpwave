@@ -9,24 +9,24 @@
 #include "omp.h"
 
 typedef struct DataStruct{
-	EigenArray x;
-	EigenArray y;
-	EigenArray z;
+	Vector x;
+	Vector y;
+	Vector z;
 } Data;
 
 class TrajectoryData{
 public:
 	TrajectoryData() {}
-	TrajectoryData(const EigenArray &chi, const EigenArray &alpha, const EigenArray &t, const EigenArray &phi, const EigenArray & flux, const EigenArray &beta, const EigenArray &omega, const EigenArray &alphaOfT, const EigenArray &tMax);
-	EigenArray chi;
-	EigenArray alpha;
-	EigenArray t;
-  	EigenArray phi;
-  	EigenArray flux;
-	EigenArray beta;
-	EigenArray omega;
-	EigenArray alphaOfT;
-	EigenArray tMax;
+	TrajectoryData(const Vector &chi, const Vector &alpha, const Vector &t, const Vector &phi, const Vector & flux, const Vector &beta, const Vector &omega, const Vector &alphaOfT, const Vector &tMax);
+	Vector chi;
+	Vector alpha;
+	Vector t;
+  	Vector phi;
+  	Vector flux;
+	Vector beta;
+	Vector omega;
+	Vector alphaOfT;
+	Vector tMax;
 };
 
 // Trajectory read_trajectory_data(std::string filename);
@@ -36,7 +36,7 @@ TrajectoryData read_trajectory_data(std::string filename="data/trajectory.txt");
 class TrajectorySpline{
 public:
 	TrajectorySpline(TrajectoryData traj);
-	TrajectorySpline(const double & chi, const EigenArray & alpha, const EigenArray & t, const EigenArray & phi, const EigenArray & flux);
+	TrajectorySpline(const double & chi, const Vector & alpha, const Vector & t, const Vector & phi, const Vector & flux);
 	~TrajectorySpline();
 
 	double time(double alpha);
@@ -57,7 +57,7 @@ public:
 	double orbital_frequency_derivative(double t);
   	double orbital_frequency_time_derivative_of_omega(double omega);
 
-  	EigenCubicInterpolator get_phase_spline();
+  	Spline get_phase_spline();
 	double get_spin();
 	double get_orbital_frequency_isco();
 	double get_min_orbital_frequency(double a);
@@ -66,31 +66,31 @@ public:
 private:
   	double _spin;
 	double _omega_isco;
-  	EigenCubicInterpolator _time_spline;
-  	EigenCubicInterpolator _phase_spline;
-  	EigenCubicInterpolator _flux_spline;
-  	EigenCubicInterpolator _frequency_spline;
+  	Spline _time_spline;
+  	Spline _phase_spline;
+  	Spline _flux_spline;
+  	Spline _frequency_spline;
 };
 
 class SmallTrajectorySpline2D{
 public:
 	SmallTrajectorySpline2D(std::string filename="data/trajectory.txt");
 	SmallTrajectorySpline2D(TrajectoryData traj);
-  	SmallTrajectorySpline2D(const EigenArray & chi, const EigenArray & alpha, const EigenArray & flux);
+  	SmallTrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & flux);
   	~SmallTrajectorySpline2D();
 
   	double flux(double chi, double alpha);
   	double flux_of_a_omega(double a, double omega);
 
 private:
-  	EigenBicubicInterpolator _flux_spline;
+  	Spline2D _flux_spline;
 };
 
 class TrajectorySpline2D{
 public:
 	TrajectorySpline2D(std::string filename="data/trajectory.txt");
 	TrajectorySpline2D(TrajectoryData traj);
-  	TrajectorySpline2D(const EigenArray & chi, const EigenArray & alpha, const EigenArray & beta, const EigenArray & t, const EigenArray & phi, const EigenArray & flux, const EigenArray & omega, const EigenArray & alphaOfT, const EigenArray & tMax);
+  	TrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & beta, const Vector & t, const Vector & phi, const Vector & flux, const Vector & omega, const Vector & alphaOfT, const Vector & tMax);
   	~TrajectorySpline2D();
 
 	double time(double chi, double alpha);
@@ -118,8 +118,6 @@ public:
 	double max_time_before_merger(double a);
 
 	void flux_of_a_omega(double flux[], const double a[], const double omega[], int n, int num_threads=0);
-
-  	// EigenBicubicInterpolator get_phase_spline();
 
 private:
   	Spline2D _time_spline;
@@ -221,13 +219,13 @@ double min_orbital_frequency(const double &a);
 double max_orbital_radius(const double &a);
 double min_orbital_radius(const double &a);
 
-EigenCubicInterpolator read_time_spline(double a);
-EigenCubicInterpolator read_phase_spline(double a);
-EigenCubicInterpolator read_flux_spline(double a);
+Spline read_time_spline(double a);
+Spline read_phase_spline(double a);
+Spline read_flux_spline(double a);
 
-double slow_time_of_omega(EigenCubicInterpolator &t, double a, double omega);
-double slow_phase_of_omega(EigenCubicInterpolator &phi, double a, double omega);
-double normalized_flux_of_omega(EigenCubicInterpolator &Edot, double a, double omega);
-double normalized_omega_time_derivative_of_omega(EigenCubicInterpolator &Edot, double a, double omega);
+double slow_time_of_omega(Spline &t, double a, double omega);
+double slow_phase_of_omega(Spline &phi, double a, double omega);
+double normalized_flux_of_omega(Spline &Edot, double a, double omega);
+double normalized_omega_time_derivative_of_omega(Spline &Edot, double a, double omega);
 
 #endif

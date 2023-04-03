@@ -54,30 +54,6 @@ double spin_weighted_sum(int s, int l, int m, double z){
     return yslm;
 }
 
-// double spin_weighted_sum(int s, int l, int m, double z){
-//     int rmax = l - s;
-//     double yslm = 0.;
-//     int r = 0;
-//     double term = binomial(l + s, s - m);
-//     term *= pow(z - 1., rmax);
-//     yslm += term;
-//     for(r = 1; r < rmax; r++){
-//         if(r + s - m >= 0){
-//             term = binomial(l - s, r)*binomial(l + s, r + s - m);
-//             term *= pow(z - 1., rmax - r)*pow(z + 1., r);
-//             yslm += term;
-//         }
-//     }
-//     r = rmax;
-//     if(r + s - m >= 0){
-//         term = binomial(l - s, r)*binomial(l + s, r + s - m);
-//         term *= pow(z + 1., r);
-//         yslm += term;
-//     }
-
-//     return yslm;
-// }
-
 double spin_weighted_sum_dz(int s, int l, int m, double z){
     int rmax = l - s;
     double yslm = 0.;
@@ -125,7 +101,7 @@ double spin_weighted_spherical_harmonic_dz(int s, int l, int m, double theta){
   double pref = pow(0.5, l)*spin_weighted_harmonic_prefactor(s, l, m)*pow(1. - z, 0.5*(s + m))*pow(1. + z, 0.5*(s - m));
   double dpref = pow(0.5, l)*spin_weighted_harmonic_prefactor(s, l, m);
   dpref *= -0.5*(s + m)*pow(1. - z, 0.5*(s + m) - 1)*pow(1. + z, 0.5*(s - m)) + 0.5*(s - m)*pow(1. - z, 0.5*(s + m))*pow(1. + z, 0.5*(s - m) - 1);
-  return dpref*spin_weighted_sum(s, l, m, z) + dpref*spin_weighted_sum_dz(s, l, m, z);
+  return dpref*spin_weighted_sum(s, l, m, z) + pref*spin_weighted_sum_dz(s, l, m, z);
 }
 
 Vector spin_weighted_spherical_harmonic(int st, int l, int mt, Vector theta){
@@ -179,7 +155,7 @@ void spin_weighted_spherical_harmonic(double *yslm, int pts_num, int st, int l, 
     pref = pow(0.5, l)*spin_weighted_harmonic_prefactor(s, l, m);
   }
 
-  for(size_t i = 0; i < pts_num; i++){
+  for(int i = 0; i < pts_num; i++){
     if(theta[i] > 0.5*M_PI){
       z = -cos(theta[i]);
       yslm[i] = pow(-1, l + m)*pow(1. - z, 0.5*(s + m))*pow(1. + z, 0.5*(s - m))*pref*spin_weighted_sum(-s, l, m, z);

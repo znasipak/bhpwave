@@ -3,7 +3,6 @@
 HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base){
 	std::string filepath = filepath_base + "_" + std::to_string(L) + "_" + std::to_string(m) + ".txt";
 	double chi, alpha, Alm, Philm;
-	Vector chiVec, alphaVec, AlmVec, PhilmVec;
 	std::istringstream lin;
 	std::ifstream inFile(filepath);
 	std::string line;
@@ -18,7 +17,7 @@ HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base
 	}
 	lin >> chiSample >> alphaSample;
 	int n = chiSample*alphaSample;
-	EigenArray chiA(n), alphaA(n), AlmA(n), PhilmA(n);
+	Vector chiA(n), alphaA(n), AlmA(n), PhilmA(n);
 	int i = 0;
 
 	for(std::string line; std::getline(inFile, line);){
@@ -33,11 +32,11 @@ HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base
 		}
 	}
 
-	EigenArray alphaAReduce(alphaSample);
+	Vector alphaAReduce(alphaSample);
 	for(int i = 0; i < alphaSample; i++){
 		alphaAReduce[i] = alphaA[i];
 	}
-	EigenArray chiAReduce(chiSample);
+	Vector chiAReduce(chiSample);
 	for(int i = 0; i < chiSample; i++){
 		chiAReduce[i] = chiA[i*alphaSample];
 	}
@@ -52,8 +51,8 @@ HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base
 	return mode;
 }
 
-HarmonicSpline::HarmonicSpline(double chi, const EigenArray & alpha, const EigenArray & A, const EigenArray & Phi): _spin(spin_of_chi(chi)), _amplitude_spline(alpha, A), _phase_spline(alpha, Phi) {}
-HarmonicSpline::HarmonicSpline(double spin, EigenCubicInterpolator amplitude_spline, EigenCubicInterpolator phase_spline): _spin(spin), _amplitude_spline(amplitude_spline), _phase_spline(phase_spline) {}
+HarmonicSpline::HarmonicSpline(double chi, const Vector & alpha, const Vector & A, const Vector & Phi): _spin(spin_of_chi(chi)), _amplitude_spline(alpha, A), _phase_spline(alpha, Phi) {}
+HarmonicSpline::HarmonicSpline(double spin, Spline amplitude_spline, Spline phase_spline): _spin(spin), _amplitude_spline(amplitude_spline), _phase_spline(phase_spline) {}
 HarmonicSpline::~HarmonicSpline() {}
 
 double HarmonicSpline::amplitude(double alpha){
@@ -78,7 +77,7 @@ double HarmonicSpline::phase_of_omega_derivative(double omega){
 
 HarmonicSpline2D::HarmonicSpline2D(int L, int m, std::string filepath_base): HarmonicSpline2D(read_harmonic_mode_data(L, m, filepath_base)) {}
 HarmonicSpline2D::HarmonicSpline2D(HarmonicModeData mode): _amplitude_spline(mode.chi, mode.alpha, mode.A), _phase_spline(mode.chi, mode.alpha, mode.Phi) { }
-HarmonicSpline2D::HarmonicSpline2D(const EigenArray & chi, const EigenArray & alpha, const EigenArray & Amp, const EigenArray & Phi): _amplitude_spline(chi, alpha, Amp), _phase_spline(chi, alpha, Phi) { }
+HarmonicSpline2D::HarmonicSpline2D(const Vector & chi, const Vector & alpha, const Vector & Amp, const Vector & Phi): _amplitude_spline(chi, alpha, Amp), _phase_spline(chi, alpha, Phi) { }
 HarmonicSpline2D::~HarmonicSpline2D() {}
 
 double HarmonicSpline2D::amplitude(double chi, double alpha){
@@ -100,24 +99,6 @@ double HarmonicSpline2D::phase_of_a_omega(double a, double omega){
 double HarmonicSpline2D::phase_of_a_omega_derivative(double a, double omega){
   return _phase_spline.derivative_y(chi_of_spin(a), alpha_of_a_omega(a, omega))*dalpha_domega_of_a_omega(a, omega, abs(kerr_isco_frequency(a)));
 }
-
-// EigenBicubicInterpolator HarmonicSpline2D::getAmplitudeSpline(){
-// 	return _amplitude_spline;
-// }
-// EigenBicubicInterpolator HarmonicSpline2D::getPhaseSpline(){
-// 	return _phase_spline;
-// }
-// EigenCubicInterpolator HarmonicSpline2D::getReducedAmplitudeSpline(double a){
-// 	return _amplitude_spline.reduce_x(chi_of_spin(a));
-// }
-// EigenCubicInterpolator HarmonicSpline2D::getReducedPhaseSpline(double a){
-// 	return _phase_spline.reduce_x(chi_of_spin(a));
-// }
-
-// HarmonicSpline HarmonicSpline2D::constant_spin_spline(double a){
-// 	double chi = chi_of_spin(a);
-// 	return HarmonicSpline(a, _amplitude_spline.reduce_x(chi), _phase_spline.reduce_x(chi));
-// }
 
 ///////////////////////////////////////////////////////
 //////////        HarmonicAmplitudes     //////////////
@@ -176,56 +157,6 @@ HarmonicSpline2D* HarmonicAmplitudes::getPointer(int l, int m){
 	std::pair<int, int> key(l, m);
 	return _harmonics[_position_map[key]];
 }
-
-// double HarmonicAmplitudes::amplitude(int l, int m, double chi, double alpha){
-// 	std::pair<int, int> key(l, m);
-// 	if(key_check(key)){
-// 		return _harmonics[_position_map[key]]->amplitude(chi, alpha);
-// 	}else{
-// 		std::cout << "Invalid key\n";
-// 		return 0.;
-// 	}
-// }
-
-// double HarmonicAmplitudes::phase(int l, int m, double chi, double alpha){
-// 	std::pair<int, int> key(l, m);
-// 	if(key_check(key)){
-// 		return _harmonics[_position_map[key]]->phase(chi, alpha);
-// 	}else{
-// 		std::cout << "Invalid key\n";
-// 		return 0.;
-// 	}
-// }
-
-// double HarmonicAmplitudes::amplitude_of_a_omega(int l, int m, double a, double omega){
-// 	std::pair<int, int> key(l, m);
-// 	if(key_check(key)){
-// 		return _harmonics[_position_map[key]]->amplitude_of_a_omega(a, omega);
-// 	}else{
-// 		std::cout << "Invalid key\n";
-// 		return 0.;
-// 	}
-// }
-
-// double HarmonicAmplitudes::phase_of_a_omega(int l, int m, double a, double omega){
-// 	std::pair<int, int> key(l, m);
-// 	if(key_check(key)){
-// 		return _harmonics[_position_map[key]]->phase_of_a_omega(a, omega);
-// 	}else{
-// 		std::cout << "Invalid key\n";
-// 		return 0.;
-// 	}
-// }
-
-// double HarmonicAmplitudes::phase_of_a_omega_derivative(int l, int m, double a, double omega){
-// 	std::pair<int, int> key(l, m);
-// 	if(key_check(key)){
-// 		return _harmonics[_position_map[key]]->phase_of_a_omega_derivative(a, omega);
-// 	}else{
-// 		std::cout << "Invalid key\n";
-// 		return 0.;
-// 	}
-// }
 
 HarmonicSelector::HarmonicSelector(HarmonicAmplitudes &harm, HarmonicOptions opts): _harm(harm), _opts(opts) {}
 
