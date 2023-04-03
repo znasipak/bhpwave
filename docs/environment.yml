@@ -1,0 +1,8 @@
+name: bhpwave-env
+dependencies:
+  - gcc_linux-64
+  - gxx_linux-64
+  - gsl
+  - numpy
+  - Cython
+  - python=3.7
