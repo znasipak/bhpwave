@@ -4,16 +4,18 @@ from setuptools import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 import numpy as np
+import sys
 
 compiler_flags = ["-std=c++11", "-fopenmp", "-O2", "-march=native"]
 
 try:
     CFLAGS = str(os.getenv("CFLAGS"))
-    print(CFLAGS)
+    os.environ["CFLAGS"] = CFLAGS
 except KeyError:
-    CFLAGS = ""
+    os.environ["CFLAGS"] = "$CFLAGS"
 
-os.environ["CFLAGS"] = CFLAGS
+base_path = sys.prefix
+
 os.environ["CFLAGS"] += " "
 os.environ["CFLAGS"] += ' '.join(compiler_flags)
 
@@ -30,14 +32,14 @@ lib_extension = dict(
     # libraries=["gsl", "gslcblas", "lapack", "lapacke", "omp"],
     libraries=["gsl", "omp"],
     language='c++',
-    include_dirs = ["cpp/include"],
+    include_dirs = ["cpp/include", base_path + "/include"],
 )
 bhpwavecpp = ['bhpwavecpp', lib_extension]
 
 cpu_extension = dict(
     libraries=["gsl", "omp"],
     language='c++',
-    include_dirs=["cpp/include", np.get_include()],
+    include_dirs=["cpp/include", np.get_include(), base_path + "/include"],
 )
 
 swsh_ext = Extension(
