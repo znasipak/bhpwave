@@ -1,14 +1,16 @@
 import numpy as np
-from bhpwaveformcy import (WaveformContainerWrapper,
-                           WaveformHarmonicGeneratorPyWrapper,
+from bhpwaveformcy import (WaveformHarmonicGeneratorPyWrapper,
                            WaveformGeneratorPy,
                            TrajectoryData,
                            InspiralGeneratorPy,
                            HarmonicAmplitudesPy)
 
-import multiprocessing
+import os
 
-CPU_MAX = multiprocessing.cpu_count()
+try:
+    CPU_MAX = len(os.sched_getaffinity(0))
+except:
+    CPU_MAX = os.cpu_count()
 
 Modot_MKS = 1.98841e+30 # kg
 GM_MKS = 1.32712440041279419e+20 # m^3/s^2
@@ -100,7 +102,7 @@ class KerrCircularWaveformBase:
     returns:
         complex
     """
-    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None, only_physical_cores=False):
+    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
@@ -153,43 +155,6 @@ class KerrCircularWaveformBase:
     
     def __call__(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
         return self.generate_base_waveform(massratio, a, r0, dt, T, theta, phi, **kwargs)
-
-# class KerrCircularWaveform(KerrCircularWaveformBase):
-#     """
-#     Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
-#     using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-#     By default, the waveform is generated in the solar system barycenter frame.
-        
-#     """
-#     def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
-#         """
-#         Calculate the complex gravitational wave strain :math:`h = h_\plus - i h_\times` measured in the
-#         solar system barycenter (SSB) frame
-
-#         args:
-#             M (double): mass (in solar masses) of the massive black hole
-#             mu (double): mass (in solar masses) of the (smaller) stellar-mass compact object
-#             a (double): dimensionless black hole spin
-#             r0 (double): initial orbital separation of the two objects
-#             dist (double): luminosity distance to the source in Gpc
-#             qK (double): polar angle of the Kerr spin vector
-#             phiK (double): azimuthal angle of the Kerr spin vector
-#             qS (double): polar angle of the source's sky location
-#             phiS (double): azimuthal angle of the source's sky location
-#             Phi_phi0 (double): Initial azimuthal position of the small compact object
-#             dt (double, optional): Spacing of time samples in seconds
-#             T (double, optional): Duration of the waveform in years
-
-#         returns:
-#             1d-array (complex)
-#         """
-#         Msec = M*Modot_GC1_to_S
-#         T_nodim = T*yr_MKS/Msec
-#         dt_nodim = dt/Msec
-#         theta, phi = source_angles(qS, phiS, qK, phiK)
-#         rescale_h = polarization(qS, phiS, qK, phiK)
-#         rescale_h *= scaled_amplitude(mu, dist)
-#         return rescale_h*self.generate_base_waveform(mu/M, a, r0, dt_nodim, T_nodim, theta, phi-Phi_phi0, **kwargs)
 
 class KerrCircularWaveform:
     """
@@ -281,202 +246,22 @@ class KerrWaveform(KerrCircularWaveform):
             dt (double, optional): Spacing of time samples in seconds
             T (double, optional): Duration of the waveform in years
 
+            pad_output (bool, optional): True returns the waveform for the full duration T years even if the system merges before T years has elasped
+            select_modes (list or ndarray, optional): A list of tuples :math:`(l, m)` that select which modes to include in the waveform calculation
+            return_list (bool, optional): True returns the plus and cross polarizations of the waveform as separate ndarrays
+
         returns:
-            1d-array (complex)
+            1d-array (complex) or list of two 1d-arrays (double)
         """
-        h = self.waveform_generator.waveform(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
-        # waveform = np.empty(h.size, dtype=np.complex128)
-        # waveform = -1.j*h.cross
-        # waveform += h.plus
-        # return h.plus - 1.j*h.cross
+        if "select_modes" in kwargs.keys():
+            lmodes = []
+            mmodes = []
+            for mode in kwargs["select_modes"]:
+                lmodes.append(mode[0])
+                mmodes.append(mode[1])
+            l = np.ascontiguousarray(lmodes)
+            m = np.ascontiguousarray(mmodes)
+            h = self.waveform_generator.waveform_harmonics(l, m, M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+        else:
+            h = self.waveform_generator.waveform(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
         return h
-
-# class KerrCircularWaveformBase:
-#     """
-#     Base class that generates a gravitational waveform produced by an extreme-mass-ratio inspiral
-#     using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-#     The waveform is generated in units G = c = 1, with time measured in units of mass 
-    
-#     Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
-#     parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
-#     args:
-#         trajectory_data ()
-
-#     returns:
-#         complex
-#     """
-#     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None, only_physical_cores=False):
-#         if num_threads is None:
-#             num_threads = cpu_count(only_physical_cores=only_physical_cores)
-#         if trajectory_data is None:
-#             self.trajectory_data = TrajectoryData(dealloc_flag=False)
-#         else:
-#             self.trajectory_data = trajectory_data
-#         if harmonic_data is None:
-#             self.harmonic_data = HarmonicAmplitudesPy(dealloc_flag=False)
-#         else:
-#             self.harmonic_data = harmonic_data
-
-#         self.lmodes = np.array([2, 2, 3, 3, 4, 5, 6], dtype=np.int32)
-#         self.mmodes = np.array([1, 2, 2, 3, 4, 5, 6], dtype=np.int32)
-
-#         self.inspiral_generator = InspiralGeneratorPy(self.trajectory_data, num_threads=num_threads)
-#         waveform_kwargs = {
-#             "num_threads": num_threads
-#         }
-#         self.waveform_generator = WaveformHarmonicGeneratorPyWrapper(self.harmonic_data, waveform_kwargs=waveform_kwargs)
-
-#     def generate_base_waveform(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
-#         """
-#         Calculate the complex gravitational wave strain :math:`h = h_\plus - i h_\times` measured in the
-#         solar system barycenter (SSB) frame
-
-#         args:
-#             massratio (double): dimensionless ratio between the smaller and larger masses of the binary
-#             a (double): dimensionless spin of the massive black hole (MBH)
-#             r0 (double): initial orbital separation of the two objects
-#             dt (double, optional): Spacing of time samples in units of mass of the MBH
-#             T (double, optional): Duration of the waveform in units of mass of the MBH
-#             theta (double): polar angle of the observor's sky location with respect to the MBH's spin vector
-#             phi (double): azimuthal angle of the observor's sky location
-
-#         returns:
-#             1d-array (complex)
-#         """
-#         if "num_threads" in kwargs.keys():
-#             inspiral = self.inspiral_generator(massratio, a, r0, dt, T, num_threads=kwargs["num_threads"])
-#         else:
-#             inspiral = self.inspiral_generator(massratio, a, r0, dt, T)
-        
-#         h = self.waveform_generator(self.lmodes, self.mmodes, inspiral, theta, phi)
-#         return h.plus - 1.j*h.cross
-    
-#     def __call__(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
-#         return self.generate_base_waveform(massratio, a, r0, dt, T, theta, phi, **kwargs)
-
-# class KerrCircularWaveform(KerrCircularWaveformBase):
-#     """
-#     Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
-#     using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-#     By default, the waveform is generated in the solar system barycenter frame.
-        
-#     """
-#     def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
-#         """
-#         Calculate the complex gravitational wave strain :math:`h = h_\plus - i h_\times` measured in the
-#         solar system barycenter (SSB) frame
-
-#         args:
-#             M (double): mass (in solar masses) of the massive black hole
-#             mu (double): mass (in solar masses) of the (smaller) stellar-mass compact object
-#             a (double): dimensionless black hole spin
-#             r0 (double): initial orbital separation of the two objects
-#             dist (double): luminosity distance to the source in Gpc
-#             qK (double): polar angle of the Kerr spin vector
-#             phiK (double): azimuthal angle of the Kerr spin vector
-#             qS (double): polar angle of the source's sky location
-#             phiS (double): azimuthal angle of the source's sky location
-#             Phi_phi0 (double): Initial azimuthal position of the small compact object
-#             dt (double, optional): Spacing of time samples in seconds
-#             T (double, optional): Duration of the waveform in years
-
-#         returns:
-#             1d-array (complex)
-#         """
-#         Msec = M*Modot_GC1_to_S
-#         T_nodim = T*yr_MKS/Msec
-#         dt_nodim = dt/Msec
-#         theta, phi = source_angles(qS, phiS, qK, phiK)
-#         rescale_h = polarization(qS, phiS, qK, phiK)
-#         rescale_h *= scaled_amplitude(mu, dist)
-#         return rescale_h*self.generate_base_waveform(mu/M, a, r0, dt_nodim, T_nodim, theta, phi-Phi_phi0, **kwargs)
-
-# class KerrWaveform(KerrCircularWaveformBase):
-#     """
-#     Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
-#     using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-#     By default, the waveform is generated in the solar system barycenter frame.
-    
-#     Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
-#     parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
-
-#     args:
-        
-#     """
-#     def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
-#         """
-#         Calculate the complex gravitational wave strain
-
-#         args:
-#             M (double): mass (in solar masses) of the massive black hole
-#             mu (double): mass (in solar masses) of the (smaller) stellar-mass compact object
-#             a (double): dimensionless black hole spin
-#             p0 (double): initial semi-latus rectum
-#             e0 (double): initial orbital eccentricity
-#             x0 (double): intial cosine of the orbital inclination
-#             dist (double): luminosity distance to the source in Gpc
-#             qK (double): polar angle of the Kerr spin vector
-#             phiK (double): azimuthal angle of the Kerr spin vector
-#             qS (double): polar angle of the source's sky location
-#             phiS (double): azimuthal angle of the source's sky location
-#             Phi_phi0 (double): Initial azimuthal position of the small compact object
-#             Phi_r0 (double): Phase describing the initial radial position and velocity of the small compact object
-#             Phi_theta0 (double): Phase describing the initial polar position and velocity of the small compact object
-#             dt (double, optional): Spacing of time samples in seconds
-#             T (double, optional): Duration of the waveform in years
-
-#         returns:
-#             1d-array (complex)
-#         """
-#         Msec = M*Modot_GC1_to_S
-#         T_nodim = T*yr_MKS/Msec
-#         dt_nodim = dt/Msec
-#         theta, phi = source_angles(qS, phiS, qK, phiK)
-#         rescale_h = polarization(qS, phiS, qK, phiK)
-#         rescale_h *= scaled_amplitude(mu, dist)
-#         return rescale_h*self.generate_base_waveform(mu/M, a, p0, dt_nodim, T_nodim, theta, phi-Phi_phi0, **kwargs)
-
-# class KerrWaveform(KerrCircularWaveformBase):
-#     """
-#     Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
-#     using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-#     By default, the waveform is generated in the solar system barycenter frame.
-    
-#     Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
-#     parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
-
-#     args:
-        
-#     """
-#     def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
-#         """
-#         Calculate the complex gravitational wave strain
-
-#         args:
-#             M (double): mass (in solar masses) of the massive black hole
-#             mu (double): mass (in solar masses) of the (smaller) stellar-mass compact object
-#             a (double): dimensionless black hole spin
-#             p0 (double): initial semi-latus rectum
-#             e0 (double): initial orbital eccentricity
-#             x0 (double): intial cosine of the orbital inclination
-#             dist (double): luminosity distance to the source in Gpc
-#             qK (double): polar angle of the Kerr spin vector
-#             phiK (double): azimuthal angle of the Kerr spin vector
-#             qS (double): polar angle of the source's sky location
-#             phiS (double): azimuthal angle of the source's sky location
-#             Phi_phi0 (double): Initial azimuthal position of the small compact object
-#             Phi_r0 (double): Phase describing the initial radial position and velocity of the small compact object
-#             Phi_theta0 (double): Phase describing the initial polar position and velocity of the small compact object
-#             dt (double, optional): Spacing of time samples in seconds
-#             T (double, optional): Duration of the waveform in years
-
-#         returns:
-#             1d-array (complex)
-#         """
-#         Msec = M*Modot_GC1_to_S
-#         T_nodim = T*yr_MKS/Msec
-#         dt_nodim = dt/Msec
-#         theta, phi = source_angles(qS, phiS, qK, phiK)
-#         rescale_h = polarization(qS, phiS, qK, phiK)
-#         rescale_h *= scaled_amplitude(mu, dist)
-#         return rescale_h*self.generate_base_waveform(mu/M, a, p0, dt_nodim, T_nodim, theta, phi-Phi_phi0, **kwargs)

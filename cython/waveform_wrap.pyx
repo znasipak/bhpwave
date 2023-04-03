@@ -53,6 +53,7 @@ cdef extern from "waveform.hpp":
         void computeWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, WaveformHarmonicOptions wOpts)
         void computeWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts)
         void computeWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
+        void computeWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
 
         HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T)
         HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions opts)
@@ -190,7 +191,7 @@ cdef class WaveformGeneratorPy:
     def time_step_number(self, double M, double mu, double a, double r0, double dt, double T):
         return self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
 
-    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, **kwargs):
+    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, pad_nmodes = False, **kwargs):
         cdef HarmonicOptions hOpts
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
@@ -199,10 +200,41 @@ cdef class WaveformGeneratorPy:
         cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts)
         cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
         modeWrap.wrap(modescpp)
-        modes = modeWrap.modes
-        return modes
+        if pad_nmodes:
+            select_modes = list(zip(modeWrap.lmodes, modeWrap.mmodes, 0*modeWrap.mmodes))
+        else:
+            select_modes = list(zip(modeWrap.lmodes, modeWrap.mmodes))
+        return select_modes
 
-    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+        
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross, timeSteps)
+        
+        self.hcpp.computeWaveform(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
+        waveform = -1.j*cross
+        waveform += plus
+
+        return waveform
+    
+    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -226,8 +258,12 @@ cdef class WaveformGeneratorPy:
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross, timeSteps)
         
         self.hcpp.computeWaveform(dereference(h.hcpp), M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
-        waveform = -1.j*cross
-        waveform += plus
+
+        if return_list:
+            return [plus, cross]
+        else:
+            waveform = -1.j*cross
+            waveform += plus
 
         return waveform
 

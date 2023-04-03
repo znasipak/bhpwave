@@ -134,7 +134,7 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, i
     double plusY[modeNum], crossY[modeNum], mphi_mod_2pi[modeNum];
     HarmonicSpline2D* Alms[modeNum];
     double twopi = 2.*M_PI;
-    
+
     for(int i = 0; i < modeNum; i++){
       double sYlm = spin_weighted_spherical_harmonic(-2, l[i], m[i], theta);
       double sYlmMinus = pow(-1, l[i] + m[i])*spin_weighted_spherical_harmonic(2, l[i], m[i], theta);
@@ -286,6 +286,49 @@ void WaveformGenerator::computeWaveform(WaveformContainer &h, double M, double m
 	// watch.print();
 	// watch.reset();
 	computeWaveformHarmonics(h, inspiral, theta, phi - Phi_phi0, hOpts, wOpts);
+	
+	double rescaleRe, rescaleIm;
+	rescaleRe = std::real(wOpts.rescale);
+	rescaleIm = std::imag(wOpts.rescale);
+	// if the rescaling factor is purely real, then just rescale both polarizations by the same amplitude
+	// else, then we get a mixing of the plus and cross polarizations that gives us new polarization amplitudes
+
+	// watch.start();
+	int imax = h.getSize();
+	#pragma omp parallel num_threads(wOpts.num_threads)
+	{
+		// total_td = omp_get_num_threads();
+		int i;
+		double hplus, hcross;
+		#pragma omp for
+		for(i = 0; i < imax; i++){
+		// total_td_check = omp_get_num_threads();
+			hplus = h.getPlus(i);
+			hcross = h.getCross(i);
+			h.setTimeStep(i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
+		}
+	}
+	// watch.stop();
+	// watch.print();
+	// watch.reset();
+}
+
+void WaveformGenerator::computeWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
+  	double theta, phi;
+	sourceAngles(theta, phi, qS, phiS, qK, phiK);
+	dt = convertTime(dt, M);
+	T = convertTime(years_to_seconds(T), M);
+	wOpts.rescale = polarization(qS, phiS, qK, phiK);
+	wOpts.rescale *= scale_strain_amplitude(mu, dist);
+
+	// omp_set_num_threads(16);
+	// StopWatch watch;
+	// watch.start();
+	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, wOpts.num_threads);
+	// watch.stop();
+	// watch.print();
+	// watch.reset();
+	computeWaveformHarmonics(h, l, m, modeNum, inspiral, theta, phi - Phi_phi0, wOpts);
 	
 	double rescaleRe, rescaleIm;
 	rescaleRe = std::real(wOpts.rescale);
