@@ -9,3 +9,4 @@ dependencies:
   - numpy
   - Cython
   - python=3.7
+  - sphinx-book-theme
