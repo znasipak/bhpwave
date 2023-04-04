@@ -12,7 +12,7 @@ For some reason, the libraries extension does not support extra compiler argumen
 instead, we pass them directly by changing the evironment variable CFLAGS
 """
 compiler_flags = ["-std=c++11", "-fopenmp", "-march=native"]
-libraries = ["gsl"]
+libraries = ["gsl", "gslcblas"]
 
 # set some flags and libraries depending on the system platform
 if sys.platform.startswith('win32'):
