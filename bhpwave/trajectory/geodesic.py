@@ -7,7 +7,7 @@ import numpy as np
 OMEGA_MIN = 2.e-3
 A_MAX = 0.9999
 
-def kerr_geo_radius_circ(a, omega):
+def kerr_circ_geo_radius(a, omega):
     """
     Calculates the Boyer-Lindquist radius of a circular geodesic with orbital
     frequency `omega` in a Kerr spacetime paramtrized by the Kerr spin `a`
@@ -21,7 +21,7 @@ def kerr_geo_radius_circ(a, omega):
     """
     return (abs(omega)*(1. - a*omega)/(omega**2))**(2./3.)
 
-def kerr_geo_orbital_frequency_circ(a, r):
+def kerr_circ_geo_orbital_frequency(a, r):
     """
     Calculates the orbital frequency of a circular geodesic with Boyer-Lindquist radius
     `r` in a Kerr spacetime paramtrized by the Kerr spin `a`
@@ -63,7 +63,7 @@ def kerr_isco_frequency(a):
     :rtype: double or array
     """
     rISCO = kerr_isco_radius(a)
-    return kerr_geo_orbital_frequency_circ(a, rISCO)
+    return kerr_circ_geo_orbital_frequency(a, rISCO)
 
 def alpha_of_a_omega(a, omega):
     oISCO = kerr_isco_frequency(a)

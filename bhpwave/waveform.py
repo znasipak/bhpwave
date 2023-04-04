@@ -22,78 +22,6 @@ Modot_GC1_to_S = GM_MKS/c_MKS**3
 Modot_GC1_to_M = GM_MKS/c_MKS**2
 Modot_GC1_to_PC = Modot_GC1_to_M/pc_MKS
 
-def solar_mass_to_seconds(mass):
-    return mass*Modot_GC1_to_S
-
-def seconds_to_solar_mass(seconds):
-    return seconds/Modot_GC1_to_S
-
-def solar_mass_to_meters(mass):
-    return mass*Modot_GC1_to_M
-
-def solar_mass_to_parsecs(mass):
-    return mass*Modot_GC1_to_PC
-
-def parsecs_to_solar_mass(pc):
-    return pc/Modot_GC1_to_PC
-
-def seconds_to_years(seconds):
-    return seconds/yr_MKS
-
-def years_to_seconds(years):
-    return years*yr_MKS
-
-def scaled_amplitude(mu, dist):
-    return Modot_GC1_to_PC*mu/(dist*1.e9)
-
-def source_angles(qS, phiS, qK, phiK):
-    """
-    Calculate the sky location :math:`(\theta, \phi)` of the observor in the
-    source frame using the sky location and orientation of the source in
-    the SSB frame
-
-    :param qS: polar angle of the source's sky location
-    :type qS: double
-    :param phiS: azimuthal angle of the source's sky location
-    :type phiS: double
-    :param qK: polar angle of the Kerr spin vector
-    :type qK: double
-    :param phiK: azimuthal angle of the Kerr spin vector
-    :type phiK: double
-
-    :rtype: tuple(double, double)
-
-    """
-    phi = -0.5*np.pi
-    theta = np.arccos(-(np.sin(qS)*np.sin(qK)*np.cos(phiS - phiK) + np.cos(qS)*np.cos(qK)))
-
-    return (theta, phi)
-
-def polarization(qS, phiS, qK, phiK):
-    """
-    Calculate the rotation of polarization angle :math:`e^{i\psi}` due to transforming from
-    the plus and cross polarizations in the source frame to the plus and
-    cross polarization in the SSB frame.
-
-    :param qS: polar angle of the source's sky location
-    :type qS: double
-    :param phiS: azimuthal angle of the source's sky location
-    :type phiS: double
-    :param qK: polar angle of the Kerr spin vector
-    :type qK: double
-    :param phiK: azimuthal angle of the Kerr spin vector
-    :type phiK: double
-
-    :rtype: complex
-
-    """
-    real_part = np.cos(qS)*np.sin(qK)*np.cos(phiS - phiK) - np.cos(qK)*np.sin(qS)
-    imag_part = -np.sin(qK)*np.sin(phiS - phiK)
-    if abs(real_part) + abs(imag_part) == 0.:
-        return 0.j
-
-    return (real_part + 1.j*imag_part)**2/(real_part**2 + imag_part**2)
-
 class KerrCircularWaveformBase:
     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
         """
@@ -110,7 +38,6 @@ class KerrCircularWaveformBase:
         :type harmonic_data: TrajectoryDataPy or None, optional
         :param num_threads: the number of threads used to evaluate the waveform
         :type num_threads: int or None, optional
-
         """
         if num_threads is None:
             num_threads = CPU_MAX
@@ -131,7 +58,7 @@ class KerrCircularWaveformBase:
 
     def generate_base_waveform(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
         """
-        Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\cross` measured in the
+        Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\\times` measured in the
         solar system barycenter (SSB) frame
 
         :param massratio: dimensionless ratio between the smaller and larger masses of the binary
@@ -150,7 +77,6 @@ class KerrCircularWaveformBase:
         :type phi: double
 
         :rtype: 1d-array[complex]
-
         """
         if "num_threads" in kwargs.keys():
             inspiral = self.inspiral_generator(massratio, a, r0, dt, T, num_threads=kwargs["num_threads"])
@@ -170,7 +96,7 @@ class KerrCircularWaveformBase:
     
     def __call__(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
         """
-        Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\cross` measured in the
+        Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\\times` measured in the
         solar system barycenter (SSB) frame.
 
         :param massratio: dimensionless ratio between the smaller and larger masses of the binary
@@ -189,7 +115,6 @@ class KerrCircularWaveformBase:
         :type phi: double
 
         :rtype: 1d-array[complex]
-
         """
         return self.generate_base_waveform(massratio, a, r0, dt, T, theta, phi, **kwargs)
 
@@ -208,8 +133,7 @@ class KerrCircularWaveform:
         :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
         :type harmonic_data: TrajectoryDataPy or None, optional
         :param num_threads: the number of threads used to evaluate the waveform
-        ::type num_threads: int or None, optional
-
+        :type num_threads: int or None, optional
         """
         if num_threads is None:
             num_threads = CPU_MAX
@@ -253,7 +177,6 @@ class KerrCircularWaveform:
         :type T: double, optional
 
         :rtype: 1d-array[tuples(doubles)]
-
         """
         return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
 
@@ -287,7 +210,6 @@ class KerrCircularWaveform:
         :type T: double, optional
 
         :rtype: 1d-array[complex]
-
         """
         h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
         return h.plus - 1.j*h.cross
@@ -306,7 +228,7 @@ class KerrWaveform(KerrCircularWaveform):
     :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
     :type harmonic_data: TrajectoryDataPy or None, optional
     :param num_threads: the number of threads used to evaluate the waveform
-    ::type num_threads: int or None, optional  
+    :type num_threads: int or None, optional  
 
     """
     def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
@@ -368,3 +290,74 @@ class KerrWaveform(KerrCircularWaveform):
         else:
             h = self.waveform_generator.waveform(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
         return h
+
+def source_angles(qS, phiS, qK, phiK):
+    """
+    Calculate the sky location :math:`(\\theta, \\phi)` of the observor in the
+    source frame using the sky location and orientation of the source in
+    the SSB frame
+
+    :param qS: polar angle of the source's sky location
+    :type qS: double
+    :param phiS: azimuthal angle of the source's sky location
+    :type phiS: double
+    :param qK: polar angle of the Kerr spin vector
+    :type qK: double
+    :param phiK: azimuthal angle of the Kerr spin vector
+    :type phiK: double
+
+    :rtype: tuple(double, double)
+    """
+    phi = -0.5*np.pi
+    theta = np.arccos(-(np.sin(qS)*np.sin(qK)*np.cos(phiS - phiK) + np.cos(qS)*np.cos(qK)))
+
+    return (theta, phi)
+
+def polarization(qS, phiS, qK, phiK):
+    """
+    Calculate the rotation of polarization angle :math:`e^{i\\psi}` due to transforming from
+    the plus and cross polarizations in the source frame to the plus and
+    cross polarization in the SSB frame.
+
+    :param qS: polar angle of the source's sky location
+    :type qS: double
+    :param phiS: azimuthal angle of the source's sky location
+    :type phiS: double
+    :param qK: polar angle of the Kerr spin vector
+    :type qK: double
+    :param phiK: azimuthal angle of the Kerr spin vector
+    :type phiK: double
+
+    :rtype: complex
+
+    """
+    real_part = np.cos(qS)*np.sin(qK)*np.cos(phiS - phiK) - np.cos(qK)*np.sin(qS)
+    imag_part = -np.sin(qK)*np.sin(phiS - phiK)
+    if abs(real_part) + abs(imag_part) == 0.:
+        return 0.j
+
+    return (real_part + 1.j*imag_part)**2/(real_part**2 + imag_part**2)
+
+def solar_mass_to_seconds(mass):
+    return mass*Modot_GC1_to_S
+
+def seconds_to_solar_mass(seconds):
+    return seconds/Modot_GC1_to_S
+
+def solar_mass_to_meters(mass):
+    return mass*Modot_GC1_to_M
+
+def solar_mass_to_parsecs(mass):
+    return mass*Modot_GC1_to_PC
+
+def parsecs_to_solar_mass(pc):
+    return pc/Modot_GC1_to_PC
+
+def seconds_to_years(seconds):
+    return seconds/yr_MKS
+
+def years_to_seconds(years):
+    return years*yr_MKS
+
+def scaled_amplitude(mu, dist):
+    return Modot_GC1_to_PC*mu/(dist*1.e9)
