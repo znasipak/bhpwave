@@ -1,9 +1,4 @@
-.. BHPWave documentation master file, created by
-   sphinx-quickstart on Mon Apr  3 13:13:22 2023.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-Welcome to BHPWave's documentation!
+BHPWave
 ===================================
 
 **BHPWave** is a C++ library wrapped in Python that generates gravitational waveforms 
@@ -24,7 +19,7 @@ Contents
 .. toctree::
 
    usage
-   api
+   api/api
 
 
 Indices and tables

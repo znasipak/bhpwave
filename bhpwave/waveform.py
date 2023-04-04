@@ -52,14 +52,17 @@ def source_angles(qS, phiS, qK, phiK):
     source frame using the sky location and orientation of the source in
     the SSB frame
 
-    args:
-        qS (double): polar angle of the source's sky location
-        phiS (double): azimuthal angle of the source's sky location
-        qK (double): polar angle of the Kerr spin vector
-        phiK (double): azimuthal angle of the Kerr spin vector
+    :param qS: polar angle of the source's sky location
+    :type qS: double
+    :param phiS: azimuthal angle of the source's sky location
+    :type phiS: double
+    :param qK: polar angle of the Kerr spin vector
+    :type qK: double
+    :param phiK: azimuthal angle of the Kerr spin vector
+    :type phiK: double
 
-    returns:
-        tuple (double, double)
+    :rtype: tuple(double, double)
+
     """
     phi = -0.5*np.pi
     theta = np.arccos(-(np.sin(qS)*np.sin(qK)*np.cos(phiS - phiK) + np.cos(qS)*np.cos(qK)))
@@ -72,14 +75,17 @@ def polarization(qS, phiS, qK, phiK):
     the plus and cross polarizations in the source frame to the plus and
     cross polarization in the SSB frame.
 
-    args:
-        qS (double): polar angle of the source's sky location
-        phiS (double): azimuthal angle of the source's sky location
-        qK (double): polar angle of the Kerr spin vector
-        phiK (double): azimuthal angle of the Kerr spin vector
+    :param qS: polar angle of the source's sky location
+    :type qS: double
+    :param phiS: azimuthal angle of the source's sky location
+    :type phiS: double
+    :param qK: polar angle of the Kerr spin vector
+    :type qK: double
+    :param phiK: azimuthal angle of the Kerr spin vector
+    :type phiK: double
 
-    returns:
-        complex
+    :rtype: complex
+
     """
     real_part = np.cos(qS)*np.sin(qK)*np.cos(phiS - phiK) - np.cos(qK)*np.sin(qS)
     imag_part = -np.sin(qK)*np.sin(phiS - phiK)
@@ -89,20 +95,23 @@ def polarization(qS, phiS, qK, phiK):
     return (real_part + 1.j*imag_part)**2/(real_part**2 + imag_part**2)
 
 class KerrCircularWaveformBase:
-    """
-    Base class that generates a gravitational waveform produced by an extreme-mass-ratio inspiral
-    using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-    The waveform is generated in units :math:`G = c = 1`, with time measured in units of mass 
-    
-    Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
-    parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
-    args:
-        trajectory_data ()
-
-    returns:
-        complex
-    """
     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
+        """
+        Base class that generates a gravitational waveform produced by an extreme-mass-ratio inspiral
+        using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
+        The waveform is generated in units :math:`G = c = 1`, with time measured in units of mass 
+
+        Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
+        parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
+        
+        :param trajectory_data: a TrajectoryDataPy class which holds interpolants of the relevant trajectory data
+        :type trajectory_data: TrajectoryDataPy or None, optional
+        :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
+        :type harmonic_data: TrajectoryDataPy or None, optional
+        :param num_threads: the number of threads used to evaluate the waveform
+        :type num_threads: int or None, optional
+
+        """
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
@@ -125,17 +134,23 @@ class KerrCircularWaveformBase:
         Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\cross` measured in the
         solar system barycenter (SSB) frame
 
-        args:
-            massratio (double): dimensionless ratio between the smaller and larger masses of the binary
-            a (double): dimensionless spin of the massive black hole (MBH)
-            r0 (double): initial orbital separation of the two objects
-            dt (double, optional): Spacing of time samples in units of mass of the MBH
-            T (double, optional): Duration of the waveform in units of mass of the MBH
-            theta (double): polar angle of the observor's sky location with respect to the MBH's spin vector
-            phi (double): azimuthal angle of the observor's sky location
+        :param massratio: dimensionless ratio between the smaller and larger masses of the binary
+        :type massratio: double
+        :param a: dimensionless spin of the massive black hole (MBH)
+        :type a: double
+        :param r0: initial orbital separation of the two objects
+        :type r0: double
+        :param dt: Spacing of time samples in units of mass of the MBH
+        :type dt: double
+        :param T: Duration of the waveform in units of mass of the MBH
+        :type T: double
+        :param theta: polar angle of the observor's sky location with respect to the MBH's spin vector
+        :type theta: double
+        :param phi: azimuthal angle of the observor's sky location
+        :type phi: double
 
-        returns:
-            1d-array (complex)
+        :rtype: 1d-array[complex]
+
         """
         if "num_threads" in kwargs.keys():
             inspiral = self.inspiral_generator(massratio, a, r0, dt, T, num_threads=kwargs["num_threads"])
@@ -154,21 +169,48 @@ class KerrCircularWaveformBase:
         return h.plus - 1.j*h.cross
     
     def __call__(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
+        """
+        Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\cross` measured in the
+        solar system barycenter (SSB) frame.
+
+        :param massratio: dimensionless ratio between the smaller and larger masses of the binary
+        :type massratio: double
+        :param a: dimensionless spin of the massive black hole (MBH)
+        :type a: double
+        :param r0: initial orbital separation of the two objects
+        :type r0: double
+        :param dt: Spacing of time samples in units of mass of the MBH
+        :type dt: double
+        :param T: Duration of the waveform in units of mass of the MBH
+        :type T: double
+        :param theta: polar angle of the observor's sky location with respect to the MBH's spin vector
+        :type theta: double
+        :param phi: azimuthal angle of the observor's sky location
+        :type phi: double
+
+        :rtype: 1d-array[complex]
+
+        """
         return self.generate_base_waveform(massratio, a, r0, dt, T, theta, phi, **kwargs)
 
 class KerrCircularWaveform:
-    """
-    Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
-    using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-    By default, the waveform is generated in the solar system barycenter frame.
-    
-    Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
-    parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
-
-    args:
-        
-    """
     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
+        """
+        Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
+        using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
+        By default, the waveform is generated in the solar system barycenter frame.
+
+        Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
+        parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
+
+        :param trajectory_data: a TrajectoryDataPy class which holds interpolants of the relevant trajectory data
+        :type trajectory_data: TrajectoryDataPy or None, optional
+        :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
+        :type harmonic_data: TrajectoryDataPy or None, optional
+        :param num_threads: the number of threads used to evaluate the waveform
+        ::type num_threads: int or None, optional
+
+        """
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
@@ -211,6 +253,7 @@ class KerrCircularWaveform:
         :type T: double, optional
 
         :rtype: 1d-array[tuples(doubles)]
+
         """
         return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
 
@@ -244,6 +287,7 @@ class KerrCircularWaveform:
         :type T: double, optional
 
         :rtype: 1d-array[complex]
+
         """
         h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
         return h.plus - 1.j*h.cross
@@ -257,8 +301,13 @@ class KerrWaveform(KerrCircularWaveform):
     Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
     parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
 
-    args:
-        
+    :param trajectory_data: a TrajectoryDataPy class which holds interpolants of the relevant trajectory data
+    :type trajectory_data: TrajectoryDataPy or None, optional
+    :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
+    :type harmonic_data: TrajectoryDataPy or None, optional
+    :param num_threads: the number of threads used to evaluate the waveform
+    ::type num_threads: int or None, optional  
+
     """
     def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
         """
@@ -305,6 +354,7 @@ class KerrWaveform(KerrCircularWaveform):
         :type return_list: bool, optional
         
         :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
+
         """
         if "select_modes" in kwargs.keys():
             lmodes = []
