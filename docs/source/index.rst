@@ -19,11 +19,13 @@ Contents
 .. toctree::
 
    usage
+   background
+   ref
    api/api
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

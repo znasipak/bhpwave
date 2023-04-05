@@ -209,7 +209,7 @@ cdef class WaveformGeneratorPy:
 
         return select_modes
 
-    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -218,6 +218,11 @@ cdef class WaveformGeneratorPy:
         else:
             timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
         
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
         if "max_samples" in kwargs.keys():
@@ -232,8 +237,13 @@ cdef class WaveformGeneratorPy:
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross, timeSteps)
         
         self.hcpp.computeWaveform(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
-        waveform = -1.j*cross
-        waveform += plus
+        if return_list:
+            return [plus, cross]
+        else:
+            waveform = -1.j*cross
+            waveform += plus
+
+        return waveform
 
         return waveform
     
@@ -246,6 +256,11 @@ cdef class WaveformGeneratorPy:
         else:
             timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
         
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
         if "max_samples" in kwargs.keys():

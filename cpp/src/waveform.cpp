@@ -187,7 +187,7 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, i
     }
     double chi = chi_of_spin(inspiral.getSpin());
 
-    int imax = h.getSize();
+    int imax = inspiral.getSize();
     // for some reason creating arrays of this size was causing issues with OpenMP
     // minimal internet research suggests that OpenMP allocates arrays on the stack
     // and large arrays can lead to crashes. std::vector seems to work better here
@@ -292,7 +292,6 @@ void WaveformGenerator::computeWaveform(WaveformContainer &h, double M, double m
 	rescaleIm = std::imag(wOpts.rescale);
 	// if the rescaling factor is purely real, then just rescale both polarizations by the same amplitude
 	// else, then we get a mixing of the plus and cross polarizations that gives us new polarization amplitudes
-
 	// watch.start();
 	int imax = h.getSize();
 	#pragma omp parallel num_threads(wOpts.num_threads)
@@ -314,7 +313,7 @@ void WaveformGenerator::computeWaveform(WaveformContainer &h, double M, double m
 }
 
 void WaveformGenerator::computeWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
-  	double theta, phi;
+  double theta, phi;
 	sourceAngles(theta, phi, qS, phiS, qK, phiK);
 	dt = convertTime(dt, M);
 	T = convertTime(years_to_seconds(T), M);

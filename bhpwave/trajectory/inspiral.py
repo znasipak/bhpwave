@@ -2,14 +2,14 @@ from bhpwaveformcy import (TrajectoryDataPy,
                            InspiralGeneratorPy)
 
 class InspiralGenerator:
-    def __init__(self, traj_data = None):
-        """
-        A class for generating quasi-circular inspirals around a rotating massive black hole.
-        Once instantiated, the class can be called to generate inspiral data.
+    """
+    A class for generating quasi-circular inspirals around a rotating massive black hole.
+    Once instantiated, the class can be called to generate inspiral data.
 
-        :param traj_data: A TrajectoryDataPy class which holds interpolants of the relevant trajectory data
-        :type traj_data: TrajectoryDataPy or None, optional
-        """
+    :param traj_data: A TrajectoryDataPy class which holds interpolants of the relevant trajectory data
+    :type traj_data: TrajectoryDataPy or None, optional
+    """
+    def __init__(self, traj_data = None):
         if traj_data is None:
             self.traj_data = TrajectoryDataPy(dealloc_flag=False)
         else:

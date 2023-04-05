@@ -23,22 +23,22 @@ Modot_GC1_to_M = GM_MKS/c_MKS**2
 Modot_GC1_to_PC = Modot_GC1_to_M/pc_MKS
 
 class KerrCircularWaveformBase:
-    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
-        """
-        Base class that generates a gravitational waveform produced by an extreme-mass-ratio inspiral
-        using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-        The waveform is generated in units :math:`G = c = 1`, with time measured in units of mass 
+    """
+    Base class that generates a gravitational waveform produced by an extreme-mass-ratio inspiral
+    using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
+    The waveform is generated in units :math:`G = c = 1`, with time measured in units of :math:`M`,
+    where :math:`M` is the mass of the more massive body. 
 
-        Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
-        parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
-        
-        :param trajectory_data: a TrajectoryDataPy class which holds interpolants of the relevant trajectory data
-        :type trajectory_data: TrajectoryDataPy or None, optional
-        :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
-        :type harmonic_data: TrajectoryDataPy or None, optional
-        :param num_threads: the number of threads used to evaluate the waveform
-        :type num_threads: int or None, optional
-        """
+    Waveform generation is limited to quasi-circular inspirals in Kerr spacetime.
+    
+    :param trajectory_data: a TrajectoryDataPy class which holds interpolants of the relevant trajectory data
+    :type trajectory_data: TrajectoryDataPy or None, optional
+    :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
+    :type harmonic_data: TrajectoryDataPy or None, optional
+    :param num_threads: the number of threads used to evaluate the waveform
+    :type num_threads: int or None, optional
+    """
+    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
@@ -119,22 +119,22 @@ class KerrCircularWaveformBase:
         return self.generate_base_waveform(massratio, a, r0, dt, T, theta, phi, **kwargs)
 
 class KerrCircularWaveform:
+    """
+    Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
+    using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
+    By default, the waveform is generated in the solar system barycenter frame.
+
+    Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
+    parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
+
+    :param trajectory_data: a TrajectoryDataPy class which holds interpolants of the relevant trajectory data
+    :type trajectory_data: TrajectoryDataPy or None, optional
+    :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
+    :type harmonic_data: TrajectoryDataPy or None, optional
+    :param num_threads: the number of threads used to evaluate the waveform
+    :type num_threads: int or None, optional
+    """
     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
-        """
-        Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
-        using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-        By default, the waveform is generated in the solar system barycenter frame.
-
-        Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
-        parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
-
-        :param trajectory_data: a TrajectoryDataPy class which holds interpolants of the relevant trajectory data
-        :type trajectory_data: TrajectoryDataPy or None, optional
-        :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
-        :type harmonic_data: TrajectoryDataPy or None, optional
-        :param num_threads: the number of threads used to evaluate the waveform
-        :type num_threads: int or None, optional
-        """
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
@@ -278,6 +278,11 @@ class KerrWaveform(KerrCircularWaveform):
         :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
 
         """
+        if "T" in kwargs.keys():
+            T = kwargs["T"]
+        if "dt" in kwargs.keys():
+            dt = kwargs["dt"]
+
         if "select_modes" in kwargs.keys():
             lmodes = []
             mmodes = []
@@ -339,25 +344,92 @@ def polarization(qS, phiS, qK, phiK):
     return (real_part + 1.j*imag_part)**2/(real_part**2 + imag_part**2)
 
 def solar_mass_to_seconds(mass):
+    """
+    Converts units of solar mass in :math:`G=c=1` convention to units of seconds in the MKS convention
+    
+    :param mass: mass in units of solar masses
+    :type mass: double
+    
+    :rtype: double
+    """
     return mass*Modot_GC1_to_S
 
-def seconds_to_solar_mass(seconds):
-    return seconds/Modot_GC1_to_S
+def seconds_to_solar_mass(time):
+    """
+    Converts units of seconds in the MKS convention to units of solar mass in :math:`G=c=1` convention
+    
+    :param time: time in units of seconds
+    :type time: double
+    
+    :rtype: double
+    """
+    return time/Modot_GC1_to_S
 
 def solar_mass_to_meters(mass):
+    """
+    Converts units of solar mass in :math:`G=c=1` convention to units of meters in the MKS convention
+    
+    :param mass: mass in units of solar masses
+    :type mass: double
+    
+    :rtype: double
+    """
     return mass*Modot_GC1_to_M
 
 def solar_mass_to_parsecs(mass):
+    """
+    Converts units of solar mass in :math:`G=c=1` convention to units of parsecs in the MKS convention
+    
+    :param mass: mass in units of solar masses
+    :type mass: double
+    
+    :rtype: double
+    """
     return mass*Modot_GC1_to_PC
 
-def parsecs_to_solar_mass(pc):
-    return pc/Modot_GC1_to_PC
+def parsecs_to_solar_mass(length):
+    """
+    Converts units of parsecs in the MKS convention to units of solar mass in :math:`G=c=1` convention
+    
+    :param length: length in units of solar masses
+    :type length: double
+    
+    :rtype: double
+    """
+    return length/Modot_GC1_to_PC
 
-def seconds_to_years(seconds):
-    return seconds/yr_MKS
+def seconds_to_years(time):
+    """
+    Converts units of seconds to units of sidereal years
+    
+    :param time: time in seconds
+    :type time: double
+    
+    :rtype: double
+    """
+    return time/yr_MKS
 
-def years_to_seconds(years):
-    return years*yr_MKS
+def years_to_seconds(time):
+    """
+    Converts units of sidereal years to units of seconds
+    
+    :param time: time in sidereal years
+    :type time: double
+    
+    :rtype: double
+    """
+    return time*yr_MKS
 
 def scaled_amplitude(mu, dist):
+    """
+    Gives the overall scaling of the waveform amplitude :math:`\\mu/D_L` for a binary with 
+    small mass :math:`\\mu` and an observer at distance :math:`D_L`
+    
+    :param mu: mass of the small body in solar masses
+    :type mu: double
+    :param dist: distance between the binary and observor in Gpc
+    :type dist: double
+    
+    :rtype: double
+    """
     return Modot_GC1_to_PC*mu/(dist*1.e9)
