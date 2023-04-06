@@ -54,3 +54,10 @@ Finally, we recommend installing the package via :code:`pip`:
 
 Uninstalling
 ------------
+
+In progress...
+
+Quick Tutorial
+--------------
+
+In progress...
