@@ -74,7 +74,7 @@ Adiabatic waveforms
 From this adiabatic inspiral, we construct
 the resulting adiabatic gravitational waveform. It can be expressed as a sum over many
 harmonics with complex amplitudes :math:`H_{lm}(t) = H_{lm}(r_\mathrm{orb}(t))` and 
-phases :math:`\Phi_m(t) = m\Phi(t)` `(Hughes, et al.; 2021)`_,
+phases :math:`\Phi_m(t) = m\Phi(t)` `(Hughes, et al.; 2021)`_ `(Pound and Wardell; 2021)`_,
 
 .. math::
     h(t, r_\mathrm{obs}, \theta_\mathrm{obs}, \phi_\mathrm{obs}) &= \frac{\mu}{r_\mathrm{obs}} \sum_{l=2}^\infty \sum_{|m|=1}^{l} H_{lm}(t) e^{i\Phi_m(t)} {}_{-2} Y_{lm}(\theta_\mathrm{obs}, \phi_\mathrm{obs}),
@@ -186,3 +186,4 @@ In progress...
 .. _(Chua, et al.; 2020): https://arxiv.org/abs/2008.06071
 .. _(Hughes, et al.; 2021): https://arxiv.org/abs/2102.02713
 .. _(Katz, et al.; 2021): https://arxiv.org/abs/2104.04582
+.. _(Pound and Wardell; 2021): https://arxiv.org/abs/2101.04592
