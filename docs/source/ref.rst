@@ -10,10 +10,14 @@ quasi-circular inspirals in Kerr spacetime, see `(Detweiler; 1978)`_ and `(Kenne
 Citations
 ---------
 
-* `(Detweiler; 1978)`_ S. Detweiler, 
+* `(Teukolsky; 1973)`_
+* `(Teukolsky and Press; 1974)`_
+* `(Detweiler; 1978)`_
 * `(Kennefick; 1998)`_
 * `(Hughes; 2000)`_
+* `(Mino; 2003)`_
 * `(Drasco and Hughes; 2006)`_
+* `(Hinderer and Flanagan; 2008)`_
 * `(Gourgoulhon, et al.; 2019)`_
 * `(Chua, et al.; 2020)`_
 * `(Hughes, et al.; 2021)`_
@@ -40,10 +44,14 @@ gravitational waveforms. These tools serve as great sources for comparison with 
 .. _kerrgeodesic_gw: https://sagemanifolds.obspm.fr/kerrgeodesic_gw/reference/
 
 
+.. _(Teukolsky; 1973): https://ui.adsabs.harvard.edu/abs/1973ApJ...185..635T/abstract
+.. _(Teukolsky and Press; 1974): https://ui.adsabs.harvard.edu/abs/1974ApJ...193..443T/abstract
 .. _(Detweiler; 1978): https://ui.adsabs.harvard.edu/abs/1978ApJ...225..687D/abstract
 .. _(Kennefick; 1998): https://journals.aps.org/prd/abstract/10.1103/PhysRevD.58.064012
 .. _(Hughes; 2000): https://arxiv.org/abs/gr-qc/9910091
+.. _(Mino; 2003): https://arxiv.org/abs/gr-qc/0302075
 .. _(Drasco and Hughes; 2006): https://arxiv.org/abs/gr-qc/9910091
+.. _(Hinderer and Flanagan; 2008): https://arxiv.org/abs/0805.3337
 .. _(Gourgoulhon, et al.; 2019): https://www.aanda.org/articles/aa/abs/2019/07/aa35406-19/aa35406-19.html
 .. _(Chua, et al.; 2020): https://arxiv.org/abs/2008.06071
 .. _(Hughes, et al.; 2021): https://arxiv.org/abs/2102.02713
