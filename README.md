@@ -30,7 +30,7 @@ Next clone the :code:`bhpwave` repository from GitHub:
 $ git clone https://github.com/znasipak/bhpwave.git
 $ cd bhpwave
 ```
-Finally, we recommend installing the package via :code:`pip`:
+Finally, we recommend installing the package via `pip`:
 ```
 $ pip install .
 ```
