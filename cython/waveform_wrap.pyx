@@ -59,14 +59,51 @@ cdef extern from "waveform.hpp":
         HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions opts)
 
         void computeWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T)
+        void computeWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T)
+
+        WaveformHarmonicOptions getWaveformHarmonicOptions()
+        HarmonicOptions getHarmonicOptions()
+
+cdef extern from "fourier.hpp":
+    cdef cppclass WaveformFourierHarmonicGenerator:
+        WaveformFourierHarmonicGenerator(HarmonicAmplitudes &Alm, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
+
+        void computeWaveformFourierHarmonics(WaveformContainer &h, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, HarmonicOptions hOpts, int num_threads, double df, int fsamples)
+        void computeWaveformFourierHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, int num_threads, double df, int fsamples)
+        void computeWaveformFourierHarmonics(WaveformContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, int num_threads, double df, int fsamples)
+
+        HarmonicSelector& getModeSelector()
+        HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta)
+        HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta, HarmonicOptions opts)
+
+        WaveformHarmonicOptions getWaveformHarmonicOptions()
+        HarmonicOptions getHarmonicOptions()
+
+    cdef cppclass WaveformFourierGenerator:
+        WaveformFourierGenerator(TrajectorySpline2D &traj, HarmonicAmplitudes &harm, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
+
+        double convertTime(double t, double M)
+        double convertFrequency(double f, double M)
+        int computeFrequencyStepNumber(double df, double T)
+        
+        void computeFourierWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double df, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
+        void computeFourierWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double df, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
+        
+        void computeFourierWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double df, double T)
+        void computeFourierWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double df, double T)
+
+        HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T)
+        HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions opts)
+
         WaveformHarmonicOptions getWaveformHarmonicOptions()
         HarmonicOptions getHarmonicOptions()
 
 cdef class WaveformContainerNumpyWrapper:
     cdef WaveformContainer *hcpp
 
-    def __cinit__(self, np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] plus, np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] cross, int time_steps):
-        self.hcpp = new WaveformContainer(&plus[0], &cross[0], time_steps)
+    def __cinit__(self, np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] plus, np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] cross):
+        cdef steps = plus.shape[0]
+        self.hcpp = new WaveformContainer(&plus[0], &cross[0], steps)
 
     def __dealloc__(self):
         del self.hcpp
@@ -234,7 +271,7 @@ cdef class WaveformGeneratorPy:
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
-        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross, timeSteps)
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
         
         self.hcpp.computeWaveform(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
         if return_list:
@@ -242,8 +279,6 @@ cdef class WaveformGeneratorPy:
         else:
             waveform = -1.j*cross
             waveform += plus
-
-        return waveform
 
         return waveform
     
@@ -273,8 +308,8 @@ cdef class WaveformGeneratorPy:
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
-        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross, timeSteps)
-        
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
         self.hcpp.computeWaveform(dereference(h.hcpp), M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
 
         if return_list:
@@ -285,12 +320,253 @@ cdef class WaveformGeneratorPy:
 
         return waveform
 
-    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False):
+    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
         cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
         if pad_output:
             timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
         else:
             timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
-        cdef WaveformContainerWrapper h = WaveformContainerWrapper(timeSteps)
+        
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+        
+        self.hcpp.computeWaveformSourceFrame(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, theta, phi, Phi_phi0, dt, T)
+        if return_list:
+            return [plus, cross]
+        else:
+            waveform = -1.j*cross
+            waveform += plus
+
+        return waveform
+
+    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+        
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
         self.hcpp.computeWaveformSourceFrame(dereference(h.hcpp), M, mu, a, r0, theta, phi, Phi_phi0, dt, T)
-        return h
+        if return_list:
+            return [plus, cross]
+        else:
+            waveform = -1.j*cross
+            waveform += plus
+
+        return waveform
+
+cdef class WaveformFourierGeneratorPy:
+    cdef WaveformFourierGenerator *hcpp
+
+    def __cinit__(self, TrajectoryDataPy traj, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
+        cdef WaveformHarmonicOptions wOpts
+        cdef HarmonicOptions hOpts
+        
+        if "eps" in harmonic_kwargs.keys():
+            hOpts.epsilon = harmonic_kwargs["eps"]
+        if "max_samples" in harmonic_kwargs.keys():
+            hOpts.max_samples = harmonic_kwargs["max_samples"]
+        
+        if "num_threads" in waveform_kwargs.keys():
+            wOpts.num_threads = waveform_kwargs["num_threads"]
+        if "pad_output" in waveform_kwargs.keys():
+            wOpts.pad_output = waveform_kwargs["pad_output"]
+
+        self.hcpp = new WaveformFourierGenerator(dereference(traj.trajcpp), dereference(Alm.harmonicscpp), hOpts, wOpts)
+
+    def __dealloc__(self):
+        del self.hcpp
+
+    def step_number(self, double dt, double T):
+        return self.hcpp.computeFrequencyStepNumber(dt, T)
+
+    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, pad_nmodes = False, **kwargs):
+        cdef HarmonicOptions hOpts
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts)
+        cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
+        modeWrap.wrap(modescpp)
+
+        if pad_nmodes:
+            select_modes = list(zip(modeWrap.lmodes, modeWrap.mmodes, 0*modeWrap.mmodes))
+        else:
+            select_modes = list(zip(modeWrap.lmodes, modeWrap.mmodes))
+
+        return select_modes
+
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+        cdef int steps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        steps = self.hcpp.computeFrequencyStepNumber(dt, T)
+        
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.empty(steps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.empty(steps, dtype=np.complex128)
+
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        self.hcpp.computeFourierWaveform(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
+        plusComplex = 1.j*np.flip(plus[-steps:])
+        plusComplex += plus[:steps]
+        crossComplex = 1.j*np.flip(cross[-steps:])
+        crossComplex += cross[:steps]
+        
+        return [plusComplex, crossComplex]
+
+    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+        cdef int steps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        steps = self.hcpp.computeFrequencyStepNumber(dt, T)
+        
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.empty(steps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.empty(steps, dtype=np.complex128)
+        
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        self.hcpp.computeFourierWaveform(dereference(h.hcpp), M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
+        plusComplex = 1.j*np.flip(plus[-steps:])
+        plusComplex += plus[:steps]
+        crossComplex = 1.j*np.flip(cross[-steps:])
+        crossComplex += cross[:steps]
+
+        return [plusComplex, crossComplex]
+    
+    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+        cdef int steps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        steps = self.hcpp.computeFrequencyStepNumber(dt, T)
+        
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.empty(steps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.empty(steps, dtype=np.complex128)
+        
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        self.hcpp.computeFourierWaveformSourceFrame(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, theta, phi, Phi_phi0, dt, T)
+        plusComplex = 1.j*np.flip(plus[-steps:])
+        plusComplex += plus[:steps]
+        crossComplex = 1.j*np.flip(cross[-steps:])
+        crossComplex += cross[:steps]
+
+        return [plusComplex, crossComplex]
+    
+    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+        cdef int steps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        steps = self.hcpp.computeFrequencyStepNumber(dt, T)
+        
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.empty(steps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.empty(steps, dtype=np.complex128)
+        
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        self.hcpp.computeFourierWaveformSourceFrame(dereference(h.hcpp), M, mu, a, r0, theta, phi, Phi_phi0, dt, T)
+        plusComplex = 1.j*np.flip(plus[-steps:])
+        plusComplex += plus[:steps]
+        crossComplex = 1.j*np.flip(cross[-steps:])
+        crossComplex += cross[:steps]
+
+        return [plusComplex, crossComplex]

@@ -3,8 +3,6 @@
 
 #include "harmonics.hpp"
 #include "swsh.hpp"
-#include <gsl/gsl_const_mksa.h>
-#include <gsl/gsl_sf_trig.h>
 #include <chrono>
 #include <algorithm>
 #include "omp.h"
@@ -102,11 +100,12 @@ public:
   void computeWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts);
   void computeWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
   void computeWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
-  
+
   HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T);
   HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions opts);
 
   void computeWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T);
+  void computeWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T);
 private:
   InspiralGenerator _inspiralGen;
 };
@@ -122,27 +121,11 @@ double parsecs_to_solar_mass(double pc);
 double seconds_to_years(double seconds);
 double years_to_seconds(double years);
 
-
-// Old functions
-
-double relative_harmonic_power(int l, int m, double chi, double alphaMin, double deltaAlpha, Vector &alphaDot);
-void harmonic_selection(List &maxmodes, double chi, double alphaInitial, double alphaFinal, double epsilon);
-double frequency_spacing(double mass1, double mass2, double spin, double r0, double &duration_yr);
-double time_spacing(double mass1, double mass2, double spin, double r0, double duration_yr);
 double scale_strain_amplitude(double mass1, double distance);
 double scale_fourier_amplitude(double mass1, double mass2, double distance);
 
-////////////////////////////
-// Time Domain Trajectory //
-////////////////////////////
-
-double time_to_inspiral(double mass1, double mass2, double spin, double r0);
-int inspiral_time_steps(double mass1, double mass2, double spin, double r0, double duration_yr, double deltaT_sec);
-void generate_trajectory_td(double mass1, double mass2, double spin, double r0, double phi0, double duration_yr, double deltaT_sec = 0.);
-void output_trajectory_td(double *rp, double *phase, double mass1, double mass2, double spin, double r0, double phi0, double duration_yr, double deltaT_sec = 0.);
-void output_downsampled_trajectory(double *t, double *alphaOfT, double *phaseOfT, int t_steps, double theta, double phi, double mass1, double mass2, double spin, double r0, double duration_yr, double deltaT_sec);
-void output_flux(double *flux, double *a, double *r, int sampleN);
-
-
+// Old functions
+// double frequency_spacing(double mass1, double mass2, double spin, double r0, double &duration_yr);
+// double time_spacing(double mass1, double mass2, double spin, double r0, double duration_yr);
 
 #endif

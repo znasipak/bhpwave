@@ -49,6 +49,10 @@ double kerr_isco_radius(double a, int sgnX){
 	return 3 + z2 - sgnX*sqrt((3. - z1)*(3. + z1 + 2.*z2));
 }
 
+double kerr_isco_radius(double a){
+	return kerr_isco_radius(a, sgn(a));
+}
+
 double kerr_isco_frequency(double a){
 	int sgnX = sgn(a);
 	return kerr_geo_azimuthal_frequency_circ_time(abs(a), kerr_isco_radius(abs(a), sgnX), sgnX);
@@ -132,6 +136,12 @@ double dalpha_domega_of_a_omega(const double &a, const double &omega, const doub
 	return 1./domega_dalpha_of_a_omega(a, omega, oISCO);
 }
 
+double dalpha_domega_of_alpha(const double &alpha, const double &oISCO){
+	double oISCOThird = pow(oISCO, 1./3.);
+	double delta = oISCOThird - pow(OMEGA_MIN, 1./3.);
+	return -1./(6.*alpha*delta*pow(oISCOThird - alpha*alpha*delta, 2.));
+}
+
 double max_orbital_frequency(const double &a){
   return omega_of_a_alpha(a, ALPHA_MAX);
 }
@@ -160,8 +170,14 @@ void InspiralContainer::setInspiralInitialConditions(double a, double massratio,
   _massratio = massratio;
   _r0 = r0;
   _dt = dt;
+  _risco = kerr_isco_radius(_a);
+  _oisco = kerr_isco_frequency(_a);
 }
 void InspiralContainer::setTimeStep(int i, double alpha, double phase){
+  _alpha[i] = alpha;
+  _phase[i] = phase;
+}
+void InspiralContainer::setTimeStep(int i, double alpha, double phase, double dtdo){
   _alpha[i] = alpha;
   _phase[i] = phase;
 }
@@ -200,6 +216,12 @@ double InspiralContainer::getRadius(int i){
 double InspiralContainer::getSpin(){
   return _a;
 }
+double InspiralContainer::getISCORadius(){
+  return _risco;
+}
+double InspiralContainer::getISCOFrequency(){
+  return _oisco;
+}
 
 double InspiralContainer::getMassRatio(){
   return _massratio;
@@ -210,7 +232,22 @@ double InspiralContainer::getInitialRadius(){
 }
 
 double InspiralContainer::getInitialFrequency(){
-  return kerr_geo_azimuthal_frequency_circ(_a, _r0);
+  return kerr_geo_azimuthal_frequency_circ_time(_a, _r0);
+}
+
+double InspiralContainer::getFinalFrequency(){
+  return omega_of_a_alpha(_a, _alpha[getSize() - 1], _oisco);
+}
+
+double InspiralContainer::getFinalRadius(){
+  return kerr_geo_radius_circ(_a, getFinalFrequency());
+}
+
+double InspiralContainer::getTimeSpacing(){
+  return _dt;
+}
+double InspiralContainer::getDuration(){
+	return (getSize() - 1)*_dt;
 }
 
 int InspiralContainer::getSize(){
@@ -244,10 +281,12 @@ void InspiralGenerator::computeInitialConditions(double &chi, double &omega_i, d
 }
 
 void InspiralGenerator::computeInspiral(InspiralContainer &inspiral, double chi, double omega_i, double alpha_i, double t_i, double massratio, double dt, int num_threads){
-	int time_steps = inspiral.getSize();
+	int steps = inspiral.getSize();
+	double a = inspiral.getSpin();
 	dt *= massratio; // need to rescale by massratio to get in terms of "slow time"
 
-	double phase_i = _traj.phase(chi, _traj.orbital_alpha(chi, t_i));
+	double phase_i = _traj.phase(chi, alpha_i);
+	inspiral.setTimeStep(0, alpha_i, 0.);	
 
 	// first we downsample by fixing a and sampling in t
 	// int downsample_steps = 200;
@@ -284,13 +323,11 @@ void InspiralGenerator::computeInspiral(InspiralContainer &inspiral, double chi,
 	// 		inspiral.setTimeStep(j, alpha, phase);
 	// 	}
 	// }
-
-
 	#pragma omp parallel num_threads(num_threads)
 	{
 		double alpha, phase;
 		#pragma omp for
-		for(int j = 0; j < time_steps; j++){
+		for(int j = 1; j < steps; j++){
 			alpha = _traj.orbital_alpha(chi, t_i + dt*j);
 			phase = (_traj.phase(chi, alpha) - phase_i)/massratio;
 			inspiral.setTimeStep(j, alpha, phase);
@@ -315,6 +352,10 @@ int InspiralGenerator::computeTimeStepNumber(double dt, double T){
 	return T/dt + 1;
 }
 
+TrajectorySpline2D& InspiralGenerator::getTrajectorySpline(){
+	return _traj;
+}
+
 Data read_data(const std::string& filename){
 	double x, y, z;
 	Vector xVec, yVec, zVec;
@@ -324,9 +365,9 @@ Data read_data(const std::string& filename){
 	    lin.clear();
 	    lin.str(line);
 	    if(lin >> x >> y >> z){
-					xVec.push_back(x);
-					yVec.push_back(y);
-					zVec.push_back(z);
+			xVec.push_back(x);
+			yVec.push_back(y);
+			zVec.push_back(z);
 	    }
 	}
 
@@ -591,6 +632,13 @@ double TrajectorySpline2D::time_of_a_omega_derivative(double a, double omega){
 	double alpha = alpha_of_a_omega(a, omega, oISCO);
 	double f = _time_spline.evaluate(chi, alpha);
   	return -2.*f*exp(pow(f, 2))*_time_spline.derivative_y(chi, alpha)*dalpha_domega_of_a_omega(a, omega, oISCO);
+}
+
+double TrajectorySpline2D::time_of_a_alpha_omega_derivative(double a, double alpha){
+	double oISCO = abs(kerr_isco_frequency(a));
+	double chi = chi_of_spin(a);
+	double f = _time_spline.evaluate(chi, alpha);
+  	return -2.*f*exp(pow(f, 2))*_time_spline.derivative_y(chi, alpha)*dalpha_domega_of_alpha(alpha, oISCO);
 }
 
 double TrajectorySpline2D::phase_of_a_omega(double a, double omega){

@@ -41,8 +41,9 @@ swsh_dependence = ["cpp/src/swsh.cpp"]
 trajectory_dependence = ["cpp/src/trajectory.cpp", *spline_dependence]
 harmonics_dependence = ["cpp/src/harmonics.cpp", *spline_dependence]
 waveform_dependence = ["cpp/src/waveform.cpp", *harmonics_dependence, *trajectory_dependence, *swsh_dependence]
+fourier_dependence = ["cpp/src/fourier.cpp", *waveform_dependence]
 
-full_dependence = [*waveform_dependence]
+full_dependence = [*fourier_dependence]
 
 lib_extension = dict(
     sources = [*set(full_dependence)],

@@ -109,6 +109,7 @@ public:
 	double orbital_frequency(double a, double t);
 	double orbital_frequency_derivative(double a, double t);
   	double orbital_frequency_time_derivative_of_a_omega(double a, double omega);
+	double time_of_a_alpha_omega_derivative(double a, double alpha);
 
 	double orbital_frequency_isco(double chi);
 	double orbital_frequency_isco_of_a(double a);
@@ -133,6 +134,7 @@ public:
 	InspiralContainer(int inspiralSteps);
 	void setInspiralInitialConditions(double a, double massratio, double r0, double dt);
 	void setTimeStep(int i, double alpha, double phase);
+	void setTimeStep(int i, double alpha, double phase, double dtdo);
 	
 	const Vector& getAlpha() const;
 	const Vector& getPhase() const;
@@ -142,6 +144,7 @@ public:
 
 	double getAlpha(int i);
 	double getPhase(int i);
+	double getTimeOmegaDeriv(int i);
 	double getTime(int i);
 	double getFrequency(int i);
 	double getRadius(int i);
@@ -149,7 +152,13 @@ public:
 	double getSpin();
 	double getMassRatio();
 	double getInitialRadius();
+	double getFinalRadius();
 	double getInitialFrequency();
+	double getFinalFrequency();
+	double getTimeSpacing();
+	double getDuration();
+	double getISCOFrequency();
+	double getISCORadius();
 	int getSize();
 
 private:
@@ -157,6 +166,8 @@ private:
 	double _massratio;
 	double _r0;
 	double _dt;
+	double _risco;
+	double _oisco;
 	Vector _alpha;
 	Vector _phase;
 };
@@ -164,13 +175,14 @@ private:
 class InspiralGenerator{
 public:
 	InspiralGenerator(TrajectorySpline2D &traj, int num_threads=0);
-	InspiralContainer computeInspiral(double a, double massratio, double r0, double dt, double T, int num_threads=0);
+	InspiralContainer computeInspiral(double a, double massratio, double r0, double dt, double T, int num_threads = 0);
 	void computeInitialConditions(double &chi, double &omega_i, double &alpha_i, double &t_i, double a, double massratio, double r0, double &T);
 	double computeTimeToMerger(double a, double massratio, double r0);
 	int computeTimeStepNumber(double a, double massratio, double r0, double dt, double T);
 	int computeTimeStepNumber(double dt, double T);
 
 	void computeInspiral(InspiralContainer &inspiral, double chi, double omega_i, double alpha_i, double t_i, double massratio, double dt, int num_threads=0);
+	TrajectorySpline2D& getTrajectorySpline();
 
 protected:
 	TrajectorySpline2D& _traj;
@@ -190,6 +202,7 @@ double kerr_geo_azimuthal_frequency_circ_time(double a, double r);
 double kerr_geo_radius_circ(double a, double Omega);
 
 double kerr_isco_radius(double a, int sgnX);
+double kerr_isco_radius(double a);
 double kerr_isco_frequency(double a);
 
 //////////////////////////////////////
