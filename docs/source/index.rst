@@ -26,6 +26,7 @@ Contents
    :maxdepth: 2
 
    usage
+   notebooks/quick_tutorial
    background
    ref
    api/api

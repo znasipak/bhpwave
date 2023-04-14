@@ -380,11 +380,66 @@ Data read_data(const std::string& filename){
 	return data;
 }
 
+inline bool file_exists(const std::string& name) {
+  struct stat buffer;   
+  return (stat (name.c_str(), &buffer) == 0); 
+}
+
 TrajectoryData::TrajectoryData(const Vector &chi, const Vector &alpha, const Vector &t, const Vector &phi, const Vector & flux, const Vector &beta, const Vector &omega, const Vector &alphaOfT, const Vector &tMax): chi(chi), alpha(alpha), t(t), phi(phi), flux(flux), beta(beta), omega(omega), alphaOfT(alphaOfT), tMax(tMax) {}
 
 TrajectoryData read_trajectory_data(std::string filename){
 	int chiSample, alphaSample;
 	double chi, alpha, t, phi, flux, beta, omega;
+
+	double phaseErrorTerm = 1.;
+	double timeErrorTerm = 1.;
+	int errorFlag = 0;
+	std::string errorString0 = "error0";
+	std::string errorString1 = "error1";
+	std::string errorString2 = "error2";
+	std::string errorString3 = "error3";
+	std::string errorString4 = "error4";
+	std::string errorString5 = "error5";
+	std::string errorString6 = "error6";
+	std::string errorString7 = "error7";
+	double epsilon;
+	if(filename.compare(errorString0) == 0){
+		errorFlag = 1;
+		epsilon = 1.e-4;
+		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
+	}else if(filename.compare(errorString1) == 0){
+		errorFlag = 1;
+		epsilon = 5.e-4;
+		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
+	}else if(filename.compare(errorString2) == 0){
+		errorFlag = 1;
+		epsilon = 1.e-5;
+		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
+	}else if(filename.compare(errorString3) == 0){
+		errorFlag = 1;
+		epsilon = 5.e-5;
+		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
+	}else if(filename.compare(errorString4) == 0){
+		errorFlag = 1;
+		epsilon = 1.e-6;
+		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
+	}else if(filename.compare(errorString5) == 0){
+		errorFlag = 1;
+		epsilon = 5.e-6;
+		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
+	}else if(filename.compare(errorString6) == 0){
+		errorFlag = 1;
+		epsilon = 1.e-7;
+		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
+	}else if(filename.compare(errorString7) == 0){
+		errorFlag = 1;
+		epsilon = 7.e-6;
+		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
+	}
+	
+	if(!file_exists(filename)){
+		return TrajectoryData();
+	}
 
 	std::istringstream lin;
 	std::ifstream inFile(filename);
@@ -399,6 +454,10 @@ TrajectoryData read_trajectory_data(std::string filename){
 	}
 	lin >> chiSample >> alphaSample;
 	int n = chiSample*alphaSample;
+	if(n > 500000){
+		n = 1;
+		std::cout << "ERROR: File "<< filename << " does not have appropriate number of samples \n";
+	}
 	Vector chiA(n), alphaA(n), tA(n), phiA(n), fluxA(n), betaA(n), omegaA(n), alphaOfTA(n);
 	int i = 0;
 
@@ -406,10 +465,14 @@ TrajectoryData read_trajectory_data(std::string filename){
 		lin.clear();
 		lin.str(line);
 		if(lin >> chi >> alpha >> flux >> t >> phi >> beta >> omega){
+			if(errorFlag){
+				double omega23 = pow(omega_of_chi_alpha(chi, alpha), 2./3.);
+				phaseErrorTerm = (1. + (1. + epsilon)*3715./1008.*omega23)/(1. + 3715./1008.*omega23);
+			}
 			chiA[i] = chi;
 			alphaA[i] = alpha;
-			tA[i] = sqrt(log(1. + t));
-			phiA[i] = sqrt(log(1. + phi));
+			tA[i] = sqrt(log(1. + t*timeErrorTerm));
+			phiA[i] = sqrt(log(1. + phi*phaseErrorTerm));
 			fluxA[i] = flux;
 			betaA[i] = beta;
 			omegaA[i] = omega;

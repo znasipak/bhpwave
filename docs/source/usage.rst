@@ -56,8 +56,3 @@ Uninstalling
 ------------
 
 In progress...
-
-Quick Tutorial
---------------
-
-In progress...

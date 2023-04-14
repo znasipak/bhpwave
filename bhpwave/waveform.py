@@ -7,21 +7,16 @@ from bhpwaveformcy import (WaveformHarmonicGeneratorPyWrapper,
                            HarmonicAmplitudesPy)
 
 import os
+from bhpwave.constants import *
+
+path_to_file = os.path.dirname(os.path.abspath(__file__))
+traj_path = path_to_file + "/data/trajectory.txt"
+amplitude_path = path_to_file + "/data/circ_data"
 
 try:
     CPU_MAX = len(os.sched_getaffinity(0))
 except:
     CPU_MAX = os.cpu_count()
-
-Modot_MKS = 1.98841e+30 # kg
-GM_MKS = 1.32712440041279419e+20 # m^3/s^2
-c_MKS = 299792458. # m/s
-pc_MKS = 3.0856775814913674e+16 # m
-yr_MKS = 31558149.763545603 # s (sidereal year)
-
-Modot_GC1_to_S = GM_MKS/c_MKS**3
-Modot_GC1_to_M = GM_MKS/c_MKS**2
-Modot_GC1_to_PC = Modot_GC1_to_M/pc_MKS
 
 class KerrCircularWaveformBase:
     """
@@ -43,11 +38,11 @@ class KerrCircularWaveformBase:
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
-            self.trajectory_data = TrajectoryDataPy(dealloc_flag=False)
+            self.trajectory_data = TrajectoryDataPy(filename=traj_path,dealloc_flag=False)
         else:
             self.trajectory_data = trajectory_data
         if harmonic_data is None:
-            self.harmonic_data = HarmonicAmplitudesPy(dealloc_flag=False)
+            self.harmonic_data = HarmonicAmplitudesPy(filebase=amplitude_path,dealloc_flag=False)
         else:
             self.harmonic_data = harmonic_data
 
@@ -139,11 +134,11 @@ class KerrCircularWaveform:
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
-            self.trajectory_data = TrajectoryDataPy(dealloc_flag=False)
+            self.trajectory_data = TrajectoryDataPy(filename=traj_path, dealloc_flag=False)
         else:
             self.trajectory_data = trajectory_data
         if harmonic_data is None:
-            self.harmonic_data = HarmonicAmplitudesPy(dealloc_flag=False)
+            self.harmonic_data = HarmonicAmplitudesPy(filebase=amplitude_path, dealloc_flag=False)
         else:
             self.harmonic_data = harmonic_data
 

@@ -1,6 +1,7 @@
 #ifndef TRAJECTORY_HPP
 #define TRAJECTORY_HPP
 
+#include <sys/stat.h>
 #include <sstream>
 #include <fstream>
 #include <iostream>
