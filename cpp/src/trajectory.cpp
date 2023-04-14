@@ -390,52 +390,6 @@ TrajectoryData::TrajectoryData(const Vector &chi, const Vector &alpha, const Vec
 TrajectoryData read_trajectory_data(std::string filename){
 	int chiSample, alphaSample;
 	double chi, alpha, t, phi, flux, beta, omega;
-
-	double phaseErrorTerm = 1.;
-	double timeErrorTerm = 1.;
-	int errorFlag = 0;
-	std::string errorString0 = "error0";
-	std::string errorString1 = "error1";
-	std::string errorString2 = "error2";
-	std::string errorString3 = "error3";
-	std::string errorString4 = "error4";
-	std::string errorString5 = "error5";
-	std::string errorString6 = "error6";
-	std::string errorString7 = "error7";
-	double epsilon;
-	if(filename.compare(errorString0) == 0){
-		errorFlag = 1;
-		epsilon = 1.e-4;
-		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
-	}else if(filename.compare(errorString1) == 0){
-		errorFlag = 1;
-		epsilon = 5.e-4;
-		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
-	}else if(filename.compare(errorString2) == 0){
-		errorFlag = 1;
-		epsilon = 1.e-5;
-		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
-	}else if(filename.compare(errorString3) == 0){
-		errorFlag = 1;
-		epsilon = 5.e-5;
-		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
-	}else if(filename.compare(errorString4) == 0){
-		errorFlag = 1;
-		epsilon = 1.e-6;
-		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
-	}else if(filename.compare(errorString5) == 0){
-		errorFlag = 1;
-		epsilon = 5.e-6;
-		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
-	}else if(filename.compare(errorString6) == 0){
-		errorFlag = 1;
-		epsilon = 1.e-7;
-		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
-	}else if(filename.compare(errorString7) == 0){
-		errorFlag = 1;
-		epsilon = 7.e-6;
-		filename = "/Users/znasipak/Documents/BHPWave/data/trajectory.txt";
-	}
 	
 	if(!file_exists(filename)){
 		return TrajectoryData();
@@ -465,14 +419,10 @@ TrajectoryData read_trajectory_data(std::string filename){
 		lin.clear();
 		lin.str(line);
 		if(lin >> chi >> alpha >> flux >> t >> phi >> beta >> omega){
-			if(errorFlag){
-				double omega23 = pow(omega_of_chi_alpha(chi, alpha), 2./3.);
-				phaseErrorTerm = (1. + (1. + epsilon)*3715./1008.*omega23)/(1. + 3715./1008.*omega23);
-			}
 			chiA[i] = chi;
 			alphaA[i] = alpha;
-			tA[i] = sqrt(log(1. + t*timeErrorTerm));
-			phiA[i] = sqrt(log(1. + phi*phaseErrorTerm));
+			tA[i] = sqrt(log(1. + t));
+			phiA[i] = sqrt(log(1. + phi));
 			fluxA[i] = flux;
 			betaA[i] = beta;
 			omegaA[i] = omega;
