@@ -1,26 +1,22 @@
 import numpy as np
 from bhpwaveformcy import (WaveformHarmonicGeneratorPyWrapper,
+                           WaveformFourierGeneratorPy,
                            WaveformGeneratorPy,
                            TrajectoryDataPy,
                            InspiralGeneratorPy,
                            HarmonicAmplitudesPy)
 
 import os
+from bhpwave.constants import *
+
+path_to_file = os.path.dirname(os.path.abspath(__file__))
+traj_path = path_to_file + "/data/trajectory.txt"
+amplitude_path = path_to_file + "/data/circ_data"
 
 try:
     CPU_MAX = len(os.sched_getaffinity(0))
 except:
     CPU_MAX = os.cpu_count()
-
-Modot_MKS = 1.98841e+30 # kg
-GM_MKS = 1.32712440041279419e+20 # m^3/s^2
-c_MKS = 299792458. # m/s
-pc_MKS = 3.0856775814913674e+16 # m
-yr_MKS = 31558149.763545603 # s (sidereal year)
-
-Modot_GC1_to_S = GM_MKS/c_MKS**3
-Modot_GC1_to_M = GM_MKS/c_MKS**2
-Modot_GC1_to_PC = Modot_GC1_to_M/pc_MKS
 
 class KerrCircularWaveformBase:
     """
@@ -42,11 +38,11 @@ class KerrCircularWaveformBase:
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
-            self.trajectory_data = TrajectoryDataPy(dealloc_flag=False)
+            self.trajectory_data = TrajectoryDataPy(filename=traj_path,dealloc_flag=False)
         else:
             self.trajectory_data = trajectory_data
         if harmonic_data is None:
-            self.harmonic_data = HarmonicAmplitudesPy(dealloc_flag=False)
+            self.harmonic_data = HarmonicAmplitudesPy(filebase=amplitude_path,dealloc_flag=False)
         else:
             self.harmonic_data = harmonic_data
 
@@ -134,22 +130,25 @@ class KerrCircularWaveform:
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional
     """
-    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
+    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None, frequency_domain=False):
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
-            self.trajectory_data = TrajectoryDataPy(dealloc_flag=False)
+            self.trajectory_data = TrajectoryDataPy(filename=traj_path, dealloc_flag=False)
         else:
             self.trajectory_data = trajectory_data
         if harmonic_data is None:
-            self.harmonic_data = HarmonicAmplitudesPy(dealloc_flag=False)
+            self.harmonic_data = HarmonicAmplitudesPy(filebase=amplitude_path, dealloc_flag=False)
         else:
             self.harmonic_data = harmonic_data
 
         waveform_kwargs = {
             "num_threads": num_threads
         }
-        self.waveform_generator = WaveformGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
+        if frequency_domain:
+            self.waveform_generator = WaveformFourierGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
+        else:
+            self.waveform_generator = WaveformGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
 
     def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
         """
@@ -295,6 +294,25 @@ class KerrWaveform(KerrCircularWaveform):
         else:
             h = self.waveform_generator.waveform(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
         return h
+    
+    def source_frame(self, M, mu, a, p0, theta, phi, Phi_phi0, dt=10., T=1., **kwargs):
+        if "T" in kwargs.keys():
+            T = kwargs["T"]
+        if "dt" in kwargs.keys():
+            dt = kwargs["dt"]
+
+        if "select_modes" in kwargs.keys():
+            lmodes = []
+            mmodes = []
+            for mode in kwargs["select_modes"]:
+                lmodes.append(mode[0])
+                mmodes.append(mode[1])
+            l = np.ascontiguousarray(lmodes)
+            m = np.ascontiguousarray(mmodes)
+            h = self.waveform_generator.waveform_harmonics_source_frame(l, m, M, mu, a, p0, theta, phi, Phi_phi0, dt, T, **kwargs)
+        else:
+            h = self.waveform_generator.waveform_source_frame(M, mu, a, p0, theta, phi, Phi_phi0, dt, T, **kwargs)
+        return h
 
 def source_angles(qS, phiS, qK, phiK):
     """
@@ -433,3 +451,7 @@ def scaled_amplitude(mu, dist):
     :rtype: double
     """
     return Modot_GC1_to_PC*mu/(dist*1.e9)
+
+def frequencies(T, dt):
+    samples = int(T*yr_MKS/dt + 1)
+    return np.fft.rfftfreq(samples, d=dt)

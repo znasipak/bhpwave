@@ -8,7 +8,8 @@ from cython.operator import dereference
 cimport openmp
 import os
 
-cdef unicode default_trajectory_file = '../bhpwave/data/trajectory.txt'
+cdef unicode path_to_file = os.path.dirname(os.path.abspath(__file__))
+cdef unicode default_trajectory_file = '/../data/trajectory.txt'
 
 cdef extern from "trajectory.hpp":
     cdef cppclass TrajectorySpline2D:

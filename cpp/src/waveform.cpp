@@ -241,10 +241,12 @@ HarmonicOptions WaveformHarmonicGenerator::getHarmonicOptions(){
 }
 
 // Waveform Generator
-
 WaveformGenerator::WaveformGenerator(TrajectorySpline2D &traj, HarmonicAmplitudes &harm, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts): WaveformHarmonicGenerator(harm, hOpts, wOpts), _inspiralGen(traj) {}
 
 double WaveformGenerator::convertTime(double t, double M){
+  /*
+  Converts time in seconds to time in M_\odot
+  */
 	return t/solar_mass_to_seconds(M);
 }
 
@@ -378,6 +380,15 @@ void WaveformGenerator::computeWaveformSourceFrame(WaveformContainer &h, double 
 	computeWaveformHarmonics(h, inspiral, theta, phi - Phi_phi0, opts);
 }
 
+void WaveformGenerator::computeWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T){
+	dt = convertTime(dt, M);
+	T = convertTime(years_to_seconds(T), M);
+	WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
+
+	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, opts.num_threads);
+	computeWaveformHarmonics(h, l, m, modeNum, inspiral, theta, phi - Phi_phi0, opts);
+}
+
 void sourceAngles(double &theta, double &phi, double qS, double phiS, double qK, double phiK){
     // Calculate the sky location :math:`(theta, phi)` of the observor in the
     // source frame using the sky location and orientation of the source in
@@ -437,8 +448,4 @@ double years_to_seconds(double years){
 
 double scale_strain_amplitude(double mass1, double distance){
   return mass1/parsecs_to_solar_mass(distance*pow(10., 9));
-}
-
-double scale_fourier_amplitude(double mass1, double mass2, double distance){
-  return solar_mass_to_seconds(mass2)*scale_strain_amplitude(mass1, distance);
 }
