@@ -1,5 +1,9 @@
 from bhpwaveformcy import HarmonicAmplitudesPy
 import numpy as np
+import os
+
+path_to_file = os.path.dirname(os.path.abspath(__file__))
+amp_base = path_to_file + "/../data/circ_data"
 
 class HarmonicAmplitudes:
     """
@@ -30,11 +34,11 @@ class HarmonicAmplitudes:
                 modesLessThanLMAX = lmodes < lmax
                 l = np.ascontiguousarray(lmodes[modesLessThanLMAX])
                 m = np.ascontiguousarray(mmodes[modesLessThanLMAX])
-                self.amplitude_generator = HarmonicAmplitudesPy(l, m, dealloc_flag = False)
+                self.amplitude_generator = HarmonicAmplitudesPy(l, m, file_base=amp_base, dealloc_flag = False)
             else: 
-                self.amplitude_generator = HarmonicAmplitudesPy(dealloc_flag = False)
+                self.amplitude_generator = HarmonicAmplitudesPy(file_base=amp_base, dealloc_flag = False)
         else:
-            self.amplitude_generator = HarmonicAmplitudesPy(dealloc_flag = False)
+            self.amplitude_generator = HarmonicAmplitudesPy(file_base=amp_base, dealloc_flag = False)
 
     def __call__(self, l, m, a, r):
         """
@@ -55,3 +59,10 @@ class HarmonicAmplitudes:
             return self.amplitude_generator.amplitude_array(l, m, a, r)*np.exp(1.j*self.amplitude_generator.phase_array(l, m, a, r))
         
         return self.amplitude_generator.amplitude(l, m, a, r)*np.exp(1.j*self.amplitude_generator.phase(l, m, a, r))
+    
+    @property
+    def base_class(self):
+        """
+        Returns the base Cython class
+        """
+        return self.amplitude_generator
