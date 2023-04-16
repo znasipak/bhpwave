@@ -129,6 +129,8 @@ class KerrCircularWaveform:
     :type harmonic_data: HarmonicAmplitudes or None, optional
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional
+    :param frequency_domain: option to generate waveforms in the frequency domain. It is False by default.
+    :type frequency_domain: bool, optional
     """
     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None, frequency_domain=False):
         if num_threads is None:
@@ -207,11 +209,17 @@ class KerrCircularWaveform:
         :type dt: double, optional
         :param T: Duration of the waveform in years
         :type T: double, optional
+        :param pad_output: True returns the waveform for the full duration T years even if the system merges before T years has elasped
+        :type pad_output: bool, optional
+        :param select_modes: A list of tuples :math:`(l, m)` that select which modes to include in the waveform calculation
+        :type select_modes: list[tuple(double)] or ndarray[tuple(double)], optional
+        :param return_list: True returns the plus and cross polarizations of the waveform as separate ndarrays
+        :type return_list: bool, optional
 
         :rtype: 1d-array[complex]
         """
         h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
-        return h.plus - 1.j*h.cross
+        return h
 
 class KerrWaveform(KerrCircularWaveform):
     """
@@ -228,7 +236,8 @@ class KerrWaveform(KerrCircularWaveform):
     :type harmonic_data: HarmonicAmplitudes or None, optional
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional  
-
+    :param frequency_domain: option to generate waveforms in the frequency domain. It is False by default.
+    :type frequency_domain: bool, optional
     """
     def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
         """
@@ -295,7 +304,39 @@ class KerrWaveform(KerrCircularWaveform):
             h = self.waveform_generator.waveform(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
         return h
     
-    def source_frame(self, M, mu, a, p0, theta, phi, Phi_phi0, dt=10., T=1., **kwargs):
+    def source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt=10., T=1., **kwargs):
+        """
+        Calculate the scaled gravitational wave strain :math:`$r\\times h/\\mu$` in the source frame
+
+        :param M: mass (in solar masses) of the massive black hole
+        :type M: double
+        :param mu: mass (in solar masses) of the (smaller) stellar-mass compact object
+        :type mu: double
+        :param a: dimensionless black hole spin
+        :type a: double
+        :param r0: initial radial separation
+        :type r0: double
+        :param theta: polar angle of the observor with respect to the Kerr spin vector
+        :type theta: double
+        :param phi: azimuthal angle of the observor with respect to the Kerr spin vector
+        :type phi: double
+        :param Phi_phi0: Initial azimuthal position of the small compact object
+        :type Phi_phi0: double
+        :param dt: Spacing of time samples in seconds. Default is 10 seconds.
+        :type dt: double, optional
+        :param T: Duration of the waveform in years. Default is 1 year.
+        :type T: double, optional
+
+        :param pad_output: True returns the waveform for the full duration T years even if the system merges before T years has elasped
+        :type pad_output: bool, optional
+        :param select_modes: A list of tuples :math:`(l, m)` that select which modes to include in the waveform calculation
+        :type select_modes: list[tuple(double)] or ndarray[tuple(double)], optional
+        :param return_list: True returns the plus and cross polarizations of the waveform as separate ndarrays
+        :type return_list: bool, optional
+        
+        :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
+
+        """
         if "T" in kwargs.keys():
             T = kwargs["T"]
         if "dt" in kwargs.keys():
@@ -309,9 +350,9 @@ class KerrWaveform(KerrCircularWaveform):
                 mmodes.append(mode[1])
             l = np.ascontiguousarray(lmodes)
             m = np.ascontiguousarray(mmodes)
-            h = self.waveform_generator.waveform_harmonics_source_frame(l, m, M, mu, a, p0, theta, phi, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics_source_frame(l, m, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs)
         else:
-            h = self.waveform_generator.waveform_source_frame(M, mu, a, p0, theta, phi, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_source_frame(M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs)
         return h
 
 def source_angles(qS, phiS, qK, phiK):
@@ -452,6 +493,17 @@ def scaled_amplitude(mu, dist):
     """
     return Modot_GC1_to_PC*mu/(dist*1.e9)
 
-def frequencies(T, dt):
+def frequencies(dt, T):
+    """
+    Frequency sampling of the frequency-domain gravitational wave signal for a given
+    time step and signal duration
+
+    :param dt: time step in seconds
+    :type dt: double
+    :param T: signal duration in years
+    :type T: double
+
+    :rtype: array[double]
+    """
     samples = int(T*yr_MKS/dt + 1)
     return np.fft.rfftfreq(samples, d=dt)

@@ -52,7 +52,33 @@ Finally, we recommend installing the package via :code:`pip`:
 
     $ pip install .
 
+Conda Environments with Jupyter
+-------------------------------
+
+To run the code in a jupyter notebook, we recommend :code:`pip` installing
+the following dependencies: 
+
+.. code-block:: console
+
+    $ pip install ipykernel matplotlib
+
+One can then make the environment accessible within jupyter by
+running
+
+.. code-block:: console
+
+    $ python -m ipykernel install --user --name=bhpwave-env
+
 Uninstalling
 ------------
 
-In progress...
+If the package is installed using :code:`pip`, then one can easily uninstall the package
+using :code:`pip` as well
+
+.. code-block:: console
+
+    $ pip uninstall bhpwave
+
+To clean the repository, one will also need to remove the directories
+:code:`build` and :code:`bhpwave.egg-info` from the main repository
+
