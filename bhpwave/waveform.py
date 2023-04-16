@@ -306,7 +306,7 @@ class KerrWaveform(KerrCircularWaveform):
     
     def source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt=10., T=1., **kwargs):
         """
-        Calculate the scaled gravitational wave strain :math:`$r\\times h/\\mu$` in the source frame
+        Calculate the scaled gravitational wave strain :math:`r\\times h/\\mu` in the source frame
 
         :param M: mass (in solar masses) of the massive black hole
         :type M: double
