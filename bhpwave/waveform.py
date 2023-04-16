@@ -30,7 +30,7 @@ class KerrCircularWaveformBase:
     :param trajectory_data: a TrajectoryData class which holds interpolants of the relevant trajectory data
     :type trajectory_data: TrajectoryData or None, optional
     :param harmonic_data: a HarmonicAmplitudes class which holds interpolants of the harmonic mode amplitudes
-    :type harmonic_data: TrajectoryData or None, optional
+    :type harmonic_data: HarmonicAmplitudes or None, optional
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional
     """
@@ -126,7 +126,7 @@ class KerrCircularWaveform:
     :param trajectory_data: a TrajectoryData class which holds interpolants of the relevant trajectory data
     :type trajectory_data: TrajectoryData or None, optional
     :param harmonic_data: a HarmonicAmplitudes class which holds interpolants of the harmonic mode amplitudes
-    :type harmonic_data: TrajectoryData or None, optional
+    :type harmonic_data: HarmonicAmplitudes or None, optional
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional
     """
@@ -222,10 +222,10 @@ class KerrWaveform(KerrCircularWaveform):
     Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
     parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
 
-    :param trajectory_data: a TrajectoryDataPy class which holds interpolants of the relevant trajectory data
-    :type trajectory_data: TrajectoryDataPy or None, optional
-    :param harmonic_data: a HarmonicAmplitudesPy class which holds interpolants of the harmonic mode amplitudes
-    :type harmonic_data: TrajectoryDataPy or None, optional
+    :param trajectory_data: a TrajectoryData class which holds interpolants of the relevant trajectory data
+    :type trajectory_data: TrajectoryData or None, optional
+    :param harmonic_data: a HarmonicAmplitudes class which holds interpolants of the harmonic mode amplitudes
+    :type harmonic_data: HarmonicAmplitudes or None, optional
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional  
 
