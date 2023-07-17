@@ -45,15 +45,6 @@ fourier_dependence = ["cpp/src/fourier.cpp", *waveform_dependence]
 
 full_dependence = [*fourier_dependence]
 
-lib_extension = dict(
-    sources = [*set(full_dependence)],
-    # libraries=["gsl", "gslcblas", "lapack", "lapacke", "omp"],
-    libraries=libraries,
-    language='c++',
-    include_dirs = ["cpp/include", base_path + "/include"],
-)
-bhpwavecpp = ['bhpwavecpp', lib_extension]
-
 cpu_extension = dict(
     libraries=libraries,
     language='c++',
@@ -62,13 +53,13 @@ cpu_extension = dict(
 
 swsh_ext = Extension(
     "bhpswshcy", 
-    sources=["cython/swsh_wrap.pyx"], 
+    sources=["cython/swsh_wrap.pyx", *set(swsh_dependence)], 
     **cpu_extension,
 )
 
 wave_ext = Extension(
     "bhpwaveformcy", 
-    sources=["cython/waveform_wrap.pyx"], 
+    sources=["cython/waveform_wrap.pyx", *set(full_dependence)], 
     **cpu_extension,
 )
 
@@ -89,7 +80,6 @@ setup(
         "Programming Language :: C++",
         "Programming Language :: Cython",
     ],
-    libraries = [bhpwavecpp],
     cmdclass = {'build_ext': build_ext},
     package_data = {"bhpwave.data": ["*.txt"]},
     include_package_data = True,

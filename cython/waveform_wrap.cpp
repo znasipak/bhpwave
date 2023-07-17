@@ -28,7 +28,13 @@
         ],
         "name": "bhpwaveformcy",
         "sources": [
-            "cython/waveform_wrap.pyx"
+            "cython/waveform_wrap.pyx",
+            "cpp/src/spline.cpp",
+            "cpp/src/swsh.cpp",
+            "cpp/src/trajectory.cpp",
+            "cpp/src/fourier.cpp",
+            "cpp/src/harmonics.cpp",
+            "cpp/src/waveform.cpp"
         ]
     },
     "module_name": "bhpwaveformcy"
