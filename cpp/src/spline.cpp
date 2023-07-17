@@ -228,26 +228,26 @@ int Matrix::size() const{
 
 void Matrix::row_replace(int i, Vector row){
 	for(int j = 0; j < _m; j++){
-		_A[j*_m + i] = row[j];
+		_A[i*_m + j] = row[j];
 	}
 }
 void Matrix::col_replace(int i, Vector col){
 	for(int j = 0; j < _n; j++){
-		_A[i*_m + j] = col[j];
+		_A[j*_m + i] = col[j];
 	}
 }
 
 Vector Matrix::row(int i){
 	Vector row(_m);
 	for(int j = 0; j < _m; j++){
-		row[j] = _A[j*_m + i];
+		row[j] = _A[i*_m + j];
 	}
 	return row;
 }
 Vector Matrix::col(int i){
 	Vector col(_n);
 	for(int j = 0; j < _n; j++){
-		col[j] = _A[i*_m + j];
+		col[j] = _A[j*_m + i];
 	}
 	return col;
 }
@@ -296,6 +296,10 @@ void Matrix::transposeInPlace(){
 	_m = m;
 }
 
+void Matrix::set_value(int i, int j, double val){
+	_A[i*_m + j] = val;
+}
+
 double& Matrix::operator()(int i, int j){
 	return _A[i*_m + j];
 }
@@ -337,8 +341,8 @@ double StopWatch::time(){
 //////////////          BicubicInterpolator       ////////////////
 //////////////////////////////////////////////////////////////////
 
-BicubicInterpolator::BicubicInterpolator(const Vector &x, const Vector &y, const Matrix &z): BicubicInterpolator(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z) {}
-BicubicInterpolator::BicubicInterpolator(double x0, double dx, int nx, double y0, double dy, int ny, const Matrix &z): dx(dx), dy(dy), nx(nx), ny(ny), x0(x0), y0(y0), cij(nx, 16*ny) {
+BicubicInterpolator::BicubicInterpolator(const Vector &x, const Vector &y, Matrix &z): BicubicInterpolator(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z) {}
+BicubicInterpolator::BicubicInterpolator(double x0, double dx, int nx, double y0, double dy, int ny, Matrix &z): dx(dx), dy(dy), nx(nx), ny(ny), x0(x0), y0(y0), cij(nx, 16*ny) {
 	if(nx + 1 != z.rows() && ny + 1 != z.cols()){
 		if(nx + 1 == z.cols() && ny + 1 == z.rows()){
 			// switch x and y
@@ -391,11 +395,37 @@ double BicubicInterpolator::derivative_yy(const double x, const double y){
 	return evaluateDerivativeYYInterval(i, j, x, y)/dy/dy;
 }
 
+Matrix BicubicInterpolator::computeSplineCoefficientsDY(Matrix &m_z){
+	int Nx = m_z.rows();
+	int Ny = m_z.cols();
+	Matrix m_zdy(Nx, Ny);
+	for(int i = 0; i < Nx; i++){
+		Vector z_xi = m_z.row(i);
+		CubicInterpolator f_xi = CubicInterpolator(y0, dy, z_xi);
+		for(int j = 0; j < Ny; j++){
+			m_zdy(i, j) = dy*f_xi.derivative(y0 + j*dy);
+		}
+	}
+	return m_zdy; 
+}
 
-void BicubicInterpolator::computeSplineCoefficients(const Matrix &m_z){
+Matrix BicubicInterpolator::computeSplineCoefficientsDX(Matrix &m_z){
+	int Nx = m_z.rows();
+	int Ny = m_z.cols();
+	Matrix m_zdx(Nx, Ny);
+	for(int j = 0; j < Ny; j++){
+		Vector z_yj = m_z.col(j);
+		CubicInterpolator f_yj = CubicInterpolator(x0, dx, z_yj);
+		for(int i = 0; i < Nx; i++){
+			m_zdx(i, j) = dx*f_yj.derivative(x0 + i*dx);
+		}
+	}
+	return m_zdx; 
+}
+
+void BicubicInterpolator::computeSplineCoefficients(Matrix &m_z){
 	StopWatch watch;
 
-	watch.start();
 	Matrix lmat(4, 4, 0.);
 	lmat(0, 0) = 1.;
 	lmat(1, 2) = 1.;
@@ -408,149 +438,25 @@ void BicubicInterpolator::computeSplineCoefficients(const Matrix &m_z){
 	lmat(3, 2) = 1.;
 	lmat(3, 3) = 1.;
 	
-	// 4th-order central difference coefficients
-	Vector diffopCentral = {1./12., -8./12., 0., 8./12., -1./12.};
-	// 4th-order forward difference coefficients
-	Vector diffopForward = {-25./12., 4., -3., 4./3., -1./4};
-	Matrix m_zdy(m_z.rows(), m_z.cols());
+	Matrix m_zdx = computeSplineCoefficientsDX(m_z);
+	Matrix m_zdy = computeSplineCoefficientsDY(m_z);
+	Matrix m_zdxdy = computeSplineCoefficientsDY(m_zdx);
+	// Matrix m_zdxdy2 = computeSplineCoefficientsDX(m_zdy);
 
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < m_zdy.rows(); i++){
-				for(int j = 0; j < 2; j++){
-					double sum = 0.;
-					for(int k = 0; k < 5; k++){
-						sum += m_z(i, j + k)*diffopForward[k];
-					}
-					m_zdy(i, j) = sum;
-				}
-			}
-	}
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < m_zdy.rows(); i++){
-				for(int j = 2; j < m_zdy.cols() - 2; j++){
-					double sum = 0.;
-					for(int k = 0; k < 5; k++){
-						sum += m_z(i, j - 2 + k)*diffopCentral[k];
-					}
-					m_zdy(i, j) = sum;
-				}
-			}
-	}
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < m_zdy.rows(); i++){
-				for(int j = m_zdy.cols() - 2; j < m_zdy.cols(); j++){
-					double sum = 0.;
-					for(int k = 0; k < 5; k++){
-						sum += -m_z(i, j - k)*diffopForward[k];
-					}
-					m_zdy(i, j) = sum;
-				}
-			}
-	}
-	watch.stop();
-	watch.print();
-	watch.reset();
-
-	watch.start();
-	// Might be more efficient to transpose m_z here to take advantage of
-	// row-major ordering
-	Matrix m_zT = m_z.transpose();
-	Matrix m_zdxT(m_zT.rows(), m_zT.cols());
-
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-		for(int i = 0; i < m_zdxT.rows(); i++){
-			for(int j = 0; j < 2; j++){
-				double sum = 0.;
-				for(int k = 0; k < 5; k++){
-					sum += m_zT(i, j + k)*diffopForward[k];
-				}
-				m_zdxT(i, j) = sum;
-			}
-		}
-	}
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < m_zdxT.rows(); i++){
-				for(int j = 2; j < m_zdxT.cols() - 2; j++){
-					double sum = 0.;
-					for(int k = 0; k < 5; k++){
-						sum += m_zT(i, j - 2 + k)*diffopCentral[k];
-					}
-					m_zdxT(i, j) = sum;
-				}
-			}
-	}
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < m_zdxT.rows(); i++){
-				for(int j = m_zdxT.cols() - 2; j < m_zdxT.cols(); j++){
-					double sum = 0.;
-					for(int k = 0; k < 5; k++){
-						sum += -m_zT(i, j - k)*diffopForward[k];
-					}
-					m_zdxT(i, j) = sum;
-				}
-			}
-	}
-	Matrix m_zdx = m_zdxT.transpose();
-	watch.stop();
-	watch.print();
-	watch.reset();
-	
-	watch.start();
-	Matrix m_zdxdy(m_zdx.rows(), m_zdx.cols());
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < m_zdxdy.rows(); i++){
-				for(int j = 0; j < 2; j++){
-					double sum = 0.;
-					for(int k = 0; k < 5; k++){
-						sum += m_zdx(i, j + k)*diffopForward[k];
-					}
-					m_zdxdy(i, j) = sum;
-				}
-			}
-	}
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < m_zdxdy.rows(); i++){
-				for(int j = 2; j < m_zdxdy.cols() - 2; j++){
-					double sum = 0.;
-					for(int k = 0; k < 5; k++){
-						sum += m_zdx(i, j - 2 + k)*diffopCentral[k];
-					}
-					m_zdxdy(i, j) = sum;
-				}
-			}
-	}
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-			for(int i = 0; i < m_zdxdy.rows(); i++){
-				for(int j = m_zdxdy.cols() - 2; j < m_zdxdy.cols(); j++){
-					double sum = 0.;
-					for(int k = 0; k < 5; k++){
-						sum += m_zdx(i, j - k)*diffopForward[k];
-					}
-					m_zdxdy(i, j) = sum;
-				}
-			}
-	}
-	watch.stop();
-	watch.print();
-	watch.reset();
+	// int Nx = m_z.rows();
+	// int Ny = m_z.cols();
+	// for(int i = 0; i < Nx; i++){
+	// 	for(int j = 0; j < Ny; j++){
+	// 		// if(j == 0){
+	// 		// 	std::cout << "dx = " << m_zdx(i, j) << "\n";
+	// 		// }
+	// 		// if(i == 0){
+	// 		// 	std::cout << "dy = " << m_zdy(i, j) << "\n";
+	// 		// }
+	// 		std::cout << m_zdxdy2(i, j) << "\n";
+	// 		std::cout << m_zdxdy(i, j) << "\n";
+	// 	}
+	// }
 
 	// now this part we just have to accept as being inefficient because we
 	// are mixing rows and columns no matter what. The important thing is that
@@ -585,20 +491,17 @@ void BicubicInterpolator::computeSplineCoefficients(const Matrix &m_z){
 					for(int k = 0; k < 4; k++){
 						for(int l = 0; l < 4; l++){
 							for(int m = 0; m < 4; m++){
-								Dmat(l, k) += dmat(k, m)*lmat(k, m);
-							}
-							for(int m = 0; m < 4; m++){
-								cij(i, 16*j + 4*k + l) += lmat(k, m)*Dmat(k, m);
+								Dmat(k, l) += dmat(k, m)*lmat(l, m); // need transpose of lmat
 							}
 						}
 					}
-					// for(int k = 0; k < 4; k++){
-					// 	for(int l = 0; l < 4; l++){
-					// 		for(int m = 0; m < 4; m++){
-					// 			cij(i, 16*j + 4*k + l) += lmat(k, m)*Dmat(k, m);
-					// 		}
-					// 	}
-					// }
+					for(int k = 0; k < 4; k++){
+						for(int l = 0; l < 4; l++){
+							for(int m = 0; m < 4; m++){
+								cij(i, 16*j + 4*k + l) += lmat(k, m)*Dmat(m, l);
+							}
+						}
+					}
 				}
 			}
 	}
@@ -607,25 +510,248 @@ void BicubicInterpolator::computeSplineCoefficients(const Matrix &m_z){
 	watch.reset();
 }
 
+// void BicubicInterpolator::computeSplineCoefficients(Matrix &m_z){
+// 	StopWatch watch;
+
+// 	watch.start();
+// 	Matrix lmat(4, 4, 0.);
+// 	lmat(0, 0) = 1.;
+// 	lmat(1, 2) = 1.;
+// 	lmat(2, 0) = -3.;
+// 	lmat(2, 1) = 3.;
+// 	lmat(2, 2) = -2.;
+// 	lmat(2, 3) = -1.;
+// 	lmat(3, 0) = 2.;
+// 	lmat(3, 1) = -2.;
+// 	lmat(3, 2) = 1.;
+// 	lmat(3, 3) = 1.;
+	
+// 	// 4th-order central difference coefficients
+// 	Vector diffopCentral = {1./12., -8./12., 0., 8./12., -1./12.};
+// 	// 4th-order forward difference coefficients
+// 	Vector diffopForward = {-25./12., 4., -3., 4./3., -1./4};
+// 	Matrix m_zdy(m_z.rows(), m_z.cols());
+
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 			for(int i = 0; i < m_zdy.rows(); i++){
+// 				for(int j = 0; j < 2; j++){
+// 					double sum = 0.;
+// 					for(int k = 0; k < 5; k++){
+// 						sum += m_z(i, j + k)*diffopForward[k];
+// 					}
+// 					m_zdy(i, j) = sum;
+// 				}
+// 			}
+// 	}
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 			for(int i = 0; i < m_zdy.rows(); i++){
+// 				for(int j = 2; j < m_zdy.cols() - 2; j++){
+// 					double sum = 0.;
+// 					for(int k = 0; k < 5; k++){
+// 						sum += m_z(i, j - 2 + k)*diffopCentral[k];
+// 					}
+// 					m_zdy(i, j) = sum;
+// 				}
+// 			}
+// 	}
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 			for(int i = 0; i < m_zdy.rows(); i++){
+// 				for(int j = m_zdy.cols() - 2; j < m_zdy.cols(); j++){
+// 					double sum = 0.;
+// 					for(int k = 0; k < 5; k++){
+// 						sum += -m_z(i, j - k)*diffopForward[k];
+// 					}
+// 					m_zdy(i, j) = sum;
+// 				}
+// 			}
+// 	}
+// 	watch.stop();
+// 	watch.print();
+// 	watch.reset();
+
+// 	watch.start();
+// 	// Might be more efficient to transpose m_z here to take advantage of
+// 	// row-major ordering
+// 	Matrix m_zT = m_z.transpose();
+// 	Matrix m_zdxT(m_zT.rows(), m_zT.cols());
+
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 		for(int i = 0; i < m_zdxT.rows(); i++){
+// 			for(int j = 0; j < 2; j++){
+// 				double sum = 0.;
+// 				for(int k = 0; k < 5; k++){
+// 					sum += m_zT(i, j + k)*diffopForward[k];
+// 				}
+// 				m_zdxT(i, j) = sum;
+// 			}
+// 		}
+// 	}
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 			for(int i = 0; i < m_zdxT.rows(); i++){
+// 				for(int j = 2; j < m_zdxT.cols() - 2; j++){
+// 					double sum = 0.;
+// 					for(int k = 0; k < 5; k++){
+// 						sum += m_zT(i, j - 2 + k)*diffopCentral[k];
+// 					}
+// 					m_zdxT(i, j) = sum;
+// 				}
+// 			}
+// 	}
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 			for(int i = 0; i < m_zdxT.rows(); i++){
+// 				for(int j = m_zdxT.cols() - 2; j < m_zdxT.cols(); j++){
+// 					double sum = 0.;
+// 					for(int k = 0; k < 5; k++){
+// 						sum += -m_zT(i, j - k)*diffopForward[k];
+// 					}
+// 					m_zdxT(i, j) = sum;
+// 				}
+// 			}
+// 	}
+// 	Matrix m_zdx = m_zdxT.transpose();
+// 	watch.stop();
+// 	watch.print();
+// 	watch.reset();
+	
+// 	watch.start();
+// 	Matrix m_zdxdy(m_zdx.rows(), m_zdx.cols());
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 			for(int i = 0; i < m_zdxdy.rows(); i++){
+// 				for(int j = 0; j < 2; j++){
+// 					double sum = 0.;
+// 					for(int k = 0; k < 5; k++){
+// 						sum += m_zdx(i, j + k)*diffopForward[k];
+// 					}
+// 					m_zdxdy(i, j) = sum;
+// 				}
+// 			}
+// 	}
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 			for(int i = 0; i < m_zdxdy.rows(); i++){
+// 				for(int j = 2; j < m_zdxdy.cols() - 2; j++){
+// 					double sum = 0.;
+// 					for(int k = 0; k < 5; k++){
+// 						sum += m_zdx(i, j - 2 + k)*diffopCentral[k];
+// 					}
+// 					m_zdxdy(i, j) = sum;
+// 				}
+// 			}
+// 	}
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 			for(int i = 0; i < m_zdxdy.rows(); i++){
+// 				for(int j = m_zdxdy.cols() - 2; j < m_zdxdy.cols(); j++){
+// 					double sum = 0.;
+// 					for(int k = 0; k < 5; k++){
+// 						sum += m_zdx(i, j - k)*diffopForward[k];
+// 					}
+// 					m_zdxdy(i, j) = sum;
+// 				}
+// 			}
+// 	}
+// 	watch.stop();
+// 	watch.print();
+// 	watch.reset();
+
+// 	// now this part we just have to accept as being inefficient because we
+// 	// are mixing rows and columns no matter what. The important thing is that
+// 	// we will store the relevant cofficients close to one another in memory
+
+// 	watch.start();
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2) schedule(dynamic, 16)
+// 			for(int i = 0; i < nx; i++){
+// 				for(int j = 0; j < ny; j++){
+// 					Matrix dmat(4, 4);
+// 					dmat(0, 0) = m_z(i, j); // f(0,0)
+// 					dmat(0, 1) = m_z(i, j + 1); // f(0,1)
+// 					dmat(0, 2) = m_zdy(i, j); // fy(0,0)
+// 					dmat(0, 3) = m_zdy(i, j + 1); // fy(0,1)
+// 					dmat(1, 0) = m_z(i + 1, j); // f(1,0)
+// 					dmat(1, 1) = m_z(i + 1, j + 1); // f(1,1)
+// 					dmat(1, 2) = m_zdy(i + 1, j); // fy(1,0)
+// 					dmat(1, 3) = m_zdy(i + 1, j + 1); // fy(1,1)
+// 					dmat(2, 0) = m_zdx(i, j); // fx(0,0)
+// 					dmat(2, 1) = m_zdx(i, j + 1); // fx(0,1)
+// 					dmat(2, 2) = m_zdxdy(i, j); // fxy(0,0)
+// 					dmat(2, 3) = m_zdxdy(i, j + 1); // fxy(0,1)
+// 					dmat(3, 0) = m_zdx(i + 1, j); // fx(1,0)
+// 					dmat(3, 1) = m_zdx(i + 1, j + 1); // fx(1,1)
+// 					dmat(3, 2) = m_zdxdy(i + 1, j); // fxy(1,0)
+// 					dmat(3, 3) = m_zdxdy(i + 1, j + 1); // fxy(1,1)
+
+// 					// this part is slow. Just lots of matrix multiplication
+// 					Matrix Dmat(4, 4);
+// 					for(int k = 0; k < 4; k++){
+// 						for(int l = 0; l < 4; l++){
+// 							for(int m = 0; m < 4; m++){
+// 								Dmat(l, k) += dmat(k, m)*lmat(k, m);
+// 							}
+// 							for(int m = 0; m < 4; m++){
+// 								cij(i, 16*j + 4*k + l) += lmat(k, m)*Dmat(k, m);
+// 							}
+// 						}
+// 					}
+// 					// for(int k = 0; k < 4; k++){
+// 					// 	for(int l = 0; l < 4; l++){
+// 					// 		for(int m = 0; m < 4; m++){
+// 					// 			cij(i, 16*j + 4*k + l) += lmat(k, m)*Dmat(k, m);
+// 					// 		}
+// 					// 	}
+// 					// }
+// 				}
+// 			}
+// 	}
+// 	watch.stop();
+// 	watch.print();
+// 	watch.reset();
+// }
+
 double BicubicInterpolator::evaluateInterval(int i, int j, const double x, const double y){
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
-	double xvec[4] = {1, xbar, xbar*xbar, xbar*xbar*xbar};
-	double yvec[4] = {1, ybar, ybar*ybar, ybar*ybar*ybar};
-	double zvec[4] = {0., 0., 0., 0.};
-	double result = 0.;
+	// double xvec[4] = {1, xbar, xbar*xbar, xbar*xbar*xbar};
+	// double yvec[4] = {1, ybar, ybar*ybar, ybar*ybar*ybar};
+	// double zvec[4] = {0., 0., 0., 0.};
+	// double result = 0.;
+	double zvec[4];
+	double result;
 
-	// zj = cij*yi
+	// // zj = cij*yi
+	// for(int k = 0; k < 4; k++){
+	// 	for(int l = 0; l < 4; l++){
+	// 		zvec[k] += cij(i, 16*j + 4*k + l)*yvec[l];
+	// 	}
+	// }
+
+	// // result = xj*zj
+	// for(int k = 0; k < 4; k++){
+	// 	result += xvec[k]*zvec[k];
+	// }
+
 	for(int k = 0; k < 4; k++){
-		for(int l = 0; l < 4; l++){
-			zvec[k] += cij(i, 16*j + 4*k + l)*yvec[l];
-		}
+		zvec[k] = cij(i, 16*j + 4*k + 0) + ybar*(cij(i, 16*j + 4*k + 1) + ybar*(cij(i, 16*j + 4*k + 2) + cij(i, 16*j + 4*k + 3)*ybar));
 	}
 
-	// result = xj*zj
-	for(int k = 0; k < 4; k++){
-		result += xvec[k]*zvec[k];
-	}
+	result = zvec[0] + xbar*(zvec[1] + xbar*(zvec[2] + zvec[3]*xbar));
 
 	return result;
 }
@@ -634,22 +760,31 @@ double BicubicInterpolator::evaluateDerivativeXInterval(int i, int j, const doub
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	
-	double xvec[3] = {1., 2.*xbar, 3.*xbar*xbar};
-	double yvec[4] = {1, ybar, ybar*ybar, ybar*ybar*ybar};
-	double zvec[3] = {0., 0., 0.};
-	double result = 0.;
+	// double xvec[3] = {1., 2.*xbar, 3.*xbar*xbar};
+	// double yvec[4] = {1, ybar, ybar*ybar, ybar*ybar*ybar};
+	// double zvec[3] = {0., 0., 0.};
+	// double result = 0.;
 
-	// zj = cij*yi
-	for(int k = 0; k < 3; k++){
-		for(int l = 0; l < 4; l++){
-			zvec[k] += cij(i, 16*j + 4*(1 + k) + l)*yvec[l];
-		}
+	double zvec[4];
+	double result;
+
+	// // zj = cij*yi
+	// for(int k = 0; k < 3; k++){
+	// 	for(int l = 0; l < 4; l++){
+	// 		zvec[k] += cij(i, 16*j + 4*(1 + k) + l)*yvec[l];
+	// 	}
+	// }
+
+	// // result = xj*zj
+	// for(int k = 0; k < 3; k++){
+	// 	result += xvec[k]*zvec[k];
+	// }
+
+	for(int k = 0; k < 4; k++){
+		zvec[k] = cij(i, 16*j + 4*k + 0) + ybar*(cij(i, 16*j + 4*k + 1) + ybar*(cij(i, 16*j + 4*k + 2) + cij(i, 16*j + 4*k + 3)*ybar));
 	}
 
-	// result = xj*zj
-	for(int k = 0; k < 3; k++){
-		result += xvec[k]*zvec[k];
-	}
+	result = (zvec[1] + xbar*(2.*zvec[2] + 3.*zvec[3]*xbar));
 
 	return result;
 }
@@ -658,22 +793,30 @@ double BicubicInterpolator::evaluateDerivativeYInterval(int i, int j, const doub
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 
-	double xvec[4] = {1, xbar, xbar*xbar, xbar*xbar*xbar};
-	double yvec[3] = {1., 2.*ybar, 3.*ybar*ybar};
-	double zvec[4] = {0., 0., 0., 0.};
-	double result = 0.;
+	// double xvec[4] = {1, xbar, xbar*xbar, xbar*xbar*xbar};
+	// double yvec[3] = {1., 2.*ybar, 3.*ybar*ybar};
+	// double zvec[4] = {0., 0., 0., 0.};
+	// double result = 0.;
+
+	double zvec[4];
+	double result;
 
 	// zj = cij*yi
+	// for(int k = 0; k < 4; k++){
+	// 	for(int l = 0; l < 3; l++){
+	// 		zvec[k] += cij(i, 16*j + 4*k + (l + 1))*yvec[l];
+	// 	}
+	// }
+
+	// // result = xj*zj
+	// for(int k = 0; k < 4; k++){
+	// 	result += xvec[k]*zvec[k];
+	// }
 	for(int k = 0; k < 4; k++){
-		for(int l = 0; l < 3; l++){
-			zvec[k] += cij(i, 16*j + 4*k + (l + 1))*yvec[l];
-		}
+		zvec[k] = cij(i, 16*j + 4*k + 1) + ybar*(2.*cij(i, 16*j + 4*k + 2) + 3.*cij(i, 16*j + 4*k + 3)*ybar);
 	}
 
-	// result = xj*zj
-	for(int k = 0; k < 4; k++){
-		result += xvec[k]*zvec[k];
-	}
+	result = zvec[0] + xbar*(zvec[1] + xbar*(zvec[2] + zvec[3]*xbar));
 	
 	return result;
 }
@@ -682,22 +825,30 @@ double BicubicInterpolator::evaluateDerivativeXYInterval(int i, int j, const dou
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	
-	double xvec[3] = {1., 2.*xbar, 3.*xbar*xbar};
-	double yvec[3] = {1., 2.*ybar, 3.*ybar*ybar};
-	double zvec[3] = {0., 0., 0.};
-	double result = 0.;
+	// double xvec[3] = {1., 2.*xbar, 3.*xbar*xbar};
+	// double yvec[3] = {1., 2.*ybar, 3.*ybar*ybar};
+	// double zvec[3] = {0., 0., 0.};
+	// double result = 0.;
+	double zvec[4];
+	double result;
 
 	// zj = cij*yi
-	for(int k = 0; k < 3; k++){
-		for(int l = 0; l < 3; l++){
-			zvec[k] += cij(i, 16*j + 4*(k + 1) + (l + 1))*yvec[l];
-		}
+	// for(int k = 0; k < 3; k++){
+	// 	for(int l = 0; l < 3; l++){
+	// 		zvec[k] += cij(i, 16*j + 4*(k + 1) + (l + 1))*yvec[l];
+	// 	}
+	// }
+
+	// // result = xj*zj
+	// for(int k = 0; k < 3; k++){
+	// 	result += xvec[k]*zvec[k];
+	// }
+
+	for(int k = 0; k < 4; k++){
+		zvec[k] = (cij(i, 16*j + 4*k + 1) + ybar*(2.*cij(i, 16*j + 4*k + 2) + 3.*cij(i, 16*j + 4*k + 3)*ybar));
 	}
 
-	// result = xj*zj
-	for(int k = 0; k < 3; k++){
-		result += xvec[k]*zvec[k];
-	}
+	result = (zvec[1] + xbar*(2.*zvec[2] + 3.*zvec[3]*xbar));
 	
 	return result;
 }
@@ -706,22 +857,30 @@ double BicubicInterpolator::evaluateDerivativeXXInterval(int i, int j, const dou
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	
-	double xvec[2] = {2., 6.*xbar};
-	double yvec[4] = {1, ybar, ybar*ybar, ybar*ybar*ybar};
-	double zvec[2] = {0., 0.};
-	double result = 0.;
+	// double xvec[2] = {2., 6.*xbar};
+	// double yvec[4] = {1, ybar, ybar*ybar, ybar*ybar*ybar};
+	// double zvec[2] = {0., 0.};
+	// double result = 0.;
+	double zvec[4];
+	double result;
 
-	// zj = cij*yi
-	for(int k = 0; k < 2; k++){
-		for(int l = 0; l < 4; l++){
-			zvec[k] += cij(i, 16*j + 4*(2 + k) + l)*yvec[l];
-		}
+	// // zj = cij*yi
+	// for(int k = 0; k < 2; k++){
+	// 	for(int l = 0; l < 4; l++){
+	// 		zvec[k] += cij(i, 16*j + 4*(2 + k) + l)*yvec[l];
+	// 	}
+	// }
+
+	// // result = xj*zj
+	// for(int k = 0; k < 2; k++){
+	// 	result += xvec[k]*zvec[k];
+	// }
+
+	for(int k = 0; k < 4; k++){
+		zvec[k] = cij(i, 16*j + 4*k + 0) + ybar*(cij(i, 16*j + 4*k + 1) + ybar*(cij(i, 16*j + 4*k + 2) + cij(i, 16*j + 4*k + 3)*ybar));
 	}
 
-	// result = xj*zj
-	for(int k = 0; k < 2; k++){
-		result += xvec[k]*zvec[k];
-	}
+	result = 2.*(zvec[2] + 3.*zvec[3]*xbar);
 
 	return result;
 }
@@ -730,22 +889,30 @@ double BicubicInterpolator::evaluateDerivativeYYInterval(int i, int j, const dou
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	
-	double xvec[4] = {1, xbar, xbar*xbar, xbar*xbar*xbar};
-	double yvec[2] = {2., 6.*ybar};
-	double zvec[4] = {0., 0., 0., 0.};
-	double result = 0.;
+	// double xvec[4] = {1, xbar, xbar*xbar, xbar*xbar*xbar};
+	// double yvec[2] = {2., 6.*ybar};
+	// double zvec[4] = {0., 0., 0., 0.};
+	// double result = 0.;
+	double zvec[4];
+	double result;
 
 	// zj = cij*yi
+	// for(int k = 0; k < 4; k++){
+	// 	for(int l = 0; l < 2; l++){
+	// 		zvec[k] += cij(i, 16*j + 4*k + (l + 2))*yvec[l];
+	// 	}
+	// }
+
+	// // result = xj*zj
+	// for(int k = 0; k < 4; k++){
+	// 	result += xvec[k]*zvec[k];
+	// }
+
 	for(int k = 0; k < 4; k++){
-		for(int l = 0; l < 2; l++){
-			zvec[k] += cij(i, 16*j + 4*k + (l + 2))*yvec[l];
-		}
+		zvec[k] = 2.*(cij(i, 16*j + 4*k + 2) + 3.*cij(i, 16*j + 4*k + 3)*ybar);
 	}
 
-	// result = xj*zj
-	for(int k = 0; k < 4; k++){
-		result += xvec[k]*zvec[k];
-	}
+	result = zvec[0] + xbar*(zvec[1] + xbar*(zvec[2] + zvec[3]*xbar));
 	
 	return result;
 }
@@ -833,52 +1000,77 @@ double CubicInterpolator::evaluate(const double x){
 
 double CubicInterpolator::derivative(const double x){
 	int i = findInterval(x);
-	return evaluateDerivativeInterval(i, x)/dx;
+	return evaluateDerivativeInterval(i, x);
 }
 
 double CubicInterpolator::derivative2(const double x){
 	int i = findInterval(x);
-	return evaluateSecondDerivativeInterval(i, x)/(dx*dx);
+	return evaluateSecondDerivativeInterval(i, x);
 }
 
 void CubicInterpolator::computeSplineCoefficients(double dx, const Vector &y){
-	Vector diffopCentral = {1./12., -8./12., 0., 8./12., -1./12.};
-	Vector diffopForward = {-25./12., 4., -3., 4./3., -1./4};
-	Vector ydx(y.size());
+	// Calculation with natural boundary conditions that follows the GSL algorithm
+	// Essentially we first calculate the second-derivatives assuming y''(x0) = y''(xn) = 0
+	// Then from the values of y and y'', we construct the spline coefficients
 
-	for(size_t i = 0; i < ydx.size(); i++){
-		for(size_t k = 0; k < diffopForward.size(); k++){
-			ydx[i] += y[i + k]*diffopForward[k];
-		}
+	int nsize = y.size() - 2;
+	// Forward sweep method for tridiagonal solve on Wikipedia
+	double a = 1.;
+	Vector b(nsize, 4.);
+	double c = 1.;
+	Vector d(nsize);
+	Vector ydx2Over2(nsize);
+
+	for(int i = 1; i <= nsize; i++){
+		d[i - 1] = 3.*(y[i + 1] - 2.0*y[i] + y[i - 1])/(dx*dx);
 	}
 
-	for(size_t i = 2; i < ydx.size(); i++){
-		for(size_t k = 0; k < diffopCentral.size(); k++){
-			ydx[i] += y[i - 2 + k]*diffopCentral[k];
-		}
+	//forward sweep
+	double w = 0.;
+	for(int i = 2; i <= nsize; i++){
+		w = a/b[i - 2];
+		b[i - 1] = b[i - 1] - w*c;
+		d[i - 1] = d[i - 1] - w*d[i - 2];
 	}
+	// back substitution
+	ydx2Over2[nsize - 1] = d[nsize - 1]/b[nsize - 1];
+	for(int i = 1; i < nsize; i++){
+		ydx2Over2[nsize - i - 1] = (d[nsize - i - 1] - c*ydx2Over2[nsize - i])/b[nsize - i - 1];
+	}
+
+	int i = 0;
+	cij(i, 0) = y[i];
+	cij(i, 2) = 0;
+	cij(i, 1) = (y[i + 1] - y[i])/dx - dx*(ydx2Over2[i])/3.0;
+	cij(i, 3) = (ydx2Over2[i])/(3.0*dx);
 	
-	for(int i = 0; i < nintervals; i++){
+	for(i = 1; i < nintervals - 1; i++){
 		cij(i, 0) = y[i];
-		cij(i, 1) = ydx[i];
-		cij(i, 2) = -3.*y[i] + 3.*y[i + 1] - 2.*ydx[i] - ydx[i + 1];
-		cij(i, 3) = 2.*y[i] - 2.*y[i + 1] + ydx[i] + ydx[i + 1];
+		cij(i, 2) = ydx2Over2[i - 1];
+		cij(i, 1) = (y[i + 1] - y[i])/dx - dx*(ydx2Over2[i] + 2.*ydx2Over2[i - 1])/3.0;
+		cij(i, 3) = (ydx2Over2[i] - ydx2Over2[i - 1])/(3.0*dx);
 	}
+
+	i = nintervals - 1;
+	cij(i, 0) = y[i];
+	cij(i, 2) = ydx2Over2[i - 1];
+	cij(i, 1) = (y[i + 1] - y[i])/dx - dx*(2.*ydx2Over2[i - 1])/3.0;
+	cij(i, 3) = -(ydx2Over2[i - 1])/(3.0*dx);
 }
 
 double CubicInterpolator::evaluateInterval(int i, const double x){
-	double xbar = (x - x0 - i*dx)/dx;
-	return cij(i, 0) + cij(i, 1)*xbar + cij(i, 2)*xbar*xbar + cij(i, 3)*xbar*xbar*xbar;
+	double xbar = (x - x0 - i*dx);
+	return cij(i, 0) + xbar*(cij(i, 1) + xbar*(cij(i, 2) + cij(i, 3)*xbar));
 }
 
 double CubicInterpolator::evaluateDerivativeInterval(int i, const double x){
-	double xbar = (x - x0 - i*dx)/dx;
-	return cij(i, 1) + 2.*cij(i, 2)*xbar + 3.*cij(i, 3)*xbar*xbar;
+	double xbar = (x - x0 - i*dx);
+	return cij(i, 1) + xbar*(2.0*cij(i, 2) + 3.0*cij(i, 3)*xbar);
 }
 
 double CubicInterpolator::evaluateSecondDerivativeInterval(int i, const double x){
-	double xbar = (x - x0 - i*dx)/dx;
-	return 2.*cij(i, 2) + 6.*cij(i, 3)*xbar;
+	double xbar = (x - x0 - i*dx);
+	return 2.0*(cij(i, 2) + 3.0*cij(i, 3)*xbar);
 }
 
 int CubicInterpolator::findInterval(const double x){

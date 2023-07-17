@@ -30,11 +30,18 @@ cdef extern from "spline.hpp":
         void reconstruct(vector[double] x, vector[double] y, vector[double] f)
 
     cdef cppclass Matrix:
-        pass
+        Matrix()
+        Matrix(int n)
+        Matrix(int n, int m)
+        Matrix(int n, int m, vector[double] A)
+        Matrix(int n, int m, double val)
+
+        void set_value(int i, int j, double val)
+        double& operator()(int i, int j)
 
     cdef cppclass CubicInterpolator:
-        CubicInterpolator(double x0, double dx, const vector[double] &y)
-        CubicInterpolator(const vector[double] &x, const vector[double] &y)
+        CubicInterpolator(double x0, double dx, const vector[double] &y) except +
+        CubicInterpolator(const vector[double] &x, const vector[double] &y) except +
 
         double evaluate(const double x)
         double derivative(const double x)
@@ -90,4 +97,62 @@ cdef class CyCubicInterpolator:
 
     def deriv2(self, double x):
         return self.scpp.derivative2(x)
+
+cdef class CySpline2D:
+    cdef Spline2D *scpp
+
+    def __init__(self, np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] x, np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] y, np.ndarray[ndim=2, dtype=np.float64_t, mode='c'] f):
+        nx = x.shape[0]
+        ny = y.shape[0]
+        cdef vector[double] xvec = x
+        cdef vector[double] yvec = y
+        cdef vector[double] fvec = f.flatten()
+        self.scpp = new Spline2D(xvec, yvec, fvec)
+
+    def eval(self, double x, double y):
+        return self.scpp.evaluate(x, y)
+
+    def deriv_x(self, double x, double y):
+        return self.scpp.derivative_x(x, y)
+
+    def deriv_y(self, double x, double y):
+        return self.scpp.derivative_y(x, y)
+    
+    def deriv_xx(self, double x, double y):
+        return self.scpp.derivative_xx(x, y)
+
+    def deriv_yy(self, double x, double y):
+        return self.scpp.derivative_yy(x, y)
+
+    def deriv_xy(self, double x, double y):
+        return self.scpp.derivative_xy(x, y)
+    
+
+cdef class CyBicubicInterpolator:
+    cdef BicubicInterpolator *scpp
+
+    def __init__(self, double x0, double dx, int nx, double y0, double dy, int ny, np.ndarray[ndim=2, dtype=np.float64_t, mode='c'] f):
+        cdef Matrix mz = Matrix(nx + 1, ny + 1)
+        for i in range(nx + 1):
+            for j in range(ny + 1):
+                mz.set_value(i, j, f[i, j])
+        self.scpp = new BicubicInterpolator(x0, dx, nx, y0, dy, ny, mz)
+
+    def eval(self, double x, double y):
+        return self.scpp.evaluate(x, y)
+
+    def deriv_x(self, double x, double y):
+        return self.scpp.derivative_x(x, y)
+
+    def deriv_y(self, double x, double y):
+        return self.scpp.derivative_y(x, y)
+    
+    def deriv_xx(self, double x, double y):
+        return self.scpp.derivative_xx(x, y)
+
+    def deriv_yy(self, double x, double y):
+        return self.scpp.derivative_yy(x, y)
+
+    def deriv_xy(self, double x, double y):
+        return self.scpp.derivative_xy(x, y)
 
