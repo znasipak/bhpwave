@@ -89,29 +89,30 @@ class Spline2D{
 		gsl_interp_accel* _xacc;
 		gsl_interp_accel* _yacc;
 };
+// note I switch x and y from the way GSL orders x and y
 
 inline double Spline2D::evaluate(const double &x0, const double &y0){
-	return gsl_spline2d_eval(_spline, y0, x0, _xacc, _yacc);
+	return gsl_spline2d_eval(_spline, y0, x0, _yacc, _xacc);
 }
 
 inline double Spline2D::derivative_x(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_y(_spline, y0, x0, _xacc, _yacc);
+	return gsl_spline2d_eval_deriv_y(_spline, y0, x0, _yacc, _xacc);
 }
 
 inline double Spline2D::derivative_y(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_x(_spline, y0, x0, _xacc, _yacc);
+	return gsl_spline2d_eval_deriv_x(_spline, y0, x0, _yacc, _xacc);
 }
 
 inline double Spline2D::derivative_xx(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_xx(_spline, y0, x0, _xacc, _yacc);
+	return gsl_spline2d_eval_deriv_yy(_spline, y0, x0, _yacc, _xacc);
 }
 
 inline double Spline2D::derivative_xy(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_xy(_spline, y0, x0, _xacc, _yacc);
+	return gsl_spline2d_eval_deriv_xy(_spline, y0, x0, _yacc, _xacc);
 }
 
 inline double Spline2D::derivative_yy(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_yy(_spline, y0, x0, _xacc, _yacc);
+	return gsl_spline2d_eval_deriv_xx(_spline, y0, x0, _yacc, _xacc);
 }
 
 class Matrix{
@@ -137,6 +138,8 @@ public:
 	Matrix transpose() const;
 	void transposeInPlace();
 
+	void set_value(int i, int j, double val);
+
 	double& operator()(int i, int j);
 	const double& operator()(int i, int j) const;
 
@@ -157,8 +160,6 @@ public:
 
     CubicInterpolator(double x0, double dx, int nintervals, Matrix cij);
 	
-    // EigenVector computeDerivatives(double dx, const Vector &y);
-    // Eigen::MatrixXd computeDerivativeVector(double dx, const Vector &y);
 	double evaluate(const double x);
     double derivative(const double x);
     double derivative2(const double x);
@@ -178,8 +179,8 @@ private:
 
 class BicubicInterpolator{
 public:
-	BicubicInterpolator(const Vector &x, const Vector &y, const Matrix &z);
-	BicubicInterpolator(double x0, double dx, int nx, double y0, double dy, int ny, const Matrix &z);
+	BicubicInterpolator(const Vector &x, const Vector &y, Matrix &z);
+	BicubicInterpolator(double x0, double dx, int nx, double y0, double dy, int ny, Matrix &z);
 	double evaluate(const double x, const double y);
     double derivative_x(const double x, const double y);
     double derivative_y(const double x, const double y);
@@ -196,7 +197,9 @@ private:
     double evaluateDerivativeXYInterval(int i, int j, const double x, const double y);
     double evaluateDerivativeXXInterval(int i, int j, const double x, const double y);
     double evaluateDerivativeYYInterval(int i, int j, const double x, const double y);
-	void computeSplineCoefficients(const Matrix &z);
+	Matrix computeSplineCoefficientsDX(Matrix &m_z);
+	Matrix computeSplineCoefficientsDY(Matrix &m_z);
+	void computeSplineCoefficients(Matrix &z);
 	int findXInterval(const double x);
 	int findYInterval(const double y);
 
