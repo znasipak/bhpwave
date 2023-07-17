@@ -5,6 +5,7 @@ from libcpp.string cimport string
 from libcpp.complex cimport complex as cpp_complex
 
 include "harmonic_wrap.pyx"
+include "spline_wrap.pyx"
 
 cdef extern from "waveform.hpp":
     cdef cppclass WaveformContainer:
