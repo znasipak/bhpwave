@@ -1,8 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <complex>
-#include <gsl/gsl_sf_gamma.h>
-#include <gsl/gsl_sf_legendre.h>
 
 typedef std::vector<double> Vector;
 typedef std::complex<double> Complex;

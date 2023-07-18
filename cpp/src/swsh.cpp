@@ -2,17 +2,45 @@
 
 #include "swsh.hpp"
 
-double factorial(int n){
-    return gsl_sf_fact(n);
+double factorial(int n)
+{
+  return (n == 1 || n == 0) ? 1 : factorial(n - 1) * n;
 }
 
-double log_factorial(int n){
-    return gsl_sf_lnfact(n);
+// double factorial(int n){
+//     return gsl_sf_fact(n);
+// }
+
+// double log_factorial(int n){
+//     return gsl_sf_lnfact(n);
+// }
+
+double log_factorial(int n)
+{
+  return (n == 1 || n == 0) ? 0. : log_factorial(n - 1) + log(n);
 }
 
-double binomial(int n, int m){
-    return gsl_sf_choose(n, m);
+// double binomial(int n, int m){
+//     return gsl_sf_choose(n, m);
+// }
+
+// https://stackoverflow.com/questions/55421835/c-binomial-coefficient-is-too-slow
+// https://github.com/BiagioFesta/algorithms/blob/master/src/DynamicProgramming/BinomialCoefficient.cpp
+double binomial(int n, int k) {
+  if (k == 0) {
+    return 1;
+  }
+
+  // Recursion ->  (n, k) = (n - 1, k - 1) * n / k
+  int step1 = n - k + 1;
+  int step0;
+  for (int i = 1; i < k; ++i) {
+    step1 = (step0 = step1) * (n - k + 1 + i) / (i + 1);
+  }
+
+  return step1;
 }
+
 
 double spin_weighted_harmonic_prefactor(int s, int l, int m){
     double factorial_factor = exp(log_factorial(l + m) + log_factorial(l - m) - log_factorial(l + s) - log_factorial(l - s));
@@ -20,25 +48,15 @@ double spin_weighted_harmonic_prefactor(int s, int l, int m){
 }
 
 double spherical_harmonic(const int &l, const int &m, const double &th){
-	if( m < 0 && l >= abs(m) ){
-		return pow(-1, m)*gsl_sf_legendre_sphPlm(l, -m, cos(th));
-	}else if(l >= abs(m)){
-		return gsl_sf_legendre_sphPlm(l, m, cos(th));
-	}else{
-		return 0.;
-	}
+	return spin_weighted_spherical_harmonic(0, l, m, th);
 }
 
 Vector spherical_harmonic(const int &l, const int &m, const Vector &th){
-	Vector ylm(th.size());
-    for(size_t i = 0; i < th.size(); i++){
-        ylm[i] = spherical_harmonic(l, m, th[i]);
-    }
-    return ylm;
+	return spin_weighted_spherical_harmonic(0, l, m, th);
 }
 
 Complex spherical_harmonic(const int &l, const int &m, const double &th, const double &ph){
-	return spherical_harmonic(l, m, th)*exp(Complex(0., m*ph));
+	return spin_weighted_spherical_harmonic(0, l, m, th, ph);
 }
 
 double spin_weighted_sum(int s, int l, int m, double z){
@@ -79,9 +97,7 @@ double spin_weighted_sum_dz(int s, int l, int m, double z){
 }
 
 double spin_weighted_spherical_harmonic(int s, int l, int m, double theta){
-  if(s == 0){
-    return spherical_harmonic(l, m, theta);
-  }else if(s + m < 0){
+  if(s + m < 0){
     return pow(-1, s+m)*spin_weighted_spherical_harmonic(-s, l, -m, theta);
   }else if(theta > 0.5*M_PI){
     return pow(-1, l + m)*spin_weighted_spherical_harmonic(-s, l, m, M_PI - theta);
@@ -105,10 +121,6 @@ double spin_weighted_spherical_harmonic_dz(int s, int l, int m, double theta){
 }
 
 Vector spin_weighted_spherical_harmonic(int st, int l, int mt, Vector theta){
-  if(st == 0){
-    return spherical_harmonic(l, mt, theta);
-  }
-
   double pref;
   int s = st;
   int m = mt;
@@ -136,12 +148,6 @@ Vector spin_weighted_spherical_harmonic(int st, int l, int mt, Vector theta){
 }
 
 void spin_weighted_spherical_harmonic(double *yslm, int pts_num, int st, int l, int mt, double *theta){
-  if(st == 0){
-    for(int i = 0; i < pts_num; i++){
-      yslm[i] = spherical_harmonic(l, mt, theta[i]);
-    }
-  }
-
   double pref;
   int s = st;
   int m = mt;

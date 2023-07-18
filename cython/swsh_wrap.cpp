@@ -1911,8 +1911,8 @@ static PyObject *__pyx_tuple__3;
 static PyObject *__pyx_codeobj__4;
 /* Late includes */
 
-/* "cython/swsh_wrap.pyx":31
- * #     return vecpy
+/* "cython/swsh_wrap.pyx":12
+ *     void spin_weighted_spherical_harmonic(double*, int, int, int, int, double*)
  * 
  * cdef spin_weighted_spherical_harmonic_vec_2(int s, int l, int m, np.ndarray[ndim=1, dtype=np.float64_t] theta):             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] vecpy = np.empty(theta.shape[0], dtype=np.float64)
@@ -1950,50 +1950,50 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(int _
   __pyx_pybuffernd_theta.rcbuffer = &__pyx_pybuffer_theta;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_theta.rcbuffer->pybuffer, (PyObject*)__pyx_v_theta, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 31, __pyx_L1_error)
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_theta.rcbuffer->pybuffer, (PyObject*)__pyx_v_theta, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_STRIDES, 1, 0, __pyx_stack) == -1)) __PYX_ERR(0, 12, __pyx_L1_error)
   }
   __pyx_pybuffernd_theta.diminfo[0].strides = __pyx_pybuffernd_theta.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_theta.diminfo[0].shape = __pyx_pybuffernd_theta.rcbuffer->pybuffer.shape[0];
 
-  /* "cython/swsh_wrap.pyx":32
+  /* "cython/swsh_wrap.pyx":13
  * 
  * cdef spin_weighted_spherical_harmonic_vec_2(int s, int l, int m, np.ndarray[ndim=1, dtype=np.float64_t] theta):
  *     cdef np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] vecpy = np.empty(theta.shape[0], dtype=np.float64)             # <<<<<<<<<<<<<<
  *     spin_weighted_spherical_harmonic(&vecpy[0], vecpy.shape[0], s, l, m, &theta[0])
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_empty); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_Py_intptr_t((__pyx_v_theta->dimensions[0])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_Py_intptr_t((__pyx_v_theta->dimensions[0])); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_float64); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_n_s_dtype, __pyx_t_5) < 0) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 32, __pyx_L1_error)
+  if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 13, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_5);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
     if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_vecpy.rcbuffer->pybuffer, (PyObject*)__pyx_t_6, &__Pyx_TypeInfo_nn___pyx_t_5numpy_float64_t, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 1, 0, __pyx_stack) == -1)) {
       __pyx_v_vecpy = ((PyArrayObject *)Py_None); __Pyx_INCREF(Py_None); __pyx_pybuffernd_vecpy.rcbuffer->pybuffer.buf = NULL;
-      __PYX_ERR(0, 32, __pyx_L1_error)
+      __PYX_ERR(0, 13, __pyx_L1_error)
     } else {__pyx_pybuffernd_vecpy.diminfo[0].strides = __pyx_pybuffernd_vecpy.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_vecpy.diminfo[0].shape = __pyx_pybuffernd_vecpy.rcbuffer->pybuffer.shape[0];
     }
   }
@@ -2001,7 +2001,7 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(int _
   __pyx_v_vecpy = ((PyArrayObject *)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "cython/swsh_wrap.pyx":33
+  /* "cython/swsh_wrap.pyx":14
  * cdef spin_weighted_spherical_harmonic_vec_2(int s, int l, int m, np.ndarray[ndim=1, dtype=np.float64_t] theta):
  *     cdef np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] vecpy = np.empty(theta.shape[0], dtype=np.float64)
  *     spin_weighted_spherical_harmonic(&vecpy[0], vecpy.shape[0], s, l, m, &theta[0])             # <<<<<<<<<<<<<<
@@ -2016,7 +2016,7 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(int _
   } else if (unlikely(__pyx_t_7 >= __pyx_pybuffernd_vecpy.diminfo[0].shape)) __pyx_t_8 = 0;
   if (unlikely(__pyx_t_8 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_8);
-    __PYX_ERR(0, 33, __pyx_L1_error)
+    __PYX_ERR(0, 14, __pyx_L1_error)
   }
   __pyx_t_9 = 0;
   __pyx_t_8 = -1;
@@ -2026,11 +2026,11 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(int _
   } else if (unlikely(__pyx_t_9 >= __pyx_pybuffernd_theta.diminfo[0].shape)) __pyx_t_8 = 0;
   if (unlikely(__pyx_t_8 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_8);
-    __PYX_ERR(0, 33, __pyx_L1_error)
+    __PYX_ERR(0, 14, __pyx_L1_error)
   }
   spin_weighted_spherical_harmonic((&(*__Pyx_BufPtrCContig1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_vecpy.rcbuffer->pybuffer.buf, __pyx_t_7, __pyx_pybuffernd_vecpy.diminfo[0].strides))), (__pyx_v_vecpy->dimensions[0]), __pyx_v_s, __pyx_v_l, __pyx_v_m, (&(*__Pyx_BufPtrStrided1d(__pyx_t_5numpy_float64_t *, __pyx_pybuffernd_theta.rcbuffer->pybuffer.buf, __pyx_t_9, __pyx_pybuffernd_theta.diminfo[0].strides))));
 
-  /* "cython/swsh_wrap.pyx":35
+  /* "cython/swsh_wrap.pyx":16
  *     spin_weighted_spherical_harmonic(&vecpy[0], vecpy.shape[0], s, l, m, &theta[0])
  * 
  *     return vecpy             # <<<<<<<<<<<<<<
@@ -2042,8 +2042,8 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(int _
   __pyx_r = ((PyObject *)__pyx_v_vecpy);
   goto __pyx_L0;
 
-  /* "cython/swsh_wrap.pyx":31
- * #     return vecpy
+  /* "cython/swsh_wrap.pyx":12
+ *     void spin_weighted_spherical_harmonic(double*, int, int, int, int, double*)
  * 
  * cdef spin_weighted_spherical_harmonic_vec_2(int s, int l, int m, np.ndarray[ndim=1, dtype=np.float64_t] theta):             # <<<<<<<<<<<<<<
  *     cdef np.ndarray[ndim=1, dtype=np.float64_t, mode='c'] vecpy = np.empty(theta.shape[0], dtype=np.float64)
@@ -2077,7 +2077,7 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(int _
   return __pyx_r;
 }
 
-/* "cython/swsh_wrap.pyx":37
+/* "cython/swsh_wrap.pyx":18
  *     return vecpy
  * 
  * cdef spin_weighted_spherical_harmonic_double(int s, int l, int m, double theta):             # <<<<<<<<<<<<<<
@@ -2094,7 +2094,7 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_double(int 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("spin_weighted_spherical_harmonic_double", 0);
 
-  /* "cython/swsh_wrap.pyx":38
+  /* "cython/swsh_wrap.pyx":19
  * 
  * cdef spin_weighted_spherical_harmonic_double(int s, int l, int m, double theta):
  *     return spin_weighted_spherical_harmonic(s, l, m, theta)             # <<<<<<<<<<<<<<
@@ -2102,13 +2102,13 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_double(int 
  * def Yslm(int s, int l, int m, theta):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(spin_weighted_spherical_harmonic(__pyx_v_s, __pyx_v_l, __pyx_v_m, __pyx_v_theta)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(spin_weighted_spherical_harmonic(__pyx_v_s, __pyx_v_l, __pyx_v_m, __pyx_v_theta)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "cython/swsh_wrap.pyx":37
+  /* "cython/swsh_wrap.pyx":18
  *     return vecpy
  * 
  * cdef spin_weighted_spherical_harmonic_double(int s, int l, int m, double theta):             # <<<<<<<<<<<<<<
@@ -2127,7 +2127,7 @@ static PyObject *__pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_double(int 
   return __pyx_r;
 }
 
-/* "cython/swsh_wrap.pyx":40
+/* "cython/swsh_wrap.pyx":21
  *     return spin_weighted_spherical_harmonic(s, l, m, theta)
  * 
  * def Yslm(int s, int l, int m, theta):             # <<<<<<<<<<<<<<
@@ -2176,23 +2176,23 @@ static PyObject *__pyx_pw_9bhpswshcy_1Yslm(PyObject *__pyx_self, PyObject *__pyx
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_l)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("Yslm", 1, 4, 4, 1); __PYX_ERR(0, 40, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("Yslm", 1, 4, 4, 1); __PYX_ERR(0, 21, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_m)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("Yslm", 1, 4, 4, 2); __PYX_ERR(0, 40, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("Yslm", 1, 4, 4, 2); __PYX_ERR(0, 21, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_theta)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("Yslm", 1, 4, 4, 3); __PYX_ERR(0, 40, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("Yslm", 1, 4, 4, 3); __PYX_ERR(0, 21, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "Yslm") < 0)) __PYX_ERR(0, 40, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "Yslm") < 0)) __PYX_ERR(0, 21, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 4) {
       goto __pyx_L5_argtuple_error;
@@ -2202,14 +2202,14 @@ static PyObject *__pyx_pw_9bhpswshcy_1Yslm(PyObject *__pyx_self, PyObject *__pyx
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
     }
-    __pyx_v_s = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_s == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
-    __pyx_v_l = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_l == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
-    __pyx_v_m = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_m == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 40, __pyx_L3_error)
+    __pyx_v_s = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_s == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 21, __pyx_L3_error)
+    __pyx_v_l = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_l == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 21, __pyx_L3_error)
+    __pyx_v_m = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_m == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 21, __pyx_L3_error)
     __pyx_v_theta = values[3];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("Yslm", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 40, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("Yslm", 1, 4, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 21, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("bhpswshcy.Yslm", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -2236,7 +2236,7 @@ static PyObject *__pyx_pf_9bhpswshcy_Yslm(CYTHON_UNUSED PyObject *__pyx_self, in
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("Yslm", 0);
 
-  /* "cython/swsh_wrap.pyx":41
+  /* "cython/swsh_wrap.pyx":22
  * 
  * def Yslm(int s, int l, int m, theta):
  *     if isinstance(theta, np.ndarray):             # <<<<<<<<<<<<<<
@@ -2247,7 +2247,7 @@ static PyObject *__pyx_pf_9bhpswshcy_Yslm(CYTHON_UNUSED PyObject *__pyx_self, in
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "cython/swsh_wrap.pyx":42
+    /* "cython/swsh_wrap.pyx":23
  * def Yslm(int s, int l, int m, theta):
  *     if isinstance(theta, np.ndarray):
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, theta)             # <<<<<<<<<<<<<<
@@ -2255,14 +2255,14 @@ static PyObject *__pyx_pf_9bhpswshcy_Yslm(CYTHON_UNUSED PyObject *__pyx_self, in
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, np.array(theta))
  */
     __Pyx_XDECREF(__pyx_r);
-    if (!(likely(((__pyx_v_theta) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_theta, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 42, __pyx_L1_error)
-    __pyx_t_3 = __pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(__pyx_v_s, __pyx_v_l, __pyx_v_m, ((PyArrayObject *)__pyx_v_theta)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 42, __pyx_L1_error)
+    if (!(likely(((__pyx_v_theta) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_theta, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 23, __pyx_L1_error)
+    __pyx_t_3 = __pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(__pyx_v_s, __pyx_v_l, __pyx_v_m, ((PyArrayObject *)__pyx_v_theta)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 23, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
     goto __pyx_L0;
 
-    /* "cython/swsh_wrap.pyx":41
+    /* "cython/swsh_wrap.pyx":22
  * 
  * def Yslm(int s, int l, int m, theta):
  *     if isinstance(theta, np.ndarray):             # <<<<<<<<<<<<<<
@@ -2271,7 +2271,7 @@ static PyObject *__pyx_pf_9bhpswshcy_Yslm(CYTHON_UNUSED PyObject *__pyx_self, in
  */
   }
 
-  /* "cython/swsh_wrap.pyx":43
+  /* "cython/swsh_wrap.pyx":24
  *     if isinstance(theta, np.ndarray):
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, theta)
  *     elif isinstance(theta, list):             # <<<<<<<<<<<<<<
@@ -2282,7 +2282,7 @@ static PyObject *__pyx_pf_9bhpswshcy_Yslm(CYTHON_UNUSED PyObject *__pyx_self, in
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "cython/swsh_wrap.pyx":44
+    /* "cython/swsh_wrap.pyx":25
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, theta)
  *     elif isinstance(theta, list):
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, np.array(theta))             # <<<<<<<<<<<<<<
@@ -2290,9 +2290,9 @@ static PyObject *__pyx_pf_9bhpswshcy_Yslm(CYTHON_UNUSED PyObject *__pyx_self, in
  *         return spin_weighted_spherical_harmonic_double(s, l, m, theta)
  */
     __Pyx_XDECREF(__pyx_r);
-    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 44, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 25, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 44, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 25, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_4 = NULL;
@@ -2307,18 +2307,18 @@ static PyObject *__pyx_pf_9bhpswshcy_Yslm(CYTHON_UNUSED PyObject *__pyx_self, in
     }
     __pyx_t_3 = (__pyx_t_4) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_4, __pyx_v_theta) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_theta);
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 44, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 25, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 44, __pyx_L1_error)
-    __pyx_t_5 = __pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(__pyx_v_s, __pyx_v_l, __pyx_v_m, ((PyArrayObject *)__pyx_t_3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 44, __pyx_L1_error)
+    if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 25, __pyx_L1_error)
+    __pyx_t_5 = __pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_vec_2(__pyx_v_s, __pyx_v_l, __pyx_v_m, ((PyArrayObject *)__pyx_t_3)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 25, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_r = __pyx_t_5;
     __pyx_t_5 = 0;
     goto __pyx_L0;
 
-    /* "cython/swsh_wrap.pyx":43
+    /* "cython/swsh_wrap.pyx":24
  *     if isinstance(theta, np.ndarray):
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, theta)
  *     elif isinstance(theta, list):             # <<<<<<<<<<<<<<
@@ -2327,22 +2327,22 @@ static PyObject *__pyx_pf_9bhpswshcy_Yslm(CYTHON_UNUSED PyObject *__pyx_self, in
  */
   }
 
-  /* "cython/swsh_wrap.pyx":46
+  /* "cython/swsh_wrap.pyx":27
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, np.array(theta))
  *     else:
  *         return spin_weighted_spherical_harmonic_double(s, l, m, theta)             # <<<<<<<<<<<<<<
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_v_theta); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 46, __pyx_L1_error)
-    __pyx_t_5 = __pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_double(__pyx_v_s, __pyx_v_l, __pyx_v_m, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 46, __pyx_L1_error)
+    __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_v_theta); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 27, __pyx_L1_error)
+    __pyx_t_5 = __pyx_f_9bhpswshcy_spin_weighted_spherical_harmonic_double(__pyx_v_s, __pyx_v_l, __pyx_v_m, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 27, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_r = __pyx_t_5;
     __pyx_t_5 = 0;
     goto __pyx_L0;
   }
 
-  /* "cython/swsh_wrap.pyx":40
+  /* "cython/swsh_wrap.pyx":21
  *     return spin_weighted_spherical_harmonic(s, l, m, theta)
  * 
  * def Yslm(int s, int l, int m, theta):             # <<<<<<<<<<<<<<
@@ -3482,17 +3482,17 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "cython/swsh_wrap.pyx":40
+  /* "cython/swsh_wrap.pyx":21
  *     return spin_weighted_spherical_harmonic(s, l, m, theta)
  * 
  * def Yslm(int s, int l, int m, theta):             # <<<<<<<<<<<<<<
  *     if isinstance(theta, np.ndarray):
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, theta)
  */
-  __pyx_tuple__3 = PyTuple_Pack(4, __pyx_n_s_s, __pyx_n_s_l, __pyx_n_s_m, __pyx_n_s_theta); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(4, __pyx_n_s_s, __pyx_n_s_l, __pyx_n_s_m, __pyx_n_s_theta); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 21, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(4, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_swsh_wrap_pyx, __pyx_n_s_Yslm, 40, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_codeobj__4 = (PyObject*)__Pyx_PyCode_New(4, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__3, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_cython_swsh_wrap_pyx, __pyx_n_s_Yslm, 21, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__4)) __PYX_ERR(0, 21, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -3835,16 +3835,16 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "cython/swsh_wrap.pyx":40
+  /* "cython/swsh_wrap.pyx":21
  *     return spin_weighted_spherical_harmonic(s, l, m, theta)
  * 
  * def Yslm(int s, int l, int m, theta):             # <<<<<<<<<<<<<<
  *     if isinstance(theta, np.ndarray):
  *         return spin_weighted_spherical_harmonic_vec_2(s, l, m, theta)
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9bhpswshcy_1Yslm, NULL, __pyx_n_s_bhpswshcy); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9bhpswshcy_1Yslm, NULL, __pyx_n_s_bhpswshcy); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 21, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Yslm, __pyx_t_1) < 0) __PYX_ERR(0, 40, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Yslm, __pyx_t_1) < 0) __PYX_ERR(0, 21, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "cython/swsh_wrap.pyx":1
