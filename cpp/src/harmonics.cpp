@@ -52,7 +52,7 @@ HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base
 }
 
 HarmonicSpline::HarmonicSpline(double chi, const Vector & alpha, const Vector & A, const Vector & Phi): _spin(spin_of_chi(chi)), _amplitude_spline(alpha, A), _phase_spline(alpha, Phi) {}
-HarmonicSpline::HarmonicSpline(double spin, Spline amplitude_spline, Spline phase_spline): _spin(spin), _amplitude_spline(amplitude_spline), _phase_spline(phase_spline) {}
+HarmonicSpline::HarmonicSpline(double spin, CubicSpline amplitude_spline, CubicSpline phase_spline): _spin(spin), _amplitude_spline(amplitude_spline), _phase_spline(phase_spline) {}
 HarmonicSpline::~HarmonicSpline() {}
 
 double HarmonicSpline::amplitude(double alpha){

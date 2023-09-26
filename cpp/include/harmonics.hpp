@@ -20,7 +20,7 @@ HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base
 class HarmonicSpline{
 public:
   HarmonicSpline(double chi, const Vector &alpha, const Vector &A, const Vector &Phi);
-  HarmonicSpline(double spin, Spline amplitude_spline, Spline phase_spline);
+  HarmonicSpline(double spin, CubicSpline amplitude_spline, CubicSpline phase_spline);
   ~HarmonicSpline();
 
   double amplitude(double alpha);
@@ -32,8 +32,8 @@ public:
 
 private:
   double _spin;
-  Spline _amplitude_spline;
-  Spline _phase_spline;
+  CubicSpline _amplitude_spline;
+  CubicSpline _phase_spline;
 };
 
 class HarmonicSpline2D{
@@ -51,8 +51,8 @@ public:
 	double phase_of_a_omega_derivative(double a, double omega);
 
 private:
-  Spline2D _amplitude_spline;
-  Spline2D _phase_spline;
+  BicubicSpline _amplitude_spline;
+  BicubicSpline _phase_spline;
 };
 
 class HarmonicAmplitudes{

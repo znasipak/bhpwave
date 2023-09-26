@@ -3,9 +3,6 @@
 
 #include <vector>
 #include <algorithm>
-#include <gsl/gsl_interp.h>
-#include <gsl/gsl_spline.h>
-#include <gsl/gsl_spline2d.h>
 #include "omp.h"
 #include <chrono>
 
@@ -27,94 +24,6 @@ private:
 };
 
 typedef std::vector<double> Vector;
-
-class Spline{
-	public:
-		// Constructor for cubic spline of f(x)
-		Spline(Vector x, Vector f);
-		// Copy constructor
-		Spline(const Spline& spline);
-		// Destructor
-		~Spline();
-
-		// Use spline to interpolate f at x = x0
-		double evaluate(const double &x0);
-		double derivative(const double &x0);
-		double derivative2(const double &x0);
-
-		// reconstruct spline on new data set
-		void reconstruct(Vector x, Vector f);
-
-	private:
-		gsl_spline* _spline;
-		gsl_interp_accel* _acc;
-};
-
-inline double Spline::evaluate(const double &x0){
-	return gsl_spline_eval(_spline, x0, _acc);
-}
-
-inline double Spline::derivative(const double &x0){
-	return gsl_spline_eval_deriv(_spline, x0, _acc);
-}
-
-inline double Spline::derivative2(const double &x0){
-	return gsl_spline_eval_deriv2(_spline, x0, _acc);
-}
-
-// 2D Interpolation
-
-class Spline2D{
-	public:
-		// Constructor for cubic spline of f(x)
-		Spline2D(Vector x, Vector y, Vector f);
-		// Copy constructor
-		Spline2D(const Spline2D& spline);
-		// Destructor
-		~Spline2D();
-
-		// Use spline to interpolate f at x = x0
-		double evaluate(const double &x0, const double &y0);
-		double derivative_x(const double &x0, const double &y0);
-		double derivative_y(const double &x0, const double &y0);
-		double derivative_xx(const double &x0, const double &y0);
-		double derivative_yy(const double &x0, const double &y0);
-		double derivative_xy(const double &x0, const double &y0);
-
-		// reconstruct spline on new data set
-		void reconstruct(Vector x, Vector y, Vector f);
-
-	private:
-		gsl_spline2d* _spline;
-		gsl_interp_accel* _xacc;
-		gsl_interp_accel* _yacc;
-};
-// note I switch x and y from the way GSL orders x and y
-
-inline double Spline2D::evaluate(const double &x0, const double &y0){
-	return gsl_spline2d_eval(_spline, y0, x0, _yacc, _xacc);
-}
-
-inline double Spline2D::derivative_x(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_y(_spline, y0, x0, _yacc, _xacc);
-}
-
-inline double Spline2D::derivative_y(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_x(_spline, y0, x0, _yacc, _xacc);
-}
-
-inline double Spline2D::derivative_xx(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_yy(_spline, y0, x0, _yacc, _xacc);
-}
-
-inline double Spline2D::derivative_xy(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_xy(_spline, y0, x0, _yacc, _xacc);
-}
-
-inline double Spline2D::derivative_yy(const double &x0, const double &y0){
-	return gsl_spline2d_eval_deriv_xx(_spline, y0, x0, _yacc, _xacc);
-}
-
 class Matrix{
 public:
 	Matrix();
@@ -153,22 +62,28 @@ private:
 ////               Basic Interpolators               ////
 /////////////////////////////////////////////////////////
 
-class CubicInterpolator{
+class CubicSpline{
 public:
-	CubicInterpolator(double x0, double dx, const Vector &y);
-	CubicInterpolator(const Vector &x, const Vector &y);
+	CubicSpline(double x0, double dx, const Vector &y, int method = 1);
+	CubicSpline(const Vector &x, const Vector &y, int method = 1);
 
-    CubicInterpolator(double x0, double dx, int nintervals, Matrix cij);
+    CubicSpline(double x0, double dx, int nintervals, Matrix cij);
 	
 	double evaluate(const double x);
     double derivative(const double x);
     double derivative2(const double x);
+
+	double getSplineCoefficient(int i, int j);
 
 private:
 	double evaluateInterval(int i, const double x);
     double evaluateDerivativeInterval(int i, const double x);
     double evaluateSecondDerivativeInterval(int i, const double x);
 	void computeSplineCoefficients(double dx, const Vector &y);
+	void computeSplineCoefficientsNaturalFirst(double dx, const Vector &y);
+	void computeSplineCoefficientsNotAKnot(double dx, const Vector &y);
+	void computeSplineCoefficientsZeroClamped(double dx, const Vector &y);
+	void computeSplineCoefficientsE3(double dx, const Vector &y);
 	int findInterval(const double x);
 
 	double dx;
@@ -177,18 +92,20 @@ private:
 	Matrix cij;
 };
 
-class BicubicInterpolator{
+class BicubicSpline{
 public:
-	BicubicInterpolator(const Vector &x, const Vector &y, Matrix &z);
-	BicubicInterpolator(double x0, double dx, int nx, double y0, double dy, int ny, Matrix &z);
+	BicubicSpline(const Vector &x, const Vector &y, Matrix &z, int method = 3);
+	BicubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, Matrix &z, int method = 3);
+	BicubicSpline(const Vector &x, const Vector &y, const Vector &z, int method = 3);
+	BicubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, const Vector &z_vec, int method = 3);
 	double evaluate(const double x, const double y);
     double derivative_x(const double x, const double y);
     double derivative_y(const double x, const double y);
     double derivative_xy(const double x, const double y);
     double derivative_xx(const double x, const double y);
     double derivative_yy(const double x, const double y);
-    CubicInterpolator reduce_x(const double x);
-    CubicInterpolator reduce_y(const double y);
+    CubicSpline reduce_x(const double x);
+    CubicSpline reduce_y(const double y);
 
 private:
 	double evaluateInterval(int i, int j, const double x, const double y);
@@ -197,9 +114,9 @@ private:
     double evaluateDerivativeXYInterval(int i, int j, const double x, const double y);
     double evaluateDerivativeXXInterval(int i, int j, const double x, const double y);
     double evaluateDerivativeYYInterval(int i, int j, const double x, const double y);
-	Matrix computeSplineCoefficientsDX(Matrix &m_z);
-	Matrix computeSplineCoefficientsDY(Matrix &m_z);
-	void computeSplineCoefficients(Matrix &z);
+	Matrix computeSplineCoefficientsDX(Matrix &m_z, int method = 3);
+	Matrix computeSplineCoefficientsDY(Matrix &m_z, int method = 3);
+	void computeSplineCoefficients(Matrix &z, int method = 3);
 	int findXInterval(const double x);
 	int findYInterval(const double y);
 

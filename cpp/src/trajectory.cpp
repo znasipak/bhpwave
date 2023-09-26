@@ -162,6 +162,26 @@ double newtonian_energy_flux(const double &omega){
   return 32./5.*pow(abs(omega), 10./3.);
 }
 
+double normalize_energy_flux(const double &omega){
+  return pow(abs(omega), 10./3.);
+}
+
+double normalize_time(const double &omega, const double &oISCO){
+  return pow(abs(omega), -8./3.) - pow(abs(oISCO), -8./3.) + 1.e-6;
+}
+
+double normalize_phase(const double &omega, const double &oISCO){
+  return  pow(abs(omega), -5./3.) - pow(abs(oISCO), -5./3.) + 1.e-6;
+}
+
+double normalize_time_domega(const double &omega){
+  return (-8./3.)*pow(abs(omega), -11./3.);
+}
+
+double normalize_phase_domega(const double &omega){
+  return  (-5./3.)*pow(abs(omega), -8./3.);
+}
+
 // Trajectory Class
 
 InspiralContainer::InspiralContainer(int inspiralSteps): _alpha(inspiralSteps), _phase(inspiralSteps) {}
@@ -309,8 +329,8 @@ void InspiralGenerator::computeInspiral(InspiralContainer &inspiral, double chi,
 	// t_downsample[downsample_steps - 1] = t_f;
 	// alpha_downsample[downsample_steps - 1] = _traj.orbital_alpha(chi, t_downsample[downsample_steps - 1]);
 	// phase_downsample[downsample_steps - 1] = (_traj.phase(chi, alpha_downsample[downsample_steps - 1]) - phase_i)/massratio;
-	// Spline alpha_interp(t_downsample, alpha_downsample);
-	// Spline phase_interp(t_downsample, phase_downsample);
+	// CubicSpline alpha_interp(t_downsample, alpha_downsample);
+	// CubicSpline phase_interp(t_downsample, phase_downsample);
 
 	// #pragma omp parallel num_threads(num_threads)
 	// {
@@ -385,7 +405,7 @@ inline bool file_exists(const std::string& name) {
   return (stat (name.c_str(), &buffer) == 0); 
 }
 
-TrajectoryData::TrajectoryData(const Vector &chi, const Vector &alpha, const Vector &t, const Vector &phi, const Vector & flux, const Vector &beta, const Vector &omega, const Vector &alphaOfT, const Vector &tMax): chi(chi), alpha(alpha), t(t), phi(phi), flux(flux), beta(beta), omega(omega), alphaOfT(alphaOfT), tMax(tMax) {}
+TrajectoryData::TrajectoryData(const Vector &chi, const Vector &alpha, const Vector &t, const Vector &phi, const Vector & flux, const Vector &beta, const Vector &omega, const Vector &alphaOfT, const double &tMax): chi(chi), alpha(alpha), t(t), phi(phi), flux(flux), beta(beta), omega(omega), alphaOfT(alphaOfT), tMax(tMax) {}
 
 TrajectoryData read_trajectory_data(std::string filename){
 	int chiSample, alphaSample;
@@ -415,18 +435,20 @@ TrajectoryData read_trajectory_data(std::string filename){
 	Vector chiA(n), alphaA(n), tA(n), phiA(n), fluxA(n), betaA(n), omegaA(n), alphaOfTA(n);
 	int i = 0;
 
+	double oISCO;
 	for(std::string line; std::getline(inFile, line);){
 		lin.clear();
 		lin.str(line);
 		if(lin >> chi >> alpha >> flux >> t >> phi >> beta >> omega){
+			oISCO = kerr_isco_frequency(spin_of_chi(chi));
 			chiA[i] = chi;
 			alphaA[i] = alpha;
-			tA[i] = sqrt(log(1. + t));
-			phiA[i] = sqrt(log(1. + phi));
-			fluxA[i] = flux;
+			tA[i] = t/normalize_time(omega, oISCO);
+			phiA[i] = phi/normalize_phase(omega, oISCO);
+			fluxA[i] = flux/normalize_energy_flux(omega);
 			betaA[i] = beta;
 			omegaA[i] = omega;
-			alphaOfTA[i] = alpha_of_a_omega(spin_of_chi(chi), omega);
+			alphaOfTA[i] = alpha_of_a_omega(spin_of_chi(chi), omega, oISCO);
 			i++;
 		}
 	}
@@ -438,161 +460,50 @@ TrajectoryData read_trajectory_data(std::string filename){
 	for(int i = 0; i < chiSample; i++){
 		chiAReduce[i] = chiA[i*alphaSample];
 	}
-	Vector tMax(chiSample);
-	for(int i = 0; i < chiSample; i++){
-		tMax[i] = betaA[(i + 1)*alphaSample - 1];
-	}
+	// Vector tMax(chiSample);
+	// for(int i = 0; i < chiSample; i++){
+	// 	tMax[i] = betaA[(i + 1)*alphaSample - 1];
+	// }
 	Vector betaAReduce(alphaSample);
 	for(int i = 0; i < alphaSample; i++){
-		betaAReduce[i] = betaA[i]/tMax[0];
+		betaAReduce[i] = betaA[i];
 	}
+	double tMax = tA[n - 1];
 
 	TrajectoryData traj(chiAReduce, alphaAReduce, tA, phiA, fluxA, betaAReduce, omegaA, alphaOfTA, tMax);
 
 	return traj;
 }
 
-Spline read_time_spline(double){
+CubicSpline read_time_spline(double){
   TrajectoryData traj = read_trajectory_data();
-  return Spline(traj.alpha, traj.t);
+  return CubicSpline(traj.alpha, traj.t);
 }
 
-Spline read_phase_spline(double){
+CubicSpline read_phase_spline(double){
   TrajectoryData traj = read_trajectory_data();
-  return Spline(traj.alpha, traj.phi);
+  return CubicSpline(traj.alpha, traj.phi);
 }
 
-Spline read_flux_spline(double){
+CubicSpline read_flux_spline(double){
   TrajectoryData traj = read_trajectory_data();
-  return Spline(traj.alpha, traj.flux);
+  return CubicSpline(traj.alpha, traj.flux);
 }
 
-double slow_time_of_omega(Spline &t, double a, double omega){
+double slow_time_of_omega(CubicSpline &t, double a, double omega){
   return -t.evaluate(alpha_of_a_omega(a, omega));
 }
 
-double slow_phase_of_omega(Spline &phi, double a, double omega){
+double slow_phase_of_omega(CubicSpline &phi, double a, double omega){
   return -phi.evaluate(alpha_of_a_omega(a, omega));
 }
 
-double normalized_flux_of_omega(Spline &Edot, double a, double omega){
+double normalized_flux_of_omega(CubicSpline &Edot, double a, double omega){
   return Edot.evaluate(alpha_of_a_omega(a, omega))*newtonian_energy_flux(omega);
 }
 
-double normalized_omega_time_derivative_of_omega(Spline &Edot, double a, double omega){
+double normalized_omega_time_derivative_of_omega(CubicSpline &Edot, double a, double omega){
   return -(1./kerr_geo_denergy_domega_circ(a, omega) + omega/kerr_geo_dmomentum_domega_circ(a, omega))*Edot.evaluate(alpha_of_a_omega(a, omega))*newtonian_energy_flux(omega);
-}
-
-// TrajectorySpline Class
-
-TrajectorySpline::TrajectorySpline(TrajectoryData traj):
-_spin(spin_of_chi(traj.chi[0])), _omega_isco(0.), _time_spline(traj.alpha, traj.t), _phase_spline(traj.alpha, traj.phi), _flux_spline(traj.alpha, traj.flux), _frequency_spline(traj.t, traj.alpha) {_omega_isco = kerr_isco_frequency(_spin);}
-TrajectorySpline::TrajectorySpline(const double & chi, const Vector & alpha, const Vector & t, const Vector & phi, const Vector & flux):
-_spin(spin_of_chi(chi)), _omega_isco(kerr_isco_frequency(spin_of_chi(chi))), _time_spline(alpha, t), _phase_spline(alpha, phi), _flux_spline(alpha, flux), _frequency_spline(t, alpha) {}
-TrajectorySpline::~TrajectorySpline(){}
-
-double TrajectorySpline::time(double alpha){
-	return -expm1(pow(_time_spline.evaluate(alpha), 2));
-}
-
-double TrajectorySpline::phase(double alpha){
-  	return -expm1(pow(_phase_spline.evaluate(alpha), 2));
-}
-
-double TrajectorySpline::flux(double alpha){
-  	return _flux_spline.evaluate(alpha)*newtonian_energy_flux(omega_of_a_alpha(_spin, alpha, _omega_isco));
-}
-
-double TrajectorySpline::flux_norm(double alpha){
-  	return _flux_spline.evaluate(alpha);
-}
-
-double TrajectorySpline::orbital_alpha(double t){
-  	return _frequency_spline.evaluate(sqrt(log1p(-t)));
-}
-
-double TrajectorySpline::orbital_alpha_derivative(double t){
-	double sqrtlog1mt = sqrt(log1p(-t));
-  	return -0.5*_frequency_spline.derivative(sqrtlog1mt)/(1. - t)/sqrtlog1mt;
-}
-
-double TrajectorySpline::orbital_frequency_time_derivative(double alpha){
-	double omega = omega_of_a_alpha(_spin, alpha, _omega_isco);
-  	return -(1./kerr_geo_denergy_domega_circ(_spin, omega) + omega/(kerr_geo_dmomentum_domega_circ(_spin, omega)))*_flux_spline.evaluate(alpha)*newtonian_energy_flux(omega);
-}
-
-double TrajectorySpline::orbital_frequency_time_derivative(double alpha, double omega){
-  	return -(1./kerr_geo_denergy_domega_circ(_spin, omega) + omega/(kerr_geo_dmomentum_domega_circ(_spin, omega)))*_flux_spline.evaluate(alpha)*newtonian_energy_flux(omega);
-}
-
-double TrajectorySpline::time_of_omega(double omega){
-  	return time(alpha_of_a_omega(_spin, omega, _omega_isco));
-}
-
-double TrajectorySpline::time_of_omega_derivative(double omega){
-	double f = _time_spline.evaluate(alpha_of_a_omega(_spin, omega, _omega_isco));
-  	return -2.*f*exp(pow(f, 2))*_time_spline.derivative(alpha_of_a_omega(_spin, omega, _omega_isco))*dalpha_domega_of_a_omega(_spin, omega, _omega_isco);
-}
-
-double TrajectorySpline::phase_of_omega(double omega){
-  return phase(alpha_of_a_omega(_spin, omega, _omega_isco));
-}
-
-double TrajectorySpline::phase_of_omega_derivative(double omega){
-	double f = _phase_spline.evaluate(alpha_of_a_omega(_spin, omega, _omega_isco));
-  	return -2.*f*exp(pow(f, 2))*_phase_spline.derivative(alpha_of_a_omega(_spin, omega, _omega_isco))*dalpha_domega_of_a_omega(_spin, omega, _omega_isco);
-}
-
-double TrajectorySpline::flux_of_omega(double omega){
-  	return _flux_spline.evaluate(alpha_of_a_omega(_spin, omega, _omega_isco))*newtonian_energy_flux(omega);
-}
-
-double TrajectorySpline::orbital_frequency(double t){
-  	return omega_of_a_alpha(_spin, orbital_alpha(t), _omega_isco);
-}
-
-double TrajectorySpline::orbital_frequency_derivative(double t){
-  	return orbital_alpha_derivative(t)/dalpha_domega_of_a_omega(_spin, orbital_frequency(t), _omega_isco);
-}
-
-double TrajectorySpline::orbital_frequency_time_derivative_of_omega(double omega){
-  	return -(1./kerr_geo_denergy_domega_circ(_spin, omega) + omega/kerr_geo_dmomentum_domega_circ(_spin, omega))*_flux_spline.evaluate(alpha_of_a_omega(_spin, omega, _omega_isco))*newtonian_energy_flux(omega);
-}
-
-Spline TrajectorySpline::get_phase_spline(){
-	Spline phase_copy(_phase_spline);
-	return phase_copy;
-}
-
-double TrajectorySpline::get_spin(){
-	return _spin;
-}
-double TrajectorySpline::get_orbital_frequency_isco(){
-	return _omega_isco;
-}
-
-double TrajectorySpline::get_max_orbital_frequency(double a){
-	return omega_of_a_alpha(a, ALPHA_MIN);
-}
-
-double TrajectorySpline::get_min_orbital_frequency(double a){
-	return omega_of_a_alpha(a, ALPHA_MAX);
-}
-
-// Test class
-SmallTrajectorySpline2D::SmallTrajectorySpline2D(std::string filename): SmallTrajectorySpline2D(read_trajectory_data(filename)) {}
-SmallTrajectorySpline2D::SmallTrajectorySpline2D(TrajectoryData traj):
-SmallTrajectorySpline2D(traj.chi, traj.alpha, traj.flux) {}
-SmallTrajectorySpline2D::SmallTrajectorySpline2D(const Vector &chi, const Vector & alpha, const Vector &flux): _flux_spline(chi, alpha, flux) {}
-SmallTrajectorySpline2D::~SmallTrajectorySpline2D(){}
-
-double SmallTrajectorySpline2D::flux(double chi, double alpha){
-	double a = spin_of_chi(chi);
-  	return _flux_spline.evaluate(chi, alpha)*newtonian_energy_flux(omega_of_a_alpha(a, alpha));
-}
-
-double SmallTrajectorySpline2D::flux_of_a_omega(double a, double omega){
-  	return _flux_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega))*newtonian_energy_flux(omega);
 }
 
 // TrajectorySpline2D class
@@ -600,21 +511,27 @@ double SmallTrajectorySpline2D::flux_of_a_omega(double a, double omega){
 TrajectorySpline2D::TrajectorySpline2D(std::string filename): TrajectorySpline2D(read_trajectory_data(filename)) {}
 TrajectorySpline2D::TrajectorySpline2D(TrajectoryData traj):
 TrajectorySpline2D(traj.chi, traj.alpha, traj.beta, traj.t, traj.phi, traj.flux, traj.omega, traj.alphaOfT, traj.tMax) {}
-TrajectorySpline2D::TrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & beta, const Vector & t, const Vector & phi, const Vector & flux, const Vector & omega, const Vector & alphaOfT, const Vector & tMax):
-  	_time_spline(chi, alpha, t), _phase_spline(chi, alpha, phi), _flux_spline(chi, alpha, flux), _alpha_spline(chi, beta, alphaOfT), _frequency_spline(chi, beta, omega), _max_time_spline(chi, tMax) {}
+TrajectorySpline2D::TrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & beta, const Vector & t, const Vector & phi, const Vector & flux, const Vector & omega, const Vector & alphaOfT, const double & tMax):
+  	_time_spline(chi, alpha, t), _phase_spline(chi, alpha, phi), _flux_spline(chi, alpha, flux), _alpha_spline(chi, beta, alphaOfT), _frequency_spline(chi, beta, omega), _max_gamma_squared(log(1+abs(tMax))) {}
 TrajectorySpline2D::~TrajectorySpline2D(){}
 
 double TrajectorySpline2D::time(double chi, double alpha){
-  	return -expm1(pow(_time_spline.evaluate(chi, alpha), 2));
+  	// return -expm1(pow(_time_spline.evaluate(chi, alpha), 2));
+	double oISCO = abs(kerr_isco_frequency(spin_of_chi(chi)));
+	double omega = omega_of_a_alpha(chi, alpha, oISCO);
+	return -_time_spline.evaluate(chi, alpha)*normalize_time(omega, oISCO);
 }
 
 double TrajectorySpline2D::phase(double chi, double alpha){
-  	return -expm1(pow(_phase_spline.evaluate(chi, alpha), 2));
+  	// return -expm1(pow(_phase_spline.evaluate(chi, alpha), 2));
+	double oISCO = kerr_isco_frequency(spin_of_chi(chi));
+	double omega = omega_of_a_alpha(chi, alpha, oISCO);
+	return -_phase_spline.evaluate(chi, alpha)*normalize_phase(omega, oISCO);
 }
 
 double TrajectorySpline2D::flux(double chi, double alpha){
-	double a = spin_of_chi(chi);
-  	return _flux_spline.evaluate(chi, alpha)*newtonian_energy_flux(omega_of_a_alpha(a, alpha));
+	double omega = omega_of_a_alpha(spin_of_chi(chi), alpha);
+  	return _flux_spline.evaluate(chi, alpha)*normalize_energy_flux(omega);
 }
 
 double TrajectorySpline2D::flux_norm(double chi, double alpha){
@@ -622,17 +539,17 @@ double TrajectorySpline2D::flux_norm(double chi, double alpha){
 }
 
 double TrajectorySpline2D::orbital_alpha(double chi, double t){
-  	return _alpha_spline.evaluate(chi, sqrt(log1p(-t))/_max_time_spline.evaluate(chi));
+  	return _alpha_spline.evaluate(chi, sqrt(log1p(-t)/_max_gamma_squared));
 }
 
 double TrajectorySpline2D::orbital_alpha_derivative(double chi, double t){
-  	return -0.5*_alpha_spline.derivative_y(chi, sqrt(log1p(-t))/_max_time_spline.evaluate(chi))/(1. - t)/sqrt(log1p(-t))/_max_time_spline.evaluate(chi);
+  	return -0.5*_alpha_spline.derivative_y(chi, sqrt(log1p(-t)/_max_gamma_squared))/(1. - t)/sqrt(_max_gamma_squared*log1p(-t));
 }
 
 double TrajectorySpline2D::orbital_frequency_time_derivative(double chi, double alpha){
 	double a = spin_of_chi(chi);
 	double omega = omega_of_a_alpha(a, alpha);
-  	return -(1./kerr_geo_denergy_domega_circ(a, omega) + omega/(kerr_geo_dmomentum_domega_circ(a, omega)))*_flux_spline.evaluate(chi, alpha)*newtonian_energy_flux(omega);
+  	return -(1./kerr_geo_denergy_domega_circ(a, omega) + omega/(kerr_geo_dmomentum_domega_circ(a, omega)))*_flux_spline.evaluate(chi, alpha)*normalize_energy_flux(omega);
 }
 
 double TrajectorySpline2D::time_of_a_omega(double a, double omega){
@@ -643,15 +560,18 @@ double TrajectorySpline2D::time_of_a_omega_derivative(double a, double omega){
 	double oISCO = abs(kerr_isco_frequency(a));
 	double chi = chi_of_spin(a);
 	double alpha = alpha_of_a_omega(a, omega, oISCO);
-	double f = _time_spline.evaluate(chi, alpha);
-  	return -2.*f*exp(pow(f, 2))*_time_spline.derivative_y(chi, alpha)*dalpha_domega_of_a_omega(a, omega, oISCO);
+	// double f = _time_spline.evaluate(chi, alpha);
+  	// return -2.*f*exp(pow(f, 2))*_time_spline.derivative_y(chi, alpha)*dalpha_domega_of_a_omega(a, omega, oISCO);
+	return _time_spline.evaluate(chi, alpha)*normalize_phase_domega(omega) + dalpha_domega_of_a_omega(a, omega, oISCO)*_time_spline.derivative_y(chi, alpha)*normalize_phase(omega, oISCO);
 }
 
 double TrajectorySpline2D::time_of_a_alpha_omega_derivative(double a, double alpha){
 	double oISCO = abs(kerr_isco_frequency(a));
 	double chi = chi_of_spin(a);
-	double f = _time_spline.evaluate(chi, alpha);
-  	return -2.*f*exp(pow(f, 2))*_time_spline.derivative_y(chi, alpha)*dalpha_domega_of_alpha(alpha, oISCO);
+	// double f = _time_spline.evaluate(chi, alpha);
+  	// return -2.*f*exp(pow(f, 2))*_time_spline.derivative_y(chi, alpha)*dalpha_domega_of_alpha(alpha, oISCO);
+	double omega = omega_of_a_alpha(a, alpha, oISCO);
+	return _time_spline.evaluate(chi, alpha)*normalize_phase_domega(omega) + dalpha_domega_of_a_omega(a, omega, oISCO)*_time_spline.derivative_y(chi, alpha)*normalize_phase(omega, oISCO);
 }
 
 double TrajectorySpline2D::phase_of_a_omega(double a, double omega){
@@ -662,24 +582,25 @@ double TrajectorySpline2D::phase_of_a_omega_derivative(double a, double omega){
 	double oISCO = abs(kerr_isco_frequency(a));
 	double chi = chi_of_spin(a);
 	double alpha = alpha_of_a_omega(a, omega, oISCO);
-	double f = _phase_spline.evaluate(chi, alpha);
-  	return -2.*f*exp(pow(f, 2))*_phase_spline.derivative_y(chi, alpha)*dalpha_domega_of_a_omega(a, omega, oISCO);
+	// double f = _phase_spline.evaluate(chi, alpha);
+  	// return -2.*f*exp(pow(f, 2))*_phase_spline.derivative_y(chi, alpha)*dalpha_domega_of_a_omega(a, omega, oISCO);
+	return _phase_spline.evaluate(chi, alpha)*normalize_phase_domega(omega) + dalpha_domega_of_a_omega(a, omega, oISCO)*_phase_spline.derivative_y(chi, alpha)*normalize_phase(omega, oISCO);
 }
 
 double TrajectorySpline2D::flux_of_a_omega(double a, double omega){
-  	return _flux_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega))*newtonian_energy_flux(omega);
+  	return _flux_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega))*normalize_energy_flux(omega);
 }
 
 double TrajectorySpline2D::orbital_frequency(double a, double t){
-  	return _frequency_spline.evaluate(chi_of_spin(a), sqrt(log1p(-t))/_max_time_spline.evaluate(chi_of_spin(a)));
+  	return _frequency_spline.evaluate(chi_of_spin(a), sqrt(log1p(-t)/_max_gamma_squared));
 }
 
 double TrajectorySpline2D::orbital_frequency_derivative(double a, double t){
-  	return -0.5*_frequency_spline.derivative_y(chi_of_spin(a), sqrt(log1p(-t))/_max_time_spline.evaluate(chi_of_spin(a)))/(1. - t)/sqrt(log(1. - t))/_max_time_spline.evaluate(chi_of_spin(a));
+  	return -0.5*_frequency_spline.derivative_y(chi_of_spin(a), sqrt(log1p(-t)/_max_gamma_squared))/(1. - t)/sqrt(_max_gamma_squared*log(1. - t));
 }
 
 double TrajectorySpline2D::orbital_frequency_time_derivative_of_a_omega(double a, double omega){
-  	return -(1./kerr_geo_denergy_domega_circ(a, omega) + omega/kerr_geo_dmomentum_domega_circ(a, omega))*_flux_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega))*newtonian_energy_flux(omega);
+  	return -(1./kerr_geo_denergy_domega_circ(a, omega) + omega/kerr_geo_dmomentum_domega_circ(a, omega))*_flux_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega))*normalize_energy_flux(omega);
 }
 
 double TrajectorySpline2D::orbital_frequency_isco(double chi){
@@ -703,7 +624,8 @@ double TrajectorySpline2D::max_orbital_radius(double a){
 }
 
 double TrajectorySpline2D::max_time_before_merger(double a){
-	return 1. - exp(pow(_max_time_spline.evaluate(chi_of_spin(a)), 2));
+	// return 1. - exp(pow(_max_time_spline.evaluate(chi_of_spin(a)), 2));
+	return _time_spline.evaluate(chi_of_spin(a), ALPHA_MAX);
 }
 
 void TrajectorySpline2D::flux_of_a_omega(double flux[], const double a[], const double omega[], int n, int num_threads){
@@ -712,6 +634,6 @@ void TrajectorySpline2D::flux_of_a_omega(double flux[], const double a[], const 
     }
 	#pragma omp parallel for
 		for(int j = 0; j < n; j++){
-			flux[j] = _flux_spline.evaluate(chi_of_spin(a[j]), alpha_of_a_omega(a[j], omega[j]))*newtonian_energy_flux(omega[j]);
+			flux[j] = _flux_spline.evaluate(chi_of_spin(a[j]), alpha_of_a_omega(a[j], omega[j]))*normalize_energy_flux(omega[j]);
 		}
 }

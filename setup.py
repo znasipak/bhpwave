@@ -80,7 +80,7 @@ setup(
     version = "0.1.0",
     description = "Adiabatic EMRI waveform generator",
     ext_modules = cythonize(ext_modules, language_level = "3"),
-    packages = ["bhpwave", "bhpwave.swsh", "bhpwave.trajectory", "bhpwave.harmonics", "bhpwave.data"],
+    packages = ["bhpwave", "bhpwave.trajectory", "bhpwave.harmonics", "bhpwave.data"],
     py_modules = ["bhpwave.waveform", "bhpwave.constants", "bhpwave.spline"],
     classifiers = [
         "Programming Language :: Python :: 3",
