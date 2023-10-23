@@ -179,14 +179,21 @@ double HarmonicSelector::modePower(int l, int m, InspiralContainer &inspiral, Ha
 	int stepSize = 1;
 	int max_samples = opts.max_samples;
 	double chi = chi_of_spin(inspiral.getSpin());
-	if(timeSteps > max_samples){
-		stepSize = int(timeSteps/max_samples);
-	}else{
-		max_samples = timeSteps;
-	}
+	// if(timeSteps > max_samples){
+	// 	stepSize = int(timeSteps/max_samples);
+	// }else{
+	// 	max_samples = timeSteps;
+	// }
 	double amp2;
+	// for(int i = 0; i < max_samples; i++){
+	// 	amp2 = pow(_harm.amplitude(l, m, chi, inspiral.getAlpha(timeSteps - 1 - i*stepSize)), 2);
+	// 	power += amp2;
+	// }
+	double alpha_i = inspiral.getAlpha(0);
+	double alpha_f = inspiral.getAlpha(timeSteps - 1);
+	double deltaAlpha = (alpha_f - alpha_i)/double(max_samples - 1);
 	for(int i = 0; i < max_samples; i++){
-		amp2 = pow(_harm.amplitude(l, m, chi, inspiral.getAlpha(timeSteps - 1 - i*stepSize)), 2);
+		amp2 = pow(_harm.amplitude(l, m, chi, alpha_i + i*deltaAlpha), 2);
 		power += amp2;
 	}
 
@@ -195,6 +202,7 @@ double HarmonicSelector::modePower(int l, int m, InspiralContainer &inspiral, Ha
 
 int HarmonicSelector::gradeMode(int l, int m, InspiralContainer &inspiral, double power22, HarmonicOptions opts){
 	double powerLM = modePower(l, m, inspiral, opts);
+	power22 += powerLM;
 	if(powerLM/power22 > opts.epsilon){
 		return 1;
 	}else{
@@ -205,6 +213,7 @@ int HarmonicSelector::gradeMode(int l, int m, InspiralContainer &inspiral, doubl
 int HarmonicSelector::gradeMode(int l, int m, InspiralContainer &inspiral, double power22, double &plusYlm, double &crossYlm, double theta, HarmonicOptions opts){
 	double powerLM = modePower(l, m, inspiral, opts);
 	Yslm_plus_cross_polarization(plusYlm, crossYlm, l, m, theta);
+	power22 += powerLM*(pow(plusYlm, 2) + pow(crossYlm, 2));
 	if(powerLM*(pow(plusYlm, 2) + pow(crossYlm, 2))/power22 > opts.epsilon){
 		return 1;
 	}else{

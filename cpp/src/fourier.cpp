@@ -23,11 +23,13 @@ void WaveformFourierHarmonicGenerator::computeWaveformFourierHarmonics(WaveformC
     double mphi_mod_2pi[modeNum];
     HarmonicSpline2D* Alms[modeNum];
     double twopi = 2.*M_PI;
+	int maxM = 1;
 
     // first compute mode-dependent but not time-step dependent information and store
     for(int i = 0; i < modeNum; i++){
       mphi_mod_2pi[i] = fmod(m[i]*phi, twopi);
       Alms[i] = _Alm.getPointer(l[i], m[i]);
+	  if(m[i] > maxM){maxM = m[i];}
     }
     // inspiral will be just over twice as long as the number
     // of frequency samples since we only sample positive
@@ -39,12 +41,12 @@ void WaveformFourierHarmonicGenerator::computeWaveformFourierHarmonics(WaveformC
       df = 1/Tobs;
     }
     if(fsamples <= 0){
-      fsamples = hmax/2;
+      fsamples = (hmax + 1)/2;
     }
 	
 	// std::cout << "Frequency spacing = " << df << "\n";
 	// std::cout << "Frequency samples = " << fsamples << "\n";
-	// std::cout << "Max frequency = " << df*(fsamples) << "\n";
+	// std::cout << "Max frequency = " << df*(fsamples + 1) << "\n";
 	// std::cout << "Time spacing = " << dt << "\n";
 
     double a = inspiral.getSpin();
@@ -61,36 +63,71 @@ void WaveformFourierHarmonicGenerator::computeWaveformFourierHarmonics(WaveformC
     // for some reason creating arrays of this size was causing issues with OpenMP
     // minimal internet research suggests that OpenMP allocates arrays on the stack
     // and large arrays can lead to crashes. std::vector seems to work better here
-    Vector hplusReal(modeNum*fsamples);
-    Vector hplusImag(modeNum*fsamples);
-    Vector hcrossReal(modeNum*fsamples);
-    Vector hcrossImag(modeNum*fsamples);
+    Vector hplusReal(modeNum*fsamples, 0.);
+    Vector hplusImag(modeNum*fsamples, 0.);
+    Vector hcrossReal(modeNum*fsamples, 0.);
+    Vector hcrossImag(modeNum*fsamples, 0.);
+
+	int freq_min_iter = omega_min/twopi/df - 1;
+	while(twopi*(freq_min_iter + 1)*df < omega_min){
+		freq_min_iter++;
+	}
+
+	double fmax = df*(fsamples + 1);
+	if(twopi*fmax > maxM*omega_max){
+		fmax = maxM*omega_max/twopi;
+	}
+
+	int freq_max_iter = fmax/df - 1;
+	while((freq_max_iter + 1)*df > fmax){
+		freq_max_iter--;
+	}
+
+	int freq_iter_samples = freq_max_iter - freq_min_iter + 1;
+
+	// std::cout << std::setprecision(10) << "\n";
+	// std::cout << omegaSamples << "\n";
+	// std::cout << omega_min_iter << "\n";
+	// std::cout << omega_0 << "\n";
+	// std::cout << omega_min << "\n";
+	// std::cout << omega_max << "\n";
+	// std::cout << domega << "\n";
+	// std::cout << fsamples << "\n";
+	// std::cout << omega_max - domega*(omega_min_iter + omegaSamples - 1) << "\n";
+
+	// Vector alphaVector(omegaSamples);
+	// Vector deltaPhaseVector(omegaSamples);
+	// Vector dtdOVector(omegaSamples);
+
+	// Vector ampVector(omegaSamples*modeNum);
+	// Vector phaseVector(omegaSamples*modeNum);
 
     #pragma omp parallel num_threads(num_threads)
     {
-      int i, j;
-      double amp, modePhase, Phi, cPhi, sPhi, omega, alpha, dtdo, phase, t;
+      int i, j, k;
+      double amp, modePhase, Phi, cPhi, sPhi, omega, alpha, dtdo, phase, t, deltaPhase;
       // first we calculate all of the mode data
       #pragma omp for collapse(2)
-      for(j = 0; j < modeNum; j++){
-        for(i = 0; i < fsamples; i++){
-          omega = twopi/m[j]*(i + 1)*df;
-          if(omega_min <= omega && omega <= omega_max){
-            alpha = alpha_of_a_omega(a, omega, oisco);
-            phase = (traj.phase(chi, alpha) - phase_i)/massratio;
-			t = (traj.time(chi, alpha) - time_i)/massratio;
+      for(k = 0; k < freq_iter_samples; k++){
+		for(j = 0; j < modeNum; j++){
+		  double mm = m[j];
+		  i = freq_min_iter + k;
+		  omega = twopi*(i + 1)*df/mm;
+		  if(omega >= omega_min && omega <= omega_max){
+			alpha = alpha_of_a_omega(a, omega, oisco);
+			deltaPhase = (traj.phase(chi, alpha) - omega*traj.time(chi, alpha) - phase_i + omega*time_i)/massratio;
 			dtdo = abs(traj.time_of_a_alpha_omega_derivative(a, alpha))/massratio;
-            amp = Alms[j]->amplitude(chi, alpha)*sqrt(twopi/m[j]*dtdo);
-            modePhase = Alms[j]->phase(chi, alpha);
-            Phi = modePhase - fmod(m[j]*phase, twopi) + mphi_mod_2pi[j];
-            Phi += fmod(m[j]*omega*t, twopi) - 0.25*M_PI;
-            cPhi = std::cos(Phi);
-            sPhi = std::sin(Phi);
-            hplusReal[j + i*modeNum] = 0.5*amp*plusY[j]*cPhi;
-            hplusImag[j + i*modeNum] = 0.5*amp*plusY[j]*sPhi;
-            hcrossReal[j + i*modeNum] = -0.5*amp*crossY[j]*sPhi;
-            hcrossImag[j + i*modeNum] = 0.5*amp*crossY[j]*cPhi;
-          }
+			modePhase = Alms[j]->phase(chi, alpha);
+			amp = Alms[j]->amplitude(chi, alpha)*sqrt(twopi/mm*dtdo);
+
+			Phi = modePhase - fmod(mm*deltaPhase, twopi) + mphi_mod_2pi[j] - 0.25*M_PI;
+			cPhi = std::cos(Phi);
+			sPhi = std::sin(Phi);
+			hplusReal[j + i*modeNum] = 0.5*amp*plusY[j]*cPhi;
+			hplusImag[j + i*modeNum] = 0.5*amp*plusY[j]*sPhi;
+			hcrossReal[j + i*modeNum] = -0.5*amp*crossY[j]*sPhi;
+			hcrossImag[j + i*modeNum] = 0.5*amp*crossY[j]*cPhi;
+		  }
         }
       }
 
@@ -104,6 +141,7 @@ void WaveformFourierHarmonicGenerator::computeWaveformFourierHarmonics(WaveformC
       }
     }
 
+	// std::cout << hplusReal[(2*(omega_min_iter) - 1)*modeNum] << "\n";
 
 }
 
@@ -146,7 +184,17 @@ double WaveformFourierGenerator::convertFrequency(double f, double M){
 }
 
 int WaveformFourierGenerator::computeFrequencyStepNumber(double dt, double T){
-	return years_to_seconds(T)/dt/2;
+	return (years_to_seconds(T)/dt + 1)/2; // we do not add one because we leave off the zero mode
+}
+
+int WaveformFourierGenerator::computeTimeStepNumber(double dt, double T){
+	return years_to_seconds(T)/dt + 1;
+}
+
+int WaveformFourierGenerator::computeTimeStepNumber(double M, double mu, double a, double r0, double dt, double T){
+	dt = convertTime(dt, M);
+	T = convertTime(years_to_seconds(T), M);
+	return _inspiralGen.computeTimeStepNumber(a, mu/M, r0, dt, T);
 }
 
 void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
@@ -178,17 +226,18 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, doub
 	{
 		// total_td = omp_get_num_threads();
 		int i;
-		double hplus, hcross;
+		double hplusRe, hcrossRe, hplusIm, hcrossIm;
 		#pragma omp for
 		for(i = 0; i < imaxf; i++){
       		// real components of the Fourier harmonics
-			hplus = h.getPlus(i);
-			hcross = h.getCross(i);
-			h.setTimeStep(i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
-			// imaginary components of the Fourier harmonics
-			hplus = h.getPlus(imax - 1 - i);
-			hcross = h.getCross(imax - 1 - i);
-			h.setTimeStep(imax - 1 - i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
+			hplusRe = h.getPlus(i);
+			hcrossRe = h.getCross(i);
+			hplusIm = h.getPlus(imax - 1 - i);
+			hcrossIm = h.getCross(imax - 1 - i);
+			h.setTimeStep(i, rescaleRe*hplusRe + rescaleIm*hcrossRe, rescaleRe*hcrossRe - rescaleIm*hplusRe);
+			h.setTimeStep(imax - 1 - i, rescaleRe*hplusIm + rescaleIm*hcrossIm, rescaleRe*hcrossIm - rescaleIm*hplusIm);
+			// h.setTimeStep(i, rescaleRe*hplusRe - rescaleIm*hplusIm, rescaleRe*hcrossRe - rescaleIm*hcrossIm);
+			// h.setTimeStep(imax - 1 - i, rescaleRe*hplusIm + rescaleIm*hplusRe, rescaleRe*hcrossIm + rescaleIm*hcrossRe);
 		}
 	}
 	// watch.stop();
@@ -225,17 +274,18 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, int 
 	{
 		// total_td = omp_get_num_threads();
 		int i;
-		double hplus, hcross;
+		double hplusRe, hcrossRe, hplusIm, hcrossIm;
 		#pragma omp for
 		for(i = 0; i < imaxf; i++){
-			// real components of the Fourier harmonics
-			hplus = h.getPlus(i);
-			hcross = h.getCross(i);
-			h.setTimeStep(i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
-			// imaginary components of the Fourier harmonics
-			hplus = h.getPlus(imax - 1 - i);
-			hcross = h.getCross(imax - 1 - i);
-			h.setTimeStep(imax - 1 - i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
+      		// real components of the Fourier harmonics
+			hplusRe = h.getPlus(i);
+			hcrossRe = h.getCross(i);
+			hplusIm = h.getPlus(imax - 1 - i);
+			hcrossIm = h.getCross(imax - 1 - i);
+			h.setTimeStep(i, rescaleRe*hplusRe + rescaleIm*hcrossRe, rescaleRe*hcrossRe - rescaleIm*hplusRe);
+			h.setTimeStep(imax - 1 - i, rescaleRe*hplusIm + rescaleIm*hcrossIm, rescaleRe*hcrossIm - rescaleIm*hplusIm);
+			// h.setTimeStep(i, rescaleRe*hplusRe - rescaleIm*hplusIm, rescaleRe*hcrossRe - rescaleIm*hcrossIm);
+			// h.setTimeStep(imax - 1 - i, rescaleRe*hplusIm + rescaleIm*hplusRe, rescaleRe*hcrossIm + rescaleIm*hcrossRe);
 		}
 	}
 	// watch.stop();

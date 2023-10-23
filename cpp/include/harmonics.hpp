@@ -88,7 +88,7 @@ public:
 
 class HarmonicOptions{
 public:
-  HarmonicOptions(): epsilon(1.e-5), max_samples(50)  {}
+  HarmonicOptions(): epsilon(1.e-5), max_samples(500)  {}
   HarmonicOptions(double eps, int max): epsilon(eps), max_samples(max)  {}
   double epsilon;
   int max_samples;

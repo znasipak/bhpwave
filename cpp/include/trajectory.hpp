@@ -18,11 +18,13 @@ typedef struct DataStruct{
 class TrajectoryData{
 public:
 	TrajectoryData() {}
-	TrajectoryData(const Vector &chi, const Vector &alpha, const Vector &t, const Vector &phi, const Vector & flux, const Vector &beta, const Vector &omega, const Vector &alphaOfT, const Vector &phiOfT, const double &tMax);
+	TrajectoryData(const Vector &chi, const Vector &alpha, const Vector &t, const Vector &phi, const Vector &chiFlux, const Vector &alphaFlux, const Vector & flux, const Vector &beta, const Vector &omega, const Vector &alphaOfT, const Vector &phiOfT, const double &tMax);
 	Vector chi;
 	Vector alpha;
 	Vector t;
   	Vector phi;
+	Vector chiFlux;
+	Vector alphaFlux;
   	Vector flux;
 	Vector beta;
 	Vector omega;
@@ -39,7 +41,7 @@ class TrajectorySpline2D{
 public:
 	TrajectorySpline2D(std::string filename="data/trajectory.txt");
 	TrajectorySpline2D(TrajectoryData traj);
-  	TrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & beta, const Vector & t, const Vector & phi, const Vector & flux, const Vector & omega, const Vector & alphaOfT, const Vector & phaseOfT, const double & tMax);
+  	TrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & chiFlux, const Vector & alphaFlux, const Vector & beta, const Vector & t, const Vector & phi, const Vector & flux, const Vector & omega, const Vector & alphaOfT, const Vector & phaseOfT, const double & tMax);
   	~TrajectorySpline2D();
 
 	// frequency domain

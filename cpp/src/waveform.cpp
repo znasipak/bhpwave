@@ -141,6 +141,9 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, i
       plusY[i] = (sYlm + sYlmMinus);
       crossY[i] = (sYlm - sYlmMinus);
       mphi_mod_2pi[i] = fmod(m[i]*phi, twopi);
+      // std::cout << mphi_mod_2pi[i] << "\n";
+      // std::cout << l[i] << "," << m[i] << "\n";
+      // std::cout << plusY[i] << "," << crossY[i] << "\n";
       Alms[i] = _Alm.getPointer(l[i], m[i]);
     }
     double chi = chi_of_spin(inspiral.getSpin());
@@ -334,6 +337,7 @@ void WaveformGenerator::computeWaveform(WaveformContainer &h, int l[], int m[], 
 	double rescaleRe, rescaleIm;
 	rescaleRe = std::real(wOpts.rescale);
 	rescaleIm = std::imag(wOpts.rescale);
+  // std::cout << rescaleRe << "," << rescaleIm << "\n";
 	// if the rescaling factor is purely real, then just rescale both polarizations by the same amplitude
 	// else, then we get a mixing of the plus and cross polarizations that gives us new polarization amplitudes
 
@@ -418,10 +422,10 @@ Complex polarization(double qS, double phiS, double qK, double phiK){
     double real_part = cos(qS)*sin(qK)*cos(phiK - phiS) - cos(qK)*sin(qS);
     double imag_part = sin(qK)*sin(phiK - phiS);
     if (abs(real_part) + abs(imag_part) == 0.){
-		return 0.;
-	}
+		  return 1.;
+	  }
 
-    return pow(Complex(real_part, imag_part), 2)/(pow(real_part, 2) + pow(imag_part, 2));
+    return Complex(real_part, imag_part)/Complex(real_part, -imag_part);
 }
 
 double solar_mass_to_seconds(double mass){
