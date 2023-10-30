@@ -34,11 +34,11 @@ class HarmonicAmplitudes:
                 modesLessThanLMAX = lmodes < lmax
                 l = np.ascontiguousarray(lmodes[modesLessThanLMAX])
                 m = np.ascontiguousarray(mmodes[modesLessThanLMAX])
-                self.amplitude_generator = HarmonicAmplitudesPy(l, m, file_base=amp_base, dealloc_flag = False)
+                self.amplitude_generator = HarmonicAmplitudesPy(l, m, filebase=amp_base, dealloc_flag = False)
             else: 
-                self.amplitude_generator = HarmonicAmplitudesPy(file_base=amp_base, dealloc_flag = False)
+                self.amplitude_generator = HarmonicAmplitudesPy(filebase=amp_base, dealloc_flag = False)
         else:
-            self.amplitude_generator = HarmonicAmplitudesPy(file_base=amp_base, dealloc_flag = False)
+            self.amplitude_generator = HarmonicAmplitudesPy(filebase=amp_base, dealloc_flag = False)
 
     def __call__(self, l, m, a, r):
         """

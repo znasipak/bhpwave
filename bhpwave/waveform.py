@@ -398,9 +398,9 @@ def polarization(qS, phiS, qK, phiK):
     real_part = np.cos(qS)*np.sin(qK)*np.cos(phiS - phiK) - np.cos(qK)*np.sin(qS)
     imag_part = -np.sin(qK)*np.sin(phiS - phiK)
     if abs(real_part) + abs(imag_part) == 0.:
-        return 0.j
+        return 1.j
 
-    return (real_part + 1.j*imag_part)**2/(real_part**2 + imag_part**2)
+    return (real_part + 1.j*imag_part)/(real_part - 1.j*imag_part)
 
 def solar_mass_to_seconds(mass):
     """

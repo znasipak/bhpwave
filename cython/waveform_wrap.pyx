@@ -8,6 +8,10 @@ include "harmonic_wrap.pyx"
 include "spline_wrap.pyx"
 
 cdef extern from "waveform.hpp":
+    double years_to_seconds(double years)
+    double seconds_to_years(double seconds)
+    double solar_mass_to_seconds(double mass)
+
     cdef cppclass WaveformContainer:
         WaveformContainer(int timeSteps) except +
         WaveformContainer(double* plus, double *cross, int timeSteps) except +
@@ -86,6 +90,8 @@ cdef extern from "fourier.hpp":
         double convertTime(double t, double M)
         double convertFrequency(double f, double M)
         int computeFrequencyStepNumber(double df, double T)
+        int computeTimeStepNumber(double dt, double T)
+        int computeTimeStepNumber(double M, double mu, double a, double r0, double dt, double T)
         
         void computeFourierWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double df, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
         void computeFourierWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double df, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
@@ -438,8 +444,15 @@ cdef class WaveformFourierGeneratorPy:
 
     def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
         cdef int steps
+        cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+
+        T = seconds_to_years(dt)*(timeSteps - 1)
         steps = self.hcpp.computeFrequencyStepNumber(dt, T)
         
         if "pad_output" in kwargs.keys():
@@ -472,8 +485,15 @@ cdef class WaveformFourierGeneratorPy:
 
     def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
         cdef int steps
+        cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+        
+        T = seconds_to_years(dt)*(timeSteps - 1)
         steps = self.hcpp.computeFrequencyStepNumber(dt, T)
         
         if "pad_output" in kwargs.keys():
@@ -506,8 +526,15 @@ cdef class WaveformFourierGeneratorPy:
     
     def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
         cdef int steps
+        cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+        
+        T = seconds_to_years(dt)*(timeSteps - 1)
         steps = self.hcpp.computeFrequencyStepNumber(dt, T)
         
         if "pad_output" in kwargs.keys():
@@ -540,8 +567,15 @@ cdef class WaveformFourierGeneratorPy:
     
     def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
         cdef int steps
+        cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+        
+        T = seconds_to_years(dt)*(timeSteps - 1)
         steps = self.hcpp.computeFrequencyStepNumber(dt, T)
         
         if "pad_output" in kwargs.keys():

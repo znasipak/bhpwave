@@ -9,7 +9,7 @@ cimport openmp
 import os
 
 cdef unicode path_to_file = os.path.dirname(os.path.abspath(__file__))
-cdef unicode default_trajectory_file = '/../data/trajectory.txt'
+cdef unicode default_trajectory_file = path_to_file + '/bhpwave/data/trajectory.txt'
 
 cdef extern from "trajectory.hpp":
     cdef cppclass TrajectorySpline2D:
@@ -31,6 +31,7 @@ cdef extern from "trajectory.hpp":
         double orbital_frequency(double a, double t)
         double orbital_frequency_derivative(double a, double t)
         double orbital_frequency_time_derivative_of_a_omega(double a, double omega)
+        double phase_of_a_time(double a, double t)
 
         double orbital_frequency_isco(double chi)
         double orbital_frequency_isco_of_a(double a)
@@ -269,6 +270,12 @@ cdef class TrajectoryDataPy:
 
     def orbital_frequency(self, double a, double t):
         return self.trajcpp.orbital_frequency(a, t)
+
+    def orbital_alpha(self, double a, double t):
+        return self.trajcpp.orbital_alpha(chi_of_spin(a), t)
+    
+    def phase(self, double a, double t):
+        return -self.trajcpp.phase_of_a_time(a, t)
 
     def isco_frequency(self, double a):
         return self.trajcpp.orbital_frequency_isco_of_a(a)
