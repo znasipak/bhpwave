@@ -26,7 +26,7 @@ HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base
 		if(lin >> chi >> alpha >> Alm >> Philm){
 			chiA[i] = chi;
 			alphaA[i] = alpha;
-			AlmA[i] = Alm;
+			AlmA[i] = log(Alm);
 			PhilmA[i] = Philm;
 			i++;
 		}
@@ -56,7 +56,7 @@ HarmonicSpline::HarmonicSpline(double spin, CubicSpline amplitude_spline, CubicS
 HarmonicSpline::~HarmonicSpline() {}
 
 double HarmonicSpline::amplitude(double alpha){
-  return _amplitude_spline.evaluate(alpha);
+  return exp(_amplitude_spline.evaluate(alpha));
 }
 
 double HarmonicSpline::phase(double alpha){
@@ -64,7 +64,7 @@ double HarmonicSpline::phase(double alpha){
 }
 
 double HarmonicSpline::amplitude_of_omega(double omega){
-  return _amplitude_spline.evaluate(alpha_of_a_omega(_spin, omega));
+  return exp(_amplitude_spline.evaluate(alpha_of_a_omega(_spin, omega)));
 }
 
 double HarmonicSpline::phase_of_omega(double omega){
@@ -81,7 +81,7 @@ HarmonicSpline2D::HarmonicSpline2D(const Vector & chi, const Vector & alpha, con
 HarmonicSpline2D::~HarmonicSpline2D() {}
 
 double HarmonicSpline2D::amplitude(double chi, double alpha){
-  return _amplitude_spline.evaluate(chi, alpha);
+  return exp(_amplitude_spline.evaluate(chi, alpha));
 }
 
 double HarmonicSpline2D::phase(double chi, double alpha){
@@ -89,7 +89,7 @@ double HarmonicSpline2D::phase(double chi, double alpha){
 }
 
 double HarmonicSpline2D::amplitude_of_a_omega(double a, double omega){
-  return _amplitude_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega));
+  return exp(_amplitude_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega)));
 }
 
 double HarmonicSpline2D::phase_of_a_omega(double a, double omega){
