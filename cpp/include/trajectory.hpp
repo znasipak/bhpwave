@@ -18,100 +18,59 @@ typedef struct DataStruct{
 class TrajectoryData{
 public:
 	TrajectoryData() {}
-	TrajectoryData(const Vector &chi, const Vector &alpha, const Vector &t, const Vector &phi, const Vector & flux, const Vector &beta, const Vector &omega, const Vector &alphaOfT, const Vector &tMax);
+	TrajectoryData(const Vector &chi, const Vector &alpha, const Vector &t, const Vector &phi, const Vector &chiFlux, const Vector &alphaFlux, const Vector & flux, const Vector &beta, const Vector &omega, const Vector &alphaOfT, const Vector &phiOfT, const double &tMax);
 	Vector chi;
 	Vector alpha;
 	Vector t;
   	Vector phi;
+	Vector chiFlux;
+	Vector alphaFlux;
   	Vector flux;
 	Vector beta;
 	Vector omega;
 	Vector alphaOfT;
-	Vector tMax;
+	Vector phiOfT;
+	double tMax;
 };
 
 // Trajectory read_trajectory_data(std::string filename);
 Data read_data(const std::string& filename);
 TrajectoryData read_trajectory_data(std::string filename="data/trajectory.txt");
 
-class TrajectorySpline{
-public:
-	TrajectorySpline(TrajectoryData traj);
-	TrajectorySpline(const double & chi, const Vector & alpha, const Vector & t, const Vector & phi, const Vector & flux);
-	~TrajectorySpline();
-
-	double time(double alpha);
-	double phase(double alpha);
-	double flux(double alpha);
-	double flux_norm(double alpha);
-	double orbital_alpha(double t);
-	double orbital_alpha_derivative(double t);
-	double orbital_frequency_time_derivative(double alpha);
-	double orbital_frequency_time_derivative(double alpha, double omega);
-
-  	double time_of_omega(double omega);
-	double time_of_omega_derivative(double omega);
-  	double phase_of_omega(double omega);
-	double phase_of_omega_derivative(double omega);
-  	double flux_of_omega(double omega);
-	double orbital_frequency(double t);
-	double orbital_frequency_derivative(double t);
-  	double orbital_frequency_time_derivative_of_omega(double omega);
-
-  	Spline get_phase_spline();
-	double get_spin();
-	double get_orbital_frequency_isco();
-	double get_min_orbital_frequency(double a);
-	double get_max_orbital_frequency(double a);
-
-private:
-  	double _spin;
-	double _omega_isco;
-  	Spline _time_spline;
-  	Spline _phase_spline;
-  	Spline _flux_spline;
-  	Spline _frequency_spline;
-};
-
-class SmallTrajectorySpline2D{
-public:
-	SmallTrajectorySpline2D(std::string filename="data/trajectory.txt");
-	SmallTrajectorySpline2D(TrajectoryData traj);
-  	SmallTrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & flux);
-  	~SmallTrajectorySpline2D();
-
-  	double flux(double chi, double alpha);
-  	double flux_of_a_omega(double a, double omega);
-
-private:
-  	Spline2D _flux_spline;
-};
-
 class TrajectorySpline2D{
 public:
 	TrajectorySpline2D(std::string filename="data/trajectory.txt");
 	TrajectorySpline2D(TrajectoryData traj);
-  	TrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & beta, const Vector & t, const Vector & phi, const Vector & flux, const Vector & omega, const Vector & alphaOfT, const Vector & tMax);
+  	TrajectorySpline2D(const Vector & chi, const Vector & alpha, const Vector & chiFlux, const Vector & alphaFlux, const Vector & beta, const Vector & t, const Vector & phi, const Vector & flux, const Vector & omega, const Vector & alphaOfT, const Vector & phaseOfT, const double & tMax);
   	~TrajectorySpline2D();
 
+	// frequency domain
 	double time(double chi, double alpha);
   	double phase(double chi, double alpha);
   	double flux(double chi, double alpha);
 	double flux_norm(double chi, double alpha);
-	double orbital_alpha(double chi, double t);
-	double orbital_alpha_derivative(double chi, double t);
-	double orbital_frequency_time_derivative(double chi, double alpha);
 
-  	double time_of_a_omega(double a, double omega);
+	double time_of_a_omega(double a, double omega);
 	double time_of_a_omega_derivative(double a, double omega);
   	double phase_of_a_omega(double a, double omega);
 	double phase_of_a_omega_derivative(double a, double omega);
   	double flux_of_a_omega(double a, double omega);
-	double orbital_frequency(double a, double t);
-	double orbital_frequency_derivative(double a, double t);
-  	double orbital_frequency_time_derivative_of_a_omega(double a, double omega);
+
+	double orbital_frequency_time_derivative_from_flux(double chi, double alpha);
+	double orbital_frequency_time_derivative_from_flux_of_a_omega(double a, double omega);
 	double time_of_a_alpha_omega_derivative(double a, double alpha);
 
+	// time domain
+	double orbital_alpha(double chi, double t);
+	double orbital_alpha_derivative(double chi, double t);
+	double orbital_frequency(double a, double t);
+	double orbital_frequency_derivative(double a, double t);
+	double phase_of_time(double chi, double t);
+	double phase_of_time_derivative(double chi, double t);
+	double phase_of_a_time(double a, double t);
+	double phase_of_a_time_derivative(double a, double t);
+
+	// utility
 	double orbital_frequency_isco(double chi);
 	double orbital_frequency_isco_of_a(double a);
 	double min_orbital_frequency(double a);
@@ -122,12 +81,13 @@ public:
 	void flux_of_a_omega(double flux[], const double a[], const double omega[], int n, int num_threads=0);
 
 private:
-  	Spline2D _time_spline;
-  	Spline2D _phase_spline;
-  	Spline2D _flux_spline;
-  	Spline2D _alpha_spline;
-	Spline2D _frequency_spline;
-	Spline _max_time_spline;
+  	BicubicSpline _time_spline;
+  	BicubicSpline _phase_spline;
+  	BicubicSpline _flux_spline;
+  	BicubicSpline _alpha_spline;
+	BicubicSpline _frequency_spline;
+	BicubicSpline _phase_time_spline;
+	double _time_norm_parameter;
 };
 
 class InspiralContainer{
@@ -233,13 +193,13 @@ double min_orbital_frequency(const double &a);
 double max_orbital_radius(const double &a);
 double min_orbital_radius(const double &a);
 
-Spline read_time_spline(double a);
-Spline read_phase_spline(double a);
-Spline read_flux_spline(double a);
+CubicSpline read_time_spline(double a);
+CubicSpline read_phase_spline(double a);
+CubicSpline read_flux_spline(double a);
 
-double slow_time_of_omega(Spline &t, double a, double omega);
-double slow_phase_of_omega(Spline &phi, double a, double omega);
-double normalized_flux_of_omega(Spline &Edot, double a, double omega);
-double normalized_omega_time_derivative_of_omega(Spline &Edot, double a, double omega);
+double slow_time_of_omega(CubicSpline &t, double a, double omega);
+double slow_phase_of_omega(CubicSpline &phi, double a, double omega);
+double normalized_flux_of_omega(CubicSpline &Edot, double a, double omega);
+double normalized_omega_time_derivative_of_omega(CubicSpline &Edot, double a, double omega);
 
 #endif

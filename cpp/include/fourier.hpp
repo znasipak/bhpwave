@@ -31,6 +31,8 @@ public:
   double convertTime(double t, double M);
   double convertFrequency(double f, double M);
   int computeFrequencyStepNumber(double df, double T);
+  int computeTimeStepNumber(double df, double T);
+  int computeTimeStepNumber(double M, double mu, double a, double r0, double dt, double T);
   
   void computeFourierWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double df, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
   void computeFourierWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double df, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);

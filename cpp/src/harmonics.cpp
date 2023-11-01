@@ -26,7 +26,7 @@ HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base
 		if(lin >> chi >> alpha >> Alm >> Philm){
 			chiA[i] = chi;
 			alphaA[i] = alpha;
-			AlmA[i] = Alm;
+			AlmA[i] = log(Alm);
 			PhilmA[i] = Philm;
 			i++;
 		}
@@ -52,11 +52,11 @@ HarmonicModeData read_harmonic_mode_data(int L, int m, std::string filepath_base
 }
 
 HarmonicSpline::HarmonicSpline(double chi, const Vector & alpha, const Vector & A, const Vector & Phi): _spin(spin_of_chi(chi)), _amplitude_spline(alpha, A), _phase_spline(alpha, Phi) {}
-HarmonicSpline::HarmonicSpline(double spin, Spline amplitude_spline, Spline phase_spline): _spin(spin), _amplitude_spline(amplitude_spline), _phase_spline(phase_spline) {}
+HarmonicSpline::HarmonicSpline(double spin, CubicSpline amplitude_spline, CubicSpline phase_spline): _spin(spin), _amplitude_spline(amplitude_spline), _phase_spline(phase_spline) {}
 HarmonicSpline::~HarmonicSpline() {}
 
 double HarmonicSpline::amplitude(double alpha){
-  return _amplitude_spline.evaluate(alpha);
+  return exp(_amplitude_spline.evaluate(alpha));
 }
 
 double HarmonicSpline::phase(double alpha){
@@ -64,7 +64,7 @@ double HarmonicSpline::phase(double alpha){
 }
 
 double HarmonicSpline::amplitude_of_omega(double omega){
-  return _amplitude_spline.evaluate(alpha_of_a_omega(_spin, omega));
+  return exp(_amplitude_spline.evaluate(alpha_of_a_omega(_spin, omega)));
 }
 
 double HarmonicSpline::phase_of_omega(double omega){
@@ -81,7 +81,7 @@ HarmonicSpline2D::HarmonicSpline2D(const Vector & chi, const Vector & alpha, con
 HarmonicSpline2D::~HarmonicSpline2D() {}
 
 double HarmonicSpline2D::amplitude(double chi, double alpha){
-  return _amplitude_spline.evaluate(chi, alpha);
+  return exp(_amplitude_spline.evaluate(chi, alpha));
 }
 
 double HarmonicSpline2D::phase(double chi, double alpha){
@@ -89,7 +89,7 @@ double HarmonicSpline2D::phase(double chi, double alpha){
 }
 
 double HarmonicSpline2D::amplitude_of_a_omega(double a, double omega){
-  return _amplitude_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega));
+  return exp(_amplitude_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega)));
 }
 
 double HarmonicSpline2D::phase_of_a_omega(double a, double omega){
@@ -179,14 +179,21 @@ double HarmonicSelector::modePower(int l, int m, InspiralContainer &inspiral, Ha
 	int stepSize = 1;
 	int max_samples = opts.max_samples;
 	double chi = chi_of_spin(inspiral.getSpin());
-	if(timeSteps > max_samples){
-		stepSize = int(timeSteps/max_samples);
-	}else{
-		max_samples = timeSteps;
-	}
+	// if(timeSteps > max_samples){
+	// 	stepSize = int(timeSteps/max_samples);
+	// }else{
+	// 	max_samples = timeSteps;
+	// }
 	double amp2;
+	// for(int i = 0; i < max_samples; i++){
+	// 	amp2 = pow(_harm.amplitude(l, m, chi, inspiral.getAlpha(timeSteps - 1 - i*stepSize)), 2);
+	// 	power += amp2;
+	// }
+	double alpha_i = inspiral.getAlpha(0);
+	double alpha_f = inspiral.getAlpha(timeSteps - 1);
+	double deltaAlpha = (alpha_f - alpha_i)/double(max_samples - 1);
 	for(int i = 0; i < max_samples; i++){
-		amp2 = pow(_harm.amplitude(l, m, chi, inspiral.getAlpha(timeSteps - 1 - i*stepSize)), 2);
+		amp2 = pow(_harm.amplitude(l, m, chi, alpha_i + i*deltaAlpha), 2);
 		power += amp2;
 	}
 
@@ -195,6 +202,7 @@ double HarmonicSelector::modePower(int l, int m, InspiralContainer &inspiral, Ha
 
 int HarmonicSelector::gradeMode(int l, int m, InspiralContainer &inspiral, double power22, HarmonicOptions opts){
 	double powerLM = modePower(l, m, inspiral, opts);
+	power22 += powerLM;
 	if(powerLM/power22 > opts.epsilon){
 		return 1;
 	}else{
@@ -205,6 +213,7 @@ int HarmonicSelector::gradeMode(int l, int m, InspiralContainer &inspiral, doubl
 int HarmonicSelector::gradeMode(int l, int m, InspiralContainer &inspiral, double power22, double &plusYlm, double &crossYlm, double theta, HarmonicOptions opts){
 	double powerLM = modePower(l, m, inspiral, opts);
 	Yslm_plus_cross_polarization(plusYlm, crossYlm, l, m, theta);
+	power22 += powerLM*(pow(plusYlm, 2) + pow(crossYlm, 2));
 	if(powerLM*(pow(plusYlm, 2) + pow(crossYlm, 2))/power22 > opts.epsilon){
 		return 1;
 	}else{
