@@ -24,33 +24,33 @@ with the necessary dependencies to install :code:`bhpwave`:
 
 .. code-block:: console
 
-    $ conda create -n bhpwave-env -c conda-forge gsl Cython numpy python=3.7
-    $ conda activate bhpwave-env
+    conda create -n bhpwave-env -c conda-forge gsl Cython numpy python=3.7
+    conda activate bhpwave-env
 
 To include the necessary compiler on MACOSX run:
 
 .. code-block:: console
 
-    $ conda install clang_osx-64 clangxx_osx-64
+    conda install clang_osx-64 clangxx_osx-64
 
 To include the necessary compiler on linux run:
 
 .. code-block:: console
 
-    $ conda install gcc_linux-64 gxx_linux-64
+    conda install gcc_linux-64 gxx_linux-64
 
 Next clone the :code:`bhpwave` repository from GitHub:
 
 .. code-block:: console
 
-    $ git clone https://github.com/znasipak/bhpwave.git
-    $ cd bhpwave
+    git clone https://github.com/znasipak/bhpwave.git
+    cd bhpwave
 
 Finally, we recommend installing the package via :code:`pip`:
 
 .. code-block:: console
 
-    $ pip install .
+    pip install .
 
 Conda Environments with Jupyter
 -------------------------------
@@ -60,14 +60,14 @@ the following dependencies:
 
 .. code-block:: console
 
-    $ pip install ipykernel matplotlib
+    pip install ipykernel matplotlib
 
 One can then make the environment accessible within jupyter by
 running
 
 .. code-block:: console
 
-    $ python -m ipykernel install --user --name=bhpwave-env
+    python -m ipykernel install --user --name=bhpwave-env
 
 Uninstalling
 ------------
@@ -77,7 +77,7 @@ using :code:`pip` as well
 
 .. code-block:: console
 
-    $ pip uninstall bhpwave
+    pip uninstall bhpwave
 
 To clean the repository, one will also need to remove the directories
 :code:`build` and :code:`bhpwave.egg-info` from the main repository
