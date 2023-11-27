@@ -67,6 +67,7 @@ class TrajectoryData:
     for quasi-circular inspirals around a rotating massive black hole.
     """
     def __init__(self, file_path = default_path, dealloc_flag = False):
+        file_path = os.path.abspath(file_path)
         if os.path.exists(file_path):
             self.trajectory_data = TrajectoryDataPy(file_path, dealloc_flag)
         else:
@@ -99,7 +100,7 @@ class TrajectoryData:
         tM = self.trajectory_data.time_to_merger(a, omega)
         return tM*M*Modot_GC1_to_S/(mu/M)
 
-    def time_to_merger(self, M, mu, a, r0):
+    def phase_to_merger(self, M, mu, a, r0):
         """
         Number of orbital phase accumulated until the system reaches the ISCO
 

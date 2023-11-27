@@ -3,205 +3,6 @@
 
 #define ENDPOINT_TOL 1.e-10
 
-Spline::Spline(Vector x, Vector f){
-	_acc = gsl_interp_accel_alloc();
-	_spline = gsl_spline_alloc(gsl_interp_cspline, x.size());
-	if(x[0] > x[1]){
-		std::reverse(x.begin(), x.end());
-		std::reverse(f.begin(), f.end());
-	}
-	gsl_spline_init(_spline, &x[0], &f[0], x.size());
-}
-
-Spline::Spline(const Spline& obj){
-	_spline = new gsl_spline;
-	_acc = new gsl_interp_accel;
-
-	*_spline = *obj._spline;
-	*_acc = *obj._acc;
-}
-
-Spline::~Spline(){
-	delete(_acc);
-	delete(_spline);
-}
-
-void Spline::reconstruct(Vector x, Vector f){
-	delete(_acc);
-	delete(_spline);
-
-	_acc = gsl_interp_accel_alloc();
-	_spline = gsl_spline_alloc(gsl_interp_cspline, x.size());
-
-	if(x[0] > x[1]){
-		std::reverse(x.begin(), x.end());
-		std::reverse(f.begin(), f.end());
-	}
-	gsl_spline_init(_spline, &x[0], &f[0], x.size());
-}
-
-// 2D Interpolation
-
-// x and y are switched because GSL's ordering for f is the transpose of how I typically order my arrays
-// in other words,
-// GSL ordering is f_ij = f[j*xsize + i]
-// my ordering is f_ij = f[i*ysize + j]
-// for i = 0, ..., xsize; j = 0, ..., ysize
-Spline2D::Spline2D(Vector y, Vector x, Vector f){
-	if(x.size()*y.size() != f.size()){
-		std::cout << "(SPLINE) Error: (x, y) array with dimensions (" << x.size() << ", " << y.size() << ") not compabitble with f(x, y) array of length " << f.size() << "\n";
-	}
-
-	_xacc = gsl_interp_accel_alloc();
-	_yacc = gsl_interp_accel_alloc();
-	_spline = gsl_spline2d_alloc(gsl_interp2d_bicubic, x.size(), y.size());
-	Vector fnew(f.size());
-	if(x[0] > x[1] && y[0] > y[1]){
-		std::reverse(x.begin(), x.end());
-		std::reverse(y.begin(), y.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + x.size() - i - 1];
-			}
-		}
-	}else if(x[0] > x[1]){
-		std::reverse(x.begin(), x.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[j*x.size() + x.size() - i - 1];
-			}
-		}
-	}else if(y[0] > y[1]){
-		std::reverse(y.begin(), y.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + i];
-			}
-		}
-	}else{
-		for(size_t j = 0; j < f.size(); j++){
-			fnew[j] = f[j];
-		}
-	}
-
-	// for(size_t i = 1; i < x.size(); i++){
-	// 	if(x[i] <= x[i-1]){
-	// 		std::cout << "x["<<i<<"] = "<<x[i]<<"\n";
-	// 	}
-	// }
-	//
-	// std::cout << "Foo\n";
-	// for(size_t i = 1; i < y.size(); i++){
-	// 	if(y[i] <= y[i-1]){
-	// 		std::cout << "y["<<i<<"] = "<<y[i]<<"\n";
-	// 	}
-	// }
-	gsl_spline2d_init(_spline, &x[0], &y[0], &fnew[0], x.size(), y.size());
-}
-
-// Spline2D::Spline2D(const EigenArray &yarray, const EigenArray &xarray, const EigenArray &farray){
-// 	Vector x(xarray.size());
-// 	Vector y(yarray.size());
-// 	Vector f(farray.size());
-// 	Eigen::ArrayXd::Map(&x[0], xarray.size()) = xarray;
-// 	Eigen::ArrayXd::Map(&y[0], yarray.size()) = yarray;
-// 	Eigen::ArrayXd::Map(&f[0], farray.size()) = farray;
-
-// 	if(x.size()*y.size() != f.size()){
-// 		std::cout << "(SPLINE) Error: (x, y) array with dimensions (" << x.size() << ", " << y.size() << ") not compabitble with f(x, y) array of length " << f.size() << "\n";
-// 	}
-
-// 	_xacc = gsl_interp_accel_alloc();
-// 	_yacc = gsl_interp_accel_alloc();
-// 	_spline = gsl_spline2d_alloc(gsl_interp2d_bicubic, x.size(), y.size());
-// 	Vector fnew(f.size());
-// 	if(x[0] > x[1] && y[0] > y[1]){
-// 		std::reverse(x.begin(), x.end());
-// 		std::reverse(y.begin(), y.end());
-// 		for(size_t i = 0; i < x.size(); i++){
-// 			for(size_t j = 0; j < y.size(); j++){
-// 				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + x.size() - i - 1];
-// 			}
-// 		}
-// 	}else if(x[0] > x[1]){
-// 		std::reverse(x.begin(), x.end());
-// 		for(size_t i = 0; i < x.size(); i++){
-// 			for(size_t j = 0; j < y.size(); j++){
-// 				fnew[j*x.size() + i] = f[j*x.size() + x.size() - i - 1];
-// 			}
-// 		}
-// 	}else if(y[0] > y[1]){
-// 		std::reverse(y.begin(), y.end());
-// 		for(size_t i = 0; i < x.size(); i++){
-// 			for(size_t j = 0; j < y.size(); j++){
-// 				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + i];
-// 			}
-// 		}
-// 	}else{
-// 		for(size_t j = 0; j < f.size(); j++){
-// 			fnew[j] = f[j];
-// 		}
-// 	}
-// 	gsl_spline2d_init(_spline, &x[0], &y[0], &fnew[0], x.size(), y.size());
-// }
-
-Spline2D::Spline2D(const Spline2D& obj){
-	_spline = new gsl_spline2d;
-	_xacc = new gsl_interp_accel;
-	_yacc = new gsl_interp_accel;
-
-	*_spline = *obj._spline;
-	*_xacc = *obj._xacc;
-	*_yacc = *obj._yacc;
-}
-
-Spline2D::~Spline2D(){
-	delete(_xacc);
-	delete(_yacc);
-	delete(_spline);
-}
-
-// see above for ordering of arguments
-void Spline2D::reconstruct(Vector y, Vector x, Vector f){
-	delete(_xacc);
-	delete(_yacc);
-	delete(_spline);
-
-	_xacc = gsl_interp_accel_alloc();
-	_yacc = gsl_interp_accel_alloc();
-	_spline = gsl_spline2d_alloc(gsl_interp2d_bicubic, x.size(), y.size());
-
-	Vector fnew(f.size());
-	if(x[0] > x[1] && y[0] > y[1]){
-		std::reverse(x.begin(), x.end());
-		std::reverse(y.begin(), y.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + x.size() - i - 1];
-			}
-		}
-	}else if(x[0] > x[1]){
-		std::reverse(x.begin(), x.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[(y.size() - j - 1)*x.size() + i];
-			}
-		}
-	}else if(y[0] > y[1]){
-		std::reverse(y.begin(), y.end());
-		for(size_t i = 0; i < x.size(); i++){
-			for(size_t j = 0; j < y.size(); j++){
-				fnew[j*x.size() + i] = f[j*x.size() + y.size() - i - 1];
-			}
-		}
-	}else{
-		for(size_t j = 0; j < f.size(); j++){
-			fnew[j] = f[j];
-		}
-	}
-	gsl_spline2d_init(_spline, &x[0], &y[0], &fnew[0], x.size(), y.size());
-}
-
 ///////////////////////////////////////////////////////////////////
 //////////////              Matrix Class           ////////////////
 ///////////////////////////////////////////////////////////////////
@@ -338,70 +139,89 @@ double StopWatch::time(){
 }
 
 //////////////////////////////////////////////////////////////////
-//////////////          BicubicInterpolator       ////////////////
+//////////////          BicubicSpline       ////////////////
 //////////////////////////////////////////////////////////////////
 
-BicubicInterpolator::BicubicInterpolator(const Vector &x, const Vector &y, Matrix &z): BicubicInterpolator(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z) {}
-BicubicInterpolator::BicubicInterpolator(double x0, double dx, int nx, double y0, double dy, int ny, Matrix &z): dx(dx), dy(dy), nx(nx), ny(ny), x0(x0), y0(y0), cij(nx, 16*ny) {
+BicubicSpline::BicubicSpline(const Vector &x, const Vector &y, Matrix &z, int method): BicubicSpline(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z) {}
+BicubicSpline::BicubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, Matrix &z, int method): dx(dx), dy(dy), nx(nx), ny(ny), x0(x0), y0(y0), cij(nx, 16*ny) {
 	if(nx + 1 != z.rows() && ny + 1 != z.cols()){
 		if(nx + 1 == z.cols() && ny + 1 == z.rows()){
 			// switch x and y
 			cij.transposeInPlace();
-			computeSplineCoefficients(z);
+			computeSplineCoefficients(z, method);
 		}else if((nx + 1)*(ny + 1) == z.size()){
 			Matrix m_z = z.reshaped(ny + 1, nx + 1).transpose();
-			computeSplineCoefficients(m_z);
+			computeSplineCoefficients(m_z, method);
 		}else{
 			std::cout << "ERROR: Indices of vectors and matrices do not match \n";
 		}
 	}else{
-		computeSplineCoefficients(z);
+		computeSplineCoefficients(z, method);
 	}
 }
 
-double BicubicInterpolator::evaluate(const double x, const double y){
+BicubicSpline::BicubicSpline(const Vector &x, const Vector &y, const Vector &z, int method): BicubicSpline(x[0], x[1] - x[0], x.size() - 1, y[0], y[1] - y[0], y.size() - 1, z) {}
+BicubicSpline::BicubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, const Vector &z_vec, int method): dx(dx), dy(dy), nx(nx), ny(ny), x0(x0), y0(y0), cij(nx, 16*ny) {
+	Matrix z(nx+1, ny+1, z_vec);
+	if(nx + 1 != z.rows() && ny + 1 != z.cols()){
+		if(nx + 1 == z.cols() && ny + 1 == z.rows()){
+			// switch x and y
+			cij.transposeInPlace();
+			computeSplineCoefficients(z, method);
+		}else if((nx + 1)*(ny + 1) == z.size()){
+			Matrix m_z = z.reshaped(ny + 1, nx + 1).transpose();
+			computeSplineCoefficients(m_z, method);
+		}else{
+			std::cout << "ERROR: Indices of vectors and matrices do not match \n";
+		}
+	}else{
+		computeSplineCoefficients(z, method);
+	}
+}
+
+double BicubicSpline::evaluate(const double x, const double y){
 	int i = findXInterval(x);
 	int j = findYInterval(y);
 	return evaluateInterval(i, j, x, y);
 }
 
-double BicubicInterpolator::derivative_x(const double x, const double y){
+double BicubicSpline::derivative_x(const double x, const double y){
 	int i = findXInterval(x);
 	int j = findYInterval(y);
 	return evaluateDerivativeXInterval(i, j, x, y)/dx;
 }
 
-double BicubicInterpolator::derivative_y(const double x, const double y){
+double BicubicSpline::derivative_y(const double x, const double y){
 	int i = findXInterval(x);
 	int j = findYInterval(y);
 	return evaluateDerivativeYInterval(i, j, x, y)/dy;
 }
 
-double BicubicInterpolator::derivative_xy(const double x, const double y){
+double BicubicSpline::derivative_xy(const double x, const double y){
 	int i = findXInterval(x);
 	int j = findYInterval(y);
 	return evaluateDerivativeXYInterval(i, j, x, y)/dx/dy;
 }
 
-double BicubicInterpolator::derivative_xx(const double x, const double y){
+double BicubicSpline::derivative_xx(const double x, const double y){
 	int i = findXInterval(x);
 	int j = findYInterval(y);
 	return evaluateDerivativeXXInterval(i, j, x, y)/dx/dx;
 }
 
-double BicubicInterpolator::derivative_yy(const double x, const double y){
+double BicubicSpline::derivative_yy(const double x, const double y){
 	int i = findXInterval(x);
 	int j = findYInterval(y);
 	return evaluateDerivativeYYInterval(i, j, x, y)/dy/dy;
 }
 
-Matrix BicubicInterpolator::computeSplineCoefficientsDY(Matrix &m_z){
+Matrix BicubicSpline::computeSplineCoefficientsDY(Matrix &m_z, int method){
 	int Nx = m_z.rows();
 	int Ny = m_z.cols();
 	Matrix m_zdy(Nx, Ny);
 	for(int i = 0; i < Nx; i++){
 		Vector z_xi = m_z.row(i);
-		CubicInterpolator f_xi = CubicInterpolator(y0, dy, z_xi);
+		CubicSpline f_xi = CubicSpline(y0, dy, z_xi, method);
 		for(int j = 0; j < Ny; j++){
 			m_zdy(i, j) = dy*f_xi.derivative(y0 + j*dy);
 		}
@@ -409,13 +229,13 @@ Matrix BicubicInterpolator::computeSplineCoefficientsDY(Matrix &m_z){
 	return m_zdy; 
 }
 
-Matrix BicubicInterpolator::computeSplineCoefficientsDX(Matrix &m_z){
+Matrix BicubicSpline::computeSplineCoefficientsDX(Matrix &m_z, int method){
 	int Nx = m_z.rows();
 	int Ny = m_z.cols();
 	Matrix m_zdx(Nx, Ny);
 	for(int j = 0; j < Ny; j++){
 		Vector z_yj = m_z.col(j);
-		CubicInterpolator f_yj = CubicInterpolator(x0, dx, z_yj);
+		CubicSpline f_yj = CubicSpline(x0, dx, z_yj, method);
 		for(int i = 0; i < Nx; i++){
 			m_zdx(i, j) = dx*f_yj.derivative(x0 + i*dx);
 		}
@@ -423,8 +243,8 @@ Matrix BicubicInterpolator::computeSplineCoefficientsDX(Matrix &m_z){
 	return m_zdx; 
 }
 
-void BicubicInterpolator::computeSplineCoefficients(Matrix &m_z){
-	StopWatch watch;
+void BicubicSpline::computeSplineCoefficients(Matrix &m_z, int method){
+	// StopWatch watch;
 
 	Matrix lmat(4, 4, 0.);
 	lmat(0, 0) = 1.;
@@ -438,9 +258,9 @@ void BicubicInterpolator::computeSplineCoefficients(Matrix &m_z){
 	lmat(3, 2) = 1.;
 	lmat(3, 3) = 1.;
 	
-	Matrix m_zdx = computeSplineCoefficientsDX(m_z);
-	Matrix m_zdy = computeSplineCoefficientsDY(m_z);
-	Matrix m_zdxdy = computeSplineCoefficientsDY(m_zdx);
+	Matrix m_zdx = computeSplineCoefficientsDX(m_z, method);
+	Matrix m_zdy = computeSplineCoefficientsDY(m_z, method);
+	Matrix m_zdxdy = computeSplineCoefficientsDY(m_zdx, method);
 	// Matrix m_zdxdy2 = computeSplineCoefficientsDX(m_zdy);
 
 	// int Nx = m_z.rows();
@@ -462,7 +282,7 @@ void BicubicInterpolator::computeSplineCoefficients(Matrix &m_z){
 	// are mixing rows and columns no matter what. The important thing is that
 	// we will store the relevant cofficients close to one another in memory
 
-	watch.start();
+	// watch.start();
 	#pragma omp parallel
 	{
 		#pragma omp for collapse(2) schedule(dynamic, 16)
@@ -505,12 +325,12 @@ void BicubicInterpolator::computeSplineCoefficients(Matrix &m_z){
 				}
 			}
 	}
-	watch.stop();
-	watch.print();
-	watch.reset();
+	// watch.stop();
+	// watch.print();
+	// watch.reset();
 }
 
-// void BicubicInterpolator::computeSplineCoefficients(Matrix &m_z){
+// void BicubicSpline::computeSplineCoefficients(Matrix &m_z){
 // 	StopWatch watch;
 
 // 	watch.start();
@@ -725,7 +545,7 @@ void BicubicInterpolator::computeSplineCoefficients(Matrix &m_z){
 // 	watch.reset();
 // }
 
-double BicubicInterpolator::evaluateInterval(int i, int j, const double x, const double y){
+double BicubicSpline::evaluateInterval(int i, int j, const double x, const double y){
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	// double xvec[4] = {1, xbar, xbar*xbar, xbar*xbar*xbar};
@@ -756,7 +576,7 @@ double BicubicInterpolator::evaluateInterval(int i, int j, const double x, const
 	return result;
 }
 
-double BicubicInterpolator::evaluateDerivativeXInterval(int i, int j, const double x, const double y){
+double BicubicSpline::evaluateDerivativeXInterval(int i, int j, const double x, const double y){
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	
@@ -789,7 +609,7 @@ double BicubicInterpolator::evaluateDerivativeXInterval(int i, int j, const doub
 	return result;
 }
 
-double BicubicInterpolator::evaluateDerivativeYInterval(int i, int j, const double x, const double y){
+double BicubicSpline::evaluateDerivativeYInterval(int i, int j, const double x, const double y){
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 
@@ -821,7 +641,7 @@ double BicubicInterpolator::evaluateDerivativeYInterval(int i, int j, const doub
 	return result;
 }
 
-double BicubicInterpolator::evaluateDerivativeXYInterval(int i, int j, const double x, const double y){
+double BicubicSpline::evaluateDerivativeXYInterval(int i, int j, const double x, const double y){
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	
@@ -853,7 +673,7 @@ double BicubicInterpolator::evaluateDerivativeXYInterval(int i, int j, const dou
 	return result;
 }
 
-double BicubicInterpolator::evaluateDerivativeXXInterval(int i, int j, const double x, const double y){
+double BicubicSpline::evaluateDerivativeXXInterval(int i, int j, const double x, const double y){
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	
@@ -885,7 +705,7 @@ double BicubicInterpolator::evaluateDerivativeXXInterval(int i, int j, const dou
 	return result;
 }
 
-double BicubicInterpolator::evaluateDerivativeYYInterval(int i, int j, const double x, const double y){
+double BicubicSpline::evaluateDerivativeYYInterval(int i, int j, const double x, const double y){
 	double xbar = (x - x0 - i*dx)/dx;
 	double ybar = (y - y0 - j*dy)/dy;
 	
@@ -917,7 +737,7 @@ double BicubicInterpolator::evaluateDerivativeYYInterval(int i, int j, const dou
 	return result;
 }
 
-int BicubicInterpolator::findXInterval(const double x){
+int BicubicSpline::findXInterval(const double x){
 	int i = static_cast<int>((x-x0)/dx);
     if(i >= nx){
         return nx - 1;
@@ -928,7 +748,7 @@ int BicubicInterpolator::findXInterval(const double x){
 	return i;
 }
 
-int BicubicInterpolator::findYInterval(const double y){
+int BicubicSpline::findYInterval(const double y){
 	int i = static_cast<int>((y-y0)/dy);
     if(i >= ny){
         return ny - 1;
@@ -939,7 +759,7 @@ int BicubicInterpolator::findYInterval(const double y){
 	return i;
 }
 
-CubicInterpolator BicubicInterpolator::reduce_x(const double x){
+CubicSpline BicubicSpline::reduce_x(const double x){
     int i = findXInterval(x);
     double xbar = (x - x0 - i*dx)/dx;
 
@@ -955,10 +775,10 @@ CubicInterpolator BicubicInterpolator::reduce_x(const double x){
 		}
 	}
 
-    return CubicInterpolator(y0, dy, ny, cubicCij);
+    return CubicSpline(y0, dy, ny, cubicCij);
 }
 
-CubicInterpolator BicubicInterpolator::reduce_y(const double y){
+CubicSpline BicubicSpline::reduce_y(const double y){
     int j = findYInterval(y);
     double ybar = (y - y0 - j*dy)/dy;
 	Matrix cubicCij(nx, 4);
@@ -973,42 +793,70 @@ CubicInterpolator BicubicInterpolator::reduce_y(const double y){
 		}
 	}
 
-    return CubicInterpolator(x0, dx, nx, cubicCij);
+    return CubicSpline(x0, dx, nx, cubicCij);
 }
 
 //////////////////////////////////////////////////////////////////
-//////////////           CubicInterpolator        ////////////////
+//////////////           CubicSpline        ////////////////
 //////////////////////////////////////////////////////////////////
 
-CubicInterpolator::CubicInterpolator(double x0, double dx, const Vector &y): dx(dx), nintervals(y.size()-1), x0(x0), cij(y.size()-1, 4) {
-	computeSplineCoefficients(dx, y);
+CubicSpline::CubicSpline(double x0, double dx, const Vector &y, int method): dx(dx), nintervals(y.size()-1), x0(x0), cij(y.size()-1, 4) {
+	if(method == 0){
+		computeSplineCoefficients(dx, y);
+	}else if(method == 1){
+		computeSplineCoefficientsNotAKnot(dx, y);
+	}else if(method == 2){
+		computeSplineCoefficientsZeroClamped(dx, y);
+	}else if(method == 3){
+		computeSplineCoefficientsE3(dx, y);
+	}else if(method == 4){
+		computeSplineCoefficientsNaturalFirst(dx, y);
+	}else{
+		computeSplineCoefficientsNotAKnot(dx, y);
+	}
 }
 
-CubicInterpolator::CubicInterpolator(const Vector &x, const Vector &y): dx(x[1] - x[0]), nintervals(x.size() - 1), x0(x[0]), cij(x.size() - 1, 4) {
+CubicSpline::CubicSpline(const Vector &x, const Vector &y, int method): dx(x[1] - x[0]), nintervals(x.size() - 1), x0(x[0]), cij(x.size() - 1, 4) {
 	if(x.size() != y.size()){
 		std::cout << "ERROR: Size of x and y vectors do not match \n";
 	}
-	computeSplineCoefficients(dx, y);
+	if(method == 0){
+		computeSplineCoefficients(dx, y);
+	}else if(method == 1){
+		computeSplineCoefficientsNotAKnot(dx, y);
+	}else if(method == 2){
+		computeSplineCoefficientsZeroClamped(dx, y);
+	}else if(method == 3){
+		computeSplineCoefficientsE3(dx, y);
+	}else if(method == 4){
+		computeSplineCoefficientsNaturalFirst(dx, y);
+	}else{
+		computeSplineCoefficientsNotAKnot(dx, y);
+	}
 }
 
-CubicInterpolator::CubicInterpolator(double x0, double dx, int nx, Matrix cij): dx(dx), nintervals(nx), x0(x0), cij(cij) {}
+CubicSpline::CubicSpline(double x0, double dx, int nx, Matrix cij): dx(dx), nintervals(nx), x0(x0), cij(cij) {}
 
-double CubicInterpolator::evaluate(const double x){
+double CubicSpline::getSplineCoefficient(int i, int j){
+	return cij(i, j);
+}
+
+double CubicSpline::evaluate(const double x){
 	int i = findInterval(x);
 	return evaluateInterval(i, x);
 }
 
-double CubicInterpolator::derivative(const double x){
+double CubicSpline::derivative(const double x){
 	int i = findInterval(x);
 	return evaluateDerivativeInterval(i, x);
 }
 
-double CubicInterpolator::derivative2(const double x){
+double CubicSpline::derivative2(const double x){
 	int i = findInterval(x);
 	return evaluateSecondDerivativeInterval(i, x);
 }
 
-void CubicInterpolator::computeSplineCoefficients(double dx, const Vector &y){
+void CubicSpline::computeSplineCoefficients(double dx, const Vector &y){
 	// Calculation with natural boundary conditions that follows the GSL algorithm
 	// Essentially we first calculate the second-derivatives assuming y''(x0) = y''(xn) = 0
 	// Then from the values of y and y'', we construct the spline coefficients
@@ -1058,22 +906,207 @@ void CubicInterpolator::computeSplineCoefficients(double dx, const Vector &y){
 	cij(i, 3) = -(ydx2Over2[i - 1])/(3.0*dx);
 }
 
-double CubicInterpolator::evaluateInterval(int i, const double x){
+void CubicSpline::computeSplineCoefficientsNaturalFirst(double dx, const Vector &y){
+	// Calculation with not-a-know boundary conditions that follows the GSL algorithm
+	// Essentially we calculate the first-derivatives assuming y'''(x0) = y'''(x1) and y'''(xn) = y'''(xn-1)
+	// Then from the values of y and y', we construct the spline coefficients
+
+	int nsize = y.size();
+	// Forward sweep method for tridiagonal solve on Wikipedia
+	Vector a(nsize, 1.);
+	Vector b(nsize, 4.);
+	Vector c(nsize, 1.);
+	Vector d(nsize);
+	Vector ydx(nsize);
+
+	b[0] = 2.;
+	c[0] = 1.;  
+	b[nsize - 1] = 2.;
+	a[nsize - 1] = 1.;
+
+	for(int i = 1; i < nsize - 1; i++){
+		d[i] = 3.*(y[i + 1] - y[i - 1])/(dx);
+	}
+	d[0] = 3.*(y[1] - y[0])/dx;
+	d[nsize - 1] = 3.*(y[nsize - 1] - y[nsize - 2])/dx;
+
+	//forward sweep
+	double w = 0.;
+	double temp = 0.;
+	for(int i = 1; i < nsize; i++){
+		w = a[i]/b[i - 1];
+		temp = b[i] - w*c[i - 1];
+		b[i] = temp;
+		temp = d[i] - w*d[i - 1];
+		d[i] = temp;
+	}
+	// back substitution
+	ydx[nsize - 1] = d[nsize - 1]/b[nsize - 1];
+	for(int i = 1; i < nsize; i++){
+		ydx[nsize - i - 1] = (d[nsize - i - 1] - c[nsize - i - 1]*ydx[nsize - i])/b[nsize - i - 1];
+	}
+	
+	for(int i = 0; i < nintervals; i++){
+		cij(i, 0) = y[i];
+		cij(i, 1) = ydx[i];
+		cij(i, 2) = 3.*(y[i + 1] - y[i])/(dx*dx) - (ydx[i + 1] + 2.*ydx[i])/dx;
+		cij(i, 3) = (ydx[i + 1] - ydx[i])/(3.*dx*dx) - 2.*cij(i, 2)/(3.*dx);
+	}
+}
+
+void CubicSpline::computeSplineCoefficientsZeroClamped(double dx, const Vector &y){
+	// Calculation with not-a-know boundary conditions that follows the GSL algorithm
+	// Essentially we calculate the first-derivatives assuming y'''(x0) = y'''(x1) and y'''(xn) = y'''(xn-1)
+	// Then from the values of y and y', we construct the spline coefficients
+
+	int nsize = y.size();
+	// Forward sweep method for tridiagonal solve on Wikipedia
+	Vector a(nsize, 1.);
+	Vector b(nsize, 4.);
+	Vector c(nsize, 1.);
+	Vector d(nsize);
+	Vector ydx(nsize);
+
+	b[0] = 1.;
+	c[0] = 0.;  
+	b[nsize - 1] = 1.;
+	a[nsize - 1] = 0.;
+
+	for(int i = 1; i < nsize - 1; i++){
+		d[i] = 3.*(y[i + 1] - y[i - 1])/(dx);
+	}
+	d[0] = 0.;
+	d[nsize - 1] = 0.;
+
+	//forward sweep
+	double w = 0.;
+	for(int i = 1; i < nsize; i++){
+		w = a[i]/b[i - 1];
+		b[i] = b[i] - w*c[i - 1];
+		d[i] = d[i] - w*d[i - 1];
+	}
+	// back substitution
+	ydx[nsize - 1] = d[nsize - 1]/b[nsize - 1];
+	for(int i = 1; i < nsize; i++){
+		ydx[nsize - i - 1] = (d[nsize - i - 1] - c[nsize - i - 1]*ydx[nsize - i])/b[nsize - i - 1];
+	}
+	
+	for(int i = 0; i < nintervals; i++){
+		cij(i, 0) = y[i];
+		cij(i, 1) = ydx[i];
+		cij(i, 2) = 3.*(y[i + 1] - y[i])/(dx*dx) - (ydx[i + 1] + 2.*ydx[i])/dx;
+		cij(i, 3) = (ydx[i + 1] - ydx[i])/(3.*dx*dx) - 2.*cij(i, 2)/(3.*dx);
+	}
+}
+
+void CubicSpline::computeSplineCoefficientsE3(double dx, const Vector &y){
+	// Calculation with not-a-know boundary conditions that follows the GSL algorithm
+	// Essentially we calculate the first-derivatives assuming y'''(x0) = y'''(x1) and y'''(xn) = y'''(xn-1)
+	// Then from the values of y and y', we construct the spline coefficients
+
+	int nsize = y.size();
+	// Forward sweep method for tridiagonal solve on Wikipedia
+	Vector a(nsize, 1.);
+	Vector b(nsize, 4.);
+	Vector c(nsize, 1.);
+	Vector d(nsize);
+	Vector ydx(nsize);
+
+	b[0] = 6.;
+	c[0] = 18.;  
+	b[nsize - 1] = 6.;
+	a[nsize - 1] = 18.;
+
+	for(int i = 1; i < nsize - 1; i++){
+		d[i] = 3.*(y[i + 1] - y[i - 1])/(dx);
+	}
+	d[0] = (-y[3] + 9.*y[2] + 9.*y[1] - 17.*y[0])/dx;
+	d[nsize - 1] = (y[nsize - 1 - 3] - 9.*y[nsize - 1 - 2] - 9.*y[nsize - 1 - 1] + 17.*y[nsize - 1])/dx;
+
+	//forward sweep
+	double w = 0.;
+	for(int i = 1; i < nsize; i++){
+		w = a[i]/b[i - 1];
+		b[i] = b[i] - w*c[i - 1];
+		d[i] = d[i] - w*d[i - 1];
+	}
+	// back substitution
+	ydx[nsize - 1] = d[nsize - 1]/b[nsize - 1];
+	for(int i = 1; i < nsize; i++){
+		ydx[nsize - i - 1] = (d[nsize - i - 1] - c[nsize - i - 1]*ydx[nsize - i])/b[nsize - i - 1];
+	}
+	
+	for(int i = 0; i < nintervals; i++){
+		cij(i, 0) = y[i];
+		cij(i, 1) = ydx[i];
+		cij(i, 2) = 3.*(y[i + 1] - y[i])/(dx*dx) - (ydx[i + 1] + 2.*ydx[i])/dx;
+		cij(i, 3) = (ydx[i + 1] - ydx[i])/(3.*dx*dx) - 2.*cij(i, 2)/(3.*dx);
+	}
+}
+
+void CubicSpline::computeSplineCoefficientsNotAKnot(double dx, const Vector &y){
+	// Calculation with not-a-know boundary conditions that follows the GSL algorithm
+	// Essentially we calculate the first-derivatives assuming y'''(x0) = y'''(x1) and y'''(xn) = y'''(xn-1)
+	// Then from the values of y and y', we construct the spline coefficients
+
+	int nsize = y.size();
+	// Forward sweep method for tridiagonal solve on Wikipedia
+	Vector a(nsize, 1.);
+	Vector b(nsize, 4.);
+	Vector c(nsize, 1.);
+	Vector d(nsize);
+	Vector ydx(nsize);
+
+	b[0] = 2.;
+	c[0] = 4.;  
+	b[nsize - 1] = 2.;
+	a[nsize - 1] = 4.;
+
+	for(int i = 1; i < nsize - 1; i++){
+		d[i] = 3.*(y[i + 1] - y[i - 1])/(dx);
+	}
+	// d[0] = 3.*(y[1] - y[0])/dx;
+	// d[nsize - 1] = 3.*(y[nsize - 1] - y[nsize - 2])/dx;
+	d[0] = (y[2] + 4.*y[1] - 5.*y[0])/dx;
+	d[nsize - 1] = (5.*y[nsize - 1] - 4.*y[nsize - 2] - y[nsize - 3])/dx;
+
+	//forward sweep
+	double w = 0.;
+	for(int i = 1; i < nsize; i++){
+		w = a[i]/b[i - 1];
+		b[i] = b[i] - w*c[i - 1];
+		d[i] = d[i] - w*d[i - 1];
+	}
+	// back substitution
+	ydx[nsize - 1] = d[nsize - 1]/b[nsize - 1];
+	for(int i = 1; i < nsize; i++){
+		ydx[nsize - i - 1] = (d[nsize - i - 1] - c[nsize - i - 1]*ydx[nsize - i])/b[nsize - i - 1];
+	}
+	
+	for(int i = 0; i < nintervals; i++){
+		cij(i, 0) = y[i];
+		cij(i, 1) = ydx[i];
+		cij(i, 2) = 3.*(y[i + 1] - y[i])/(dx*dx) - (ydx[i + 1] + 2.*ydx[i])/dx;
+		cij(i, 3) = (ydx[i + 1] - ydx[i])/(3.*dx*dx) - 2.*cij(i, 2)/(3.*dx);
+	}
+}
+
+double CubicSpline::evaluateInterval(int i, const double x){
 	double xbar = (x - x0 - i*dx);
 	return cij(i, 0) + xbar*(cij(i, 1) + xbar*(cij(i, 2) + cij(i, 3)*xbar));
 }
 
-double CubicInterpolator::evaluateDerivativeInterval(int i, const double x){
+double CubicSpline::evaluateDerivativeInterval(int i, const double x){
 	double xbar = (x - x0 - i*dx);
 	return cij(i, 1) + xbar*(2.0*cij(i, 2) + 3.0*cij(i, 3)*xbar);
 }
 
-double CubicInterpolator::evaluateSecondDerivativeInterval(int i, const double x){
+double CubicSpline::evaluateSecondDerivativeInterval(int i, const double x){
 	double xbar = (x - x0 - i*dx);
 	return 2.0*(cij(i, 2) + 3.0*cij(i, 3)*xbar);
 }
 
-int CubicInterpolator::findInterval(const double x){
+int CubicSpline::findInterval(const double x){
 	int i = static_cast<int>((x-x0)/dx);
     if(i >= nintervals){
         return nintervals - 1;
