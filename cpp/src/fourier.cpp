@@ -68,7 +68,8 @@ void WaveformFourierHarmonicGenerator::computeWaveformFourierHarmonics(WaveformC
     Vector hcrossReal(modeNum*fsamples, 0.);
     Vector hcrossImag(modeNum*fsamples, 0.);
 
-	int freq_min_iter = omega_min/twopi/df - 1;
+	double fmin = omega_min/twopi;
+	int freq_min_iter = fmin/df - 1;
 	while(twopi*(freq_min_iter + 1)*df < omega_min){
 		freq_min_iter++;
 	}
@@ -85,15 +86,8 @@ void WaveformFourierHarmonicGenerator::computeWaveformFourierHarmonics(WaveformC
 
 	int freq_iter_samples = freq_max_iter - freq_min_iter + 1;
 
-	// std::cout << std::setprecision(10) << "\n";
-	// std::cout << omegaSamples << "\n";
-	// std::cout << omega_min_iter << "\n";
-	// std::cout << omega_0 << "\n";
 	// std::cout << omega_min << "\n";
 	// std::cout << omega_max << "\n";
-	// std::cout << domega << "\n";
-	// std::cout << fsamples << "\n";
-	// std::cout << omega_max - domega*(omega_min_iter + omegaSamples - 1) << "\n";
 
 	// Vector alphaVector(omegaSamples);
 	// Vector deltaPhaseVector(omegaSamples);
@@ -197,10 +191,10 @@ int WaveformFourierGenerator::computeTimeStepNumber(double M, double mu, double 
 	return _inspiralGen.computeTimeStepNumber(a, mu/M, r0, dt, T);
 }
 
-void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
+void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double df, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
 	double theta, phi;
 	sourceAngles(theta, phi, qS, phiS, qK, phiK);
-	dt = convertTime(dt, M);
+	df = convertFrequency(df, M);
 	T = convertTime(years_to_seconds(T), M);
 	wOpts.rescale = polarization(qS, phiS, qK, phiK);
 	wOpts.rescale *= scale_fourier_amplitude(mu, M, dist);
@@ -208,11 +202,11 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, doub
 	// omp_set_num_threads(16);
 	StopWatch watch;
 	// watch.start();
-	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, wOpts.num_threads);
+	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, T/1000., T, wOpts.num_threads);
 	// watch.stop();
 	// watch.print();
 	// watch.reset();
-	computeWaveformFourierHarmonics(h, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, hOpts, wOpts.num_threads);
+	computeWaveformFourierHarmonics(h, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, hOpts, wOpts.num_threads, df);
 	
 	double rescaleRe, rescaleIm;
 	rescaleRe = std::real(wOpts.rescale);
@@ -245,10 +239,10 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, doub
 	// watch.reset();
 }
 
-void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
+void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double df, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
 	double theta, phi;
 	sourceAngles(theta, phi, qS, phiS, qK, phiK);
-	dt = convertTime(dt, M);
+	df = convertFrequency(df, M);
 	T = convertTime(years_to_seconds(T), M);
 	wOpts.rescale = polarization(qS, phiS, qK, phiK);
 	wOpts.rescale *= scale_fourier_amplitude(mu, M, dist);
@@ -256,11 +250,11 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, int 
 	// omp_set_num_threads(16);
 	StopWatch watch;
 	// watch.start();
-	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, wOpts.num_threads);
+	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, T/1000., T, wOpts.num_threads);
 	// watch.stop();
 	// watch.print();
 	// watch.reset();
-	computeWaveformFourierHarmonics(h, l, m, modeNum, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, wOpts.num_threads);
+	computeWaveformFourierHarmonics(h, l, m, modeNum, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, wOpts.num_threads, df);
 	
 	double rescaleRe, rescaleIm;
 	rescaleRe = std::real(wOpts.rescale);
@@ -293,13 +287,13 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, int 
 	// watch.reset();
 }
 
-void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T){
-	dt = convertTime(dt, M);
+void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double df, double T){
+	df = convertFrequency(df, M);
 	T = convertTime(years_to_seconds(T), M);
 	WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
 
-	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, opts.num_threads);
-	computeWaveformFourierHarmonics(h, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, getHarmonicOptions(), opts.num_threads);
+	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, T/1000., T, opts.num_threads);
+	computeWaveformFourierHarmonics(h, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, getHarmonicOptions(), opts.num_threads, df);
 
 	double amplitude_correction = solar_mass_to_seconds(M);
 	#pragma omp parallel num_threads(opts.num_threads)
@@ -313,13 +307,14 @@ void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContain
 	}
 }
 
-void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T){
-	dt = convertTime(dt, M);
+void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double df, double T){
+	// dt = convertTime(dt, M);
+	df = convertFrequency(df, M);
 	T = convertTime(years_to_seconds(T), M);
 	WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
 
-	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, opts.num_threads);
-	computeWaveformFourierHarmonics(h, l, m, modeNum, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, opts.num_threads);
+	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, T/1000., T, opts.num_threads);
+	computeWaveformFourierHarmonics(h, l, m, modeNum, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, opts.num_threads, df);
 
 	double amplitude_correction = solar_mass_to_seconds(M);
 	#pragma omp parallel num_threads(opts.num_threads)

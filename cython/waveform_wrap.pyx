@@ -442,23 +442,36 @@ cdef class WaveformFourierGeneratorPy:
 
         return select_modes
 
-    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, bint include_zero_frequency = False, **kwargs):
         cdef int steps
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+
+        if "df" in kwargs.keys():
+            df = kwargs["df"]
+
+        cdef double T_f
+        if abs(df) > 0.:
+            T_f = seconds_to_years(1/abs(df))
+        else:
+            T_f = T
+            df = 1/years_to_seconds(T_f)
+
         if pad_output:
             timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
         else:
             timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
 
         T = seconds_to_years(dt)*(timeSteps - 1)
-        steps = self.hcpp.computeFrequencyStepNumber(dt, T)
+        steps = self.hcpp.computeFrequencyStepNumber(dt, T_f)
         
         if "pad_output" in kwargs.keys():
             pad_output = kwargs["pad_output"]
         if "return_list" in kwargs.keys():
             return_list = kwargs["return_list"]
+        if "include_zero_frequency" in kwargs.keys():
+            include_zero_frequency = kwargs["include_zero_frequency"]
 
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
@@ -468,22 +481,26 @@ cdef class WaveformFourierGeneratorPy:
         if "num_threads" in kwargs.keys():
             wOpts.num_threads = kwargs["num_threads"]
 
+        steps_zero = steps
+        if include_zero_frequency:
+            steps_zero += 1
+
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.empty(steps, dtype=np.complex128)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.empty(steps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.zeros(steps_zero, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.zeros(steps_zero, dtype=np.complex128)
 
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
 
-        self.hcpp.computeFourierWaveform(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
-        plusComplex = 1.j*np.flip(plus[-steps:])
-        plusComplex += plus[:steps]
-        crossComplex = 1.j*np.flip(cross[-steps:])
-        crossComplex += cross[:steps]
+        self.hcpp.computeFourierWaveform(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, df, T, hOpts, wOpts)
+        plusComplex[steps_zero-steps:] = 1.j*np.flip(plus[-steps:])
+        plusComplex[steps_zero-steps:] += plus[:steps]
+        crossComplex[steps_zero-steps:] = 1.j*np.flip(cross[-steps:])
+        crossComplex[steps_zero-steps:] += cross[:steps]
         
         return [plusComplex, crossComplex]
 
-    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, double df = 0., bint pad_output = False, bint return_list = False, bint include_zero_frequency = False, **kwargs):
         cdef int steps
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
@@ -492,14 +509,26 @@ cdef class WaveformFourierGeneratorPy:
             timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
         else:
             timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+
+        if "df" in kwargs.keys():
+            df = kwargs["df"]
+
+        cdef double T_f
+        if abs(df) > 0.:
+            T_f = seconds_to_years(1/abs(df))
+        else:
+            T_f = T
+            df = 1/years_to_seconds(T_f)
         
         T = seconds_to_years(dt)*(timeSteps - 1)
-        steps = self.hcpp.computeFrequencyStepNumber(dt, T)
-        
+        steps = self.hcpp.computeFrequencyStepNumber(dt, T_f)
+
         if "pad_output" in kwargs.keys():
             pad_output = kwargs["pad_output"]
         if "return_list" in kwargs.keys():
             return_list = kwargs["return_list"]
+        if "include_zero_frequency" in kwargs.keys():
+            include_zero_frequency = kwargs["include_zero_frequency"]
 
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
@@ -509,63 +538,26 @@ cdef class WaveformFourierGeneratorPy:
         if "num_threads" in kwargs.keys():
             wOpts.num_threads = kwargs["num_threads"]
 
-        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
-        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.empty(steps, dtype=np.complex128)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.empty(steps, dtype=np.complex128)
-        
-        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
-
-        self.hcpp.computeFourierWaveform(dereference(h.hcpp), M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
-        plusComplex = 1.j*np.flip(plus[-steps:])
-        plusComplex += plus[:steps]
-        crossComplex = 1.j*np.flip(cross[-steps:])
-        crossComplex += cross[:steps]
-
-        return [plusComplex, crossComplex]
-    
-    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
-        cdef int steps
-        cdef int timeSteps
-        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
-        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
-        if pad_output:
-            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
-        else:
-            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
-        
-        T = seconds_to_years(dt)*(timeSteps - 1)
-        steps = self.hcpp.computeFrequencyStepNumber(dt, T)
-        
-        if "pad_output" in kwargs.keys():
-            pad_output = kwargs["pad_output"]
-        if "return_list" in kwargs.keys():
-            return_list = kwargs["return_list"]
-
-        if "eps" in kwargs.keys():
-            hOpts.epsilon = kwargs["eps"]
-        if "max_samples" in kwargs.keys():
-            hOpts.max_samples = kwargs["max_samples"]
-
-        if "num_threads" in kwargs.keys():
-            wOpts.num_threads = kwargs["num_threads"]
+        steps_zero = steps
+        if include_zero_frequency:
+            steps_zero += 1
 
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.empty(steps, dtype=np.complex128)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.empty(steps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.zeros(steps_zero, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.zeros(steps_zero, dtype=np.complex128)
         
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
 
-        self.hcpp.computeFourierWaveformSourceFrame(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, theta, phi, Phi_phi0, dt, T)
-        plusComplex = 1.j*np.flip(plus[-steps:])
-        plusComplex += plus[:steps]
-        crossComplex = 1.j*np.flip(cross[-steps:])
-        crossComplex += cross[:steps]
+        self.hcpp.computeFourierWaveform(dereference(h.hcpp), M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, df, T, hOpts, wOpts)
+        plusComplex[steps_zero-steps:] = 1.j*np.flip(plus[-steps:])
+        plusComplex[steps_zero-steps:] += plus[:steps]
+        crossComplex[steps_zero-steps:] = 1.j*np.flip(cross[-steps:])
+        crossComplex[steps_zero-steps:] += cross[:steps]
 
         return [plusComplex, crossComplex]
     
-    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, double df = 0., bint pad_output = False, bint return_list = False, bint include_zero_frequency = False, **kwargs):
         cdef int steps
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
@@ -574,14 +566,26 @@ cdef class WaveformFourierGeneratorPy:
             timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
         else:
             timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+
+        if "df" in kwargs.keys():
+            df = kwargs["df"]
+
+        cdef double T_f
+        if abs(df) > 0.:
+            T_f = seconds_to_years(1/abs(df))
+        else:
+            T_f = T
+            df = 1/years_to_seconds(T_f)
         
         T = seconds_to_years(dt)*(timeSteps - 1)
-        steps = self.hcpp.computeFrequencyStepNumber(dt, T)
+        steps = self.hcpp.computeFrequencyStepNumber(dt, T_f)
         
         if "pad_output" in kwargs.keys():
             pad_output = kwargs["pad_output"]
         if "return_list" in kwargs.keys():
             return_list = kwargs["return_list"]
+        if "include_zero_frequency" in kwargs.keys():
+            include_zero_frequency = kwargs["include_zero_frequency"]
 
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
@@ -591,17 +595,78 @@ cdef class WaveformFourierGeneratorPy:
         if "num_threads" in kwargs.keys():
             wOpts.num_threads = kwargs["num_threads"]
 
+        steps_zero = steps
+        if include_zero_frequency:
+            steps_zero += 1
+
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.empty(steps, dtype=np.complex128)
-        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.empty(steps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.zeros(steps_zero, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.zeros(steps_zero, dtype=np.complex128)
         
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
 
-        self.hcpp.computeFourierWaveformSourceFrame(dereference(h.hcpp), M, mu, a, r0, theta, phi, Phi_phi0, dt, T)
-        plusComplex = 1.j*np.flip(plus[-steps:])
-        plusComplex += plus[:steps]
-        crossComplex = 1.j*np.flip(cross[-steps:])
-        crossComplex += cross[:steps]
+        self.hcpp.computeFourierWaveformSourceFrame(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, theta, phi, Phi_phi0, df, T)
+        plusComplex[steps_zero-steps:] = 1.j*np.flip(plus[-steps:])
+        plusComplex[steps_zero-steps:] += plus[:steps]
+        crossComplex[steps_zero-steps:] = 1.j*np.flip(cross[-steps:])
+        crossComplex[steps_zero-steps:] += cross[:steps]
+
+        return [plusComplex, crossComplex]
+    
+    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, double df = 0., bint pad_output = False, bint return_list = False, bint include_zero_frequency = False, **kwargs):
+        cdef int steps
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+
+        if "df" in kwargs.keys():
+            df = kwargs["df"]
+        
+        cdef double T_f
+        if abs(df) > 0.:
+            T_f = seconds_to_years(1/abs(df))
+        else:
+            T_f = T
+            df = 1/years_to_seconds(T_f)
+        
+        T = seconds_to_years(dt)*(timeSteps - 1)
+        steps = self.hcpp.computeFrequencyStepNumber(dt, T_f)
+        
+        if "pad_output" in kwargs.keys():
+            pad_output = kwargs["pad_output"]
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+        if "include_zero_frequency" in kwargs.keys():
+            include_zero_frequency = kwargs["include_zero_frequency"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+
+        steps_zero = steps
+        if include_zero_frequency:
+            steps_zero += 1
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] plusComplex = np.zeros(steps_zero, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] crossComplex = np.zeros(steps_zero, dtype=np.complex128)
+        
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        self.hcpp.computeFourierWaveformSourceFrame(dereference(h.hcpp), M, mu, a, r0, theta, phi, Phi_phi0, df, T)
+        plusComplex[steps_zero-steps:] = 1.j*np.flip(plus[-steps:])
+        plusComplex[steps_zero-steps:] += plus[:steps]
+        crossComplex[steps_zero-steps:] = 1.j*np.flip(cross[-steps:])
+        crossComplex[steps_zero-steps:] += cross[:steps]
 
         return [plusComplex, crossComplex]

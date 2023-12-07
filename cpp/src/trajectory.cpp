@@ -19,7 +19,7 @@ double kerr_geo_energy_circ(double a, double r){
 }
 double kerr_geo_momentum_circ(double a, double r){
 	double v = 1./sqrt(r);
-	return a*v*r*(1. - 2.*a*pow(v, 3) + pow(a, 2)*pow(v, 4))/sqrt(1. - 3.*pow(v, 2) + 2.*a*pow(v, 3))/abs(a);
+	return a*v*r*(1. - 2.*a*pow(v, 3) + pow(a, 2)*pow(v, 4))/sqrt(1. - 3.*pow(v, 2) + 2.*a*pow(v, 3))/fabs(a);
 }
 double kerr_geo_time_frequency_circ(double a, double r){
 	double v = 1./sqrt(r);
@@ -38,7 +38,7 @@ double kerr_geo_azimuthal_frequency_circ_time(double a, double r, int sgnX){
 	return kerr_geo_azimuthal_frequency_circ_time(sgnX*a, r);
 }
 double kerr_geo_radius_circ(double a, double Omega){
-	double sgnOmega = Omega/abs(Omega);
+	double sgnOmega = Omega/fabs(Omega);
 	return pow((1. - a*Omega)/(sgnOmega*Omega), 2./3.);
 }
 
@@ -55,7 +55,7 @@ double kerr_isco_radius(double a){
 
 double kerr_isco_frequency(double a){
 	int sgnX = sgn(a);
-	return kerr_geo_azimuthal_frequency_circ_time(abs(a), kerr_isco_radius(abs(a), sgnX), sgnX);
+	return kerr_geo_azimuthal_frequency_circ_time(fabs(a), kerr_isco_radius(fabs(a), sgnX), sgnX);
 }
 
 //////////////////////////////////////
@@ -103,12 +103,12 @@ double chi_of_spin(const double & a){
 }
 
 double alpha_of_a_omega(const double &, const double & omega, const double & oISCO){
-	if(abs(oISCO - omega) < 1.e-13){return 0.;}
-	return pow(abs(pow(oISCO, 1./3.) - pow(omega, 1./3.))/(pow(oISCO, 1./3.) - pow(OMEGA_MIN, 1./3.)), 0.5);
+	if(fabs(oISCO - omega) < 1.e-13){return 0.;}
+	return pow(fabs(pow(oISCO, 1./3.) - pow(omega, 1./3.))/(pow(oISCO, 1./3.) - pow(OMEGA_MIN, 1./3.)), 0.5);
 }
 
 double alpha_of_a_omega(const double & a, const double & omega){
-	return alpha_of_a_omega(a, omega, abs(kerr_isco_frequency(a)));
+	return alpha_of_a_omega(a, omega, fabs(kerr_isco_frequency(a)));
 }
 
 double omega_of_a_alpha(const double &, const double & alpha, const double & oISCO){
@@ -116,7 +116,7 @@ double omega_of_a_alpha(const double &, const double & alpha, const double & oIS
 }
 
 double omega_of_a_alpha(const double & a, const double & alpha){
-	return omega_of_a_alpha(a, alpha, abs(kerr_isco_frequency(a)));
+	return omega_of_a_alpha(a, alpha, fabs(kerr_isco_frequency(a)));
 }
 
 double omega_of_chi_alpha(const double & chi, const double & alpha, const double & oISCO){
@@ -124,11 +124,11 @@ double omega_of_chi_alpha(const double & chi, const double & alpha, const double
 }
 
 double omega_of_chi_alpha(const double & chi, const double & alpha){
-	return omega_of_chi_alpha(chi, alpha, abs(kerr_isco_frequency(spin_of_chi(chi))));
+	return omega_of_chi_alpha(chi, alpha, fabs(kerr_isco_frequency(spin_of_chi(chi))));
 }
 
 double domega_dalpha_of_a_omega(const double &, const double &omega, const double &oISCO){
-	if(abs(oISCO - omega) < 1.e-13){return 0.;}
+	if(fabs(oISCO - omega) < 1.e-13){return 0.;}
 	return -6.*pow((pow(oISCO, 1./3.) - pow(OMEGA_MIN, 1./3.))*(pow(oISCO, 1./3.) - pow(omega, 1./3.)), 0.5)*pow(omega, 2./3.);
 }
 
@@ -195,27 +195,27 @@ double min_orbital_radius(const double &a){
 }
 
 double newtonian_energy_flux(const double &omega){
-  return 32./5.*pow(abs(omega), 10./3.);
+  return 32./5.*pow(fabs(omega), 10./3.);
 }
 
 double normalize_energy_flux(const double &omega){
-  return pow(abs(omega), 10./3.);
+  return pow(fabs(omega), 10./3.);
 }
 
 double normalize_time(const double &omega, const double &oISCO){
-  return pow(abs(omega), -8./3.) - pow(abs(oISCO), -8./3.) + 1.e-6;
+  return pow(fabs(omega), -8./3.) - pow(fabs(oISCO), -8./3.) + 1.e-6;
 }
 
 double normalize_phase(const double &omega, const double &oISCO){
-  return  pow(abs(omega), -5./3.) - pow(abs(oISCO), -5./3.) + 1.e-6;
+  return  pow(fabs(omega), -5./3.) - pow(fabs(oISCO), -5./3.) + 1.e-6;
 }
 
 double normalize_time_domega(const double &omega){
-  return (-8./3.)*pow(abs(omega), -11./3.);
+  return (-8./3.)*pow(fabs(omega), -11./3.);
 }
 
 double normalize_phase_domega(const double &omega){
-  return  (-5./3.)*pow(abs(omega), -8./3.);
+  return  (-5./3.)*pow(fabs(omega), -8./3.);
 }
 
 // Trajectory Class
@@ -448,6 +448,7 @@ TrajectoryData read_trajectory_data(std::string filename){
 	double chi, alpha, t, phi, flux, beta, omega, PhiT;
 	
 	if(!file_exists(filename)){
+		std::cout << "(ERROR): No trajectory data for filename = " << filename << "\n";
 		return TrajectoryData();
 	}
 
@@ -581,7 +582,7 @@ TrajectorySpline2D::~TrajectorySpline2D(){}
 
 double TrajectorySpline2D::time(double chi, double alpha){
   	// return -expm1(pow(_time_spline.evaluate(chi, alpha), 2));
-	double oISCO = abs(kerr_isco_frequency(spin_of_chi(chi)));
+	double oISCO = fabs(kerr_isco_frequency(spin_of_chi(chi)));
 	double omega = omega_of_a_alpha(chi, alpha, oISCO);
 	return -_time_spline.evaluate(chi, alpha)*normalize_time(omega, oISCO);
 }
@@ -613,7 +614,7 @@ double TrajectorySpline2D::time_of_a_omega(double a, double omega){
 }
 
 double TrajectorySpline2D::time_of_a_omega_derivative(double a, double omega){
-	double oISCO = abs(kerr_isco_frequency(a));
+	double oISCO = fabs(kerr_isco_frequency(a));
 	double chi = chi_of_spin(a);
 	double alpha = alpha_of_a_omega(a, omega, oISCO);
 	// double f = _time_spline.evaluate(chi, alpha);
@@ -622,7 +623,7 @@ double TrajectorySpline2D::time_of_a_omega_derivative(double a, double omega){
 }
 
 // double TrajectorySpline2D::time_of_a_alpha_omega_derivative(double a, double alpha){
-// 	double oISCO = abs(kerr_isco_frequency(a));
+// 	double oISCO = fabs(kerr_isco_frequency(a));
 // 	double chi = chi_of_spin(a);
 // 	// double f = _time_spline.evaluate(chi, alpha);
 //   	// return -2.*f*exp(pow(f, 2))*_time_spline.derivative_y(chi, alpha)*dalpha_domega_of_alpha(alpha, oISCO);
@@ -631,7 +632,7 @@ double TrajectorySpline2D::time_of_a_omega_derivative(double a, double omega){
 // }
 
 double TrajectorySpline2D::time_of_a_alpha_omega_derivative(double a, double alpha){
-	double oISCO = abs(kerr_isco_frequency(a));
+	double oISCO = fabs(kerr_isco_frequency(a));
 	double chi = chi_of_spin(a);
 	// double f = _time_spline.evaluate(chi, alpha);
   	// return -2.*f*exp(pow(f, 2))*_time_spline.derivative_y(chi, alpha)*dalpha_domega_of_alpha(alpha, oISCO);
@@ -644,7 +645,7 @@ double TrajectorySpline2D::phase_of_a_omega(double a, double omega){
 }
 
 double TrajectorySpline2D::phase_of_a_omega_derivative(double a, double omega){
-	double oISCO = abs(kerr_isco_frequency(a));
+	double oISCO = fabs(kerr_isco_frequency(a));
 	double chi = chi_of_spin(a);
 	double alpha = alpha_of_a_omega(a, omega, oISCO);
 	// double f = _phase_spline.evaluate(chi, alpha);
