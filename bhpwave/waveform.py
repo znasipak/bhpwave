@@ -129,10 +129,8 @@ class KerrCircularWaveform:
     :type harmonic_data: HarmonicAmplitudes or None, optional
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional
-    :param frequency_domain: option to generate waveforms in the frequency domain. It is False by default.
-    :type frequency_domain: bool, optional
     """
-    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None, frequency_domain=False):
+    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
@@ -147,10 +145,8 @@ class KerrCircularWaveform:
         waveform_kwargs = {
             "num_threads": num_threads
         }
-        if frequency_domain:
-            self.waveform_generator = WaveformFourierGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
-        else:
-            self.waveform_generator = WaveformGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
+
+        self.waveform_generator = WaveformGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
 
     def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
         """
@@ -236,8 +232,6 @@ class KerrWaveform(KerrCircularWaveform):
     :type harmonic_data: HarmonicAmplitudes or None, optional
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional  
-    :param frequency_domain: option to generate waveforms in the frequency domain. It is False by default.
-    :type frequency_domain: bool, optional
     """
     def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
         """
@@ -300,6 +294,298 @@ class KerrWaveform(KerrCircularWaveform):
             l = np.ascontiguousarray(lmodes)
             m = np.ascontiguousarray(mmodes)
             h = self.waveform_generator.waveform_harmonics(l, m, M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+        else:
+            h = self.waveform_generator.waveform(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+        return h
+    
+    def source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt=10., T=1., **kwargs):
+        """
+        Calculate the scaled gravitational wave strain :math:`r\\times h/\\mu` in the source frame
+
+        :param M: mass (in solar masses) of the massive black hole
+        :type M: double
+        :param mu: mass (in solar masses) of the (smaller) stellar-mass compact object
+        :type mu: double
+        :param a: dimensionless black hole spin
+        :type a: double
+        :param r0: initial radial separation
+        :type r0: double
+        :param theta: polar angle of the observor with respect to the Kerr spin vector
+        :type theta: double
+        :param phi: azimuthal angle of the observor with respect to the Kerr spin vector
+        :type phi: double
+        :param Phi_phi0: Initial azimuthal position of the small compact object
+        :type Phi_phi0: double
+        :param dt: Spacing of time samples in seconds. Default is 10 seconds.
+        :type dt: double, optional
+        :param T: Duration of the waveform in years. Default is 1 year.
+        :type T: double, optional
+
+        :param pad_output: True returns the waveform for the full duration T years even if the system merges before T years has elasped
+        :type pad_output: bool, optional
+        :param select_modes: A list of tuples :math:`(l, m)` that select which modes to include in the waveform calculation
+        :type select_modes: list[tuple(double)] or ndarray[tuple(double)], optional
+        :param return_list: True returns the plus and cross polarizations of the waveform as separate ndarrays
+        :type return_list: bool, optional
+        
+        :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
+
+        """
+        if "T" in kwargs.keys():
+            T = kwargs["T"]
+        if "dt" in kwargs.keys():
+            dt = kwargs["dt"]
+
+        if "select_modes" in kwargs.keys():
+            lmodes = []
+            mmodes = []
+            for mode in kwargs["select_modes"]:
+                lmodes.append(mode[0])
+                mmodes.append(mode[1])
+            l = np.ascontiguousarray(lmodes)
+            m = np.ascontiguousarray(mmodes)
+            h = self.waveform_generator.waveform_harmonics_source_frame(l, m, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs)
+        else:
+            h = self.waveform_generator.waveform_source_frame(M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs)
+        return h
+    
+class KerrCircularFourierWaveform:
+    """
+    Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
+    in the frequency domain using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
+    By default, the waveform is generated in the solar system barycenter frame.
+
+    Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
+    parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
+
+    :param trajectory_data: a TrajectoryData class which holds interpolants of the relevant trajectory data
+    :type trajectory_data: TrajectoryData or None, optional
+    :param harmonic_data: a HarmonicAmplitudes class which holds interpolants of the harmonic mode amplitudes
+    :type harmonic_data: HarmonicAmplitudes or None, optional
+    :param num_threads: the number of threads used to evaluate the waveform
+    :type num_threads: int or None, optional
+    """
+    def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
+        if num_threads is None:
+            num_threads = CPU_MAX
+        if trajectory_data is None:
+            self.trajectory_data = TrajectoryDataPy(filename=traj_path, dealloc_flag=False)
+        else:
+            self.trajectory_data = trajectory_data.base_class
+        if harmonic_data is None:
+            self.harmonic_data = HarmonicAmplitudesPy(filebase=amplitude_path, dealloc_flag=False)
+        else:
+            self.harmonic_data = harmonic_data.base_class
+
+        waveform_kwargs = {
+            "num_threads": num_threads
+        }
+        self.waveform_generator = WaveformFourierGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
+
+    def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, T = 1., **kwargs):
+        """
+        Selects the harmonic modes that are used for calculating the waveform
+
+        :param M: mass (in solar masses) of the massive black hole
+        :type M: double
+        :param mu: mass (in solar masses) of the (smaller) stellar-mass compact object
+        :type mu: double
+        :param a: dimensionless black hole spin
+        :type a: double
+        :param r0: initial orbital separation of the two objects
+        :type r0: double
+        :param qS: polar angle of the source's sky location
+        :type qS: double
+        :param phiS: azimuthal angle of the source's sky location
+        :type phiS: double
+        :param qK: polar angle of the Kerr spin vector
+        :type qK: double
+        :param phiK: azimuthal angle of the Kerr spin vector
+        :type phiK: double
+        :param Phi_phi0: Initial azimuthal position of the small compact object
+        :type Phi_phi0: double
+        :param T: Duration of the waveform in years
+        :type T: double, optional
+
+        :rtype: 1d-array[tuples(doubles)]
+        """
+        return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, T, **kwargs)
+
+    def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, df = 1.e-8, fmax = 1e-1, frequencies = None, dt = None, T = None, **kwargs):
+        """
+        Calculate the complex gravitational wave strain
+
+        :param M: mass (in solar masses) of the massive black hole
+        :type M: double
+        :param mu: mass (in solar masses) of the (smaller) stellar-mass compact object
+        :type mu: double
+        :param a: dimensionless black hole spin
+        :type a: double
+        :param r0: initial orbital separation of the two objects
+        :type r0: double
+        :param dist: luminosity distance to the source in Gpc
+        :type dist: double
+        :param qS: polar angle of the source's sky location
+        :type qS: double
+        :param phiS: azimuthal angle of the source's sky location
+        :type phiS: double
+        :param qK: polar angle of the Kerr spin vector
+        :type qK: double
+        :param phiK: azimuthal angle of the Kerr spin vector
+        :type phiK: double
+        :param Phi_phi0: Initial azimuthal position of the small compact object
+        :type Phi_phi0: double
+        :param df: Spacing of the frequency samples in Hertz. Default is 1e-8.
+        :type df: double, optional
+        :param fmax: Maximum sampled frequency in Hertz. Default is 1e-1.
+        :type fmax: double, optional
+        :param frequencies: Array of frequency samples in Hertz. Default is None. This option overrides df and fmax.
+        :type frequencies: list[double] or ndarray[double], optional
+        :param dt: Spacing of time samples for corresponding time-domain waveform in seconds. Default is None. This option is only considered if df, fmax, and frequencies are None.
+        :type dt: double, optional
+        :param T: Duration of the observed waveform in years. Default is None. If None, T is set to be 1/df.
+        :type T: double, optional
+
+        :param pad_output: True returns the waveform for the full duration T years even if the system merges before T years has elasped
+        :type pad_output: bool, optional
+        :param select_modes: A list of tuples :math:`(l, m)` that select which modes to include in the waveform calculation
+        :type select_modes: list[tuple(double)] or ndarray[tuple(double)], optional
+        :param return_list: True returns the plus and cross polarizations of the waveform as separate ndarrays
+        :type return_list: bool, optional
+        :param eps: The tolerance to include modes that are subdominant to the power in the (2,2)-mode.
+        :type max_samples: double, optional
+        :param eps: The tolerance to include modes that are subdominant to the power in the (2,2)-mode.
+        :type eps: double, optional
+
+        :rtype: 1d-array[complex]
+        """
+        h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+        return h
+    
+def sort_frequency_and_time_sampling_arguments(df, fmax, frequencies, dt, T):
+    if df is None and frequencies is None and T is None:
+            raise ValueError("Values for df, frequencies, and T cannot all be None.")
+    
+    if fmax is None and frequencies is None and dt is None:
+        raise ValueError("Values for fmax, frequencies, and dt cannot all be None.")
+    
+    # dt is only relevant if it is set to a numerical value and none of the frequency data is specified
+    if dt is None or fmax is not None or df is not None or frequencies is not None:
+        dt = 0.
+    
+    if frequencies is not None:
+        if not isinstance(frequencies, list) or not isinstance(frequencies, np.ndarray):
+            raise ValueError("frequencies must be a list or a ndarray.")
+        
+        df = np.min(np.diff(frequencies))
+        fmax = np.max(frequencies)
+
+        if T is None:
+            T = 1/df
+    
+    if frequencies is None:
+        if df is None:
+            df = 1/years_to_seconds(T)
+        if fmax is None:
+            fmax = 1/(2*dt)
+        if T is None:
+            T = seconds_to_years(1/df)
+
+        frequencies = np.linspace(0, fmax, df)
+
+    return frequencies, dt, T
+
+class KerrFourierWaveform(KerrCircularFourierWaveform):
+    """
+    Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral in the
+    frequency domain using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
+    By default, the waveform is generated in the solar system barycenter frame.
+    
+    Waveform generation is limited to quasi-circular inspirals in Kerr spacetime, but the generator mirrors the generic
+    parametrization used in other EMRI waveform generators (e.g., https://bhptoolkit.org/FastEMRIWaveforms/html/user/main.html)
+
+    :param trajectory_data: a TrajectoryData class which holds interpolants of the relevant trajectory data
+    :type trajectory_data: TrajectoryData or None, optional
+    :param harmonic_data: a HarmonicAmplitudes class which holds interpolants of the harmonic mode amplitudes
+    :type harmonic_data: HarmonicAmplitudes or None, optional
+    :param num_threads: the number of threads used to evaluate the waveform
+    :type num_threads: int or None, optional  
+    """
+    def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, df = 0., fmax = 1e-1, frequencies = None, dt=10., T = 1., **kwargs):
+        """
+        Calculate the complex gravitational wave strain
+
+        :param M: mass (in solar masses) of the massive black hole
+        :type M: double
+        :param mu: mass (in solar masses) of the (smaller) stellar-mass compact object
+        :type mu: double
+        :param a: dimensionless black hole spin
+        :type a: double
+        :param p0: initial semi-latus rectum
+        :type p0: double
+        :param e0: initial orbital eccentricity
+        :type e0: double
+        :param x0: intial cosine of the orbital inclination
+        :type x0: double
+        :param dist: luminosity distance to the source in Gpc
+        :type dist: double
+        :param qS: polar angle of the source's sky location
+        :type qS: double
+        :param phiS: azimuthal angle of the source's sky location
+        :type phiS: double
+        :param qK: polar angle of the Kerr spin vector
+        :type qK: double
+        :param phiK: azimuthal angle of the Kerr spin vector
+        :type phiK: double
+        :param Phi_phi0: Initial azimuthal position of the small compact object
+        :type Phi_phi0: double
+        :param Phi_r0: Phase describing the initial radial position and velocity of the small compact object
+        :type Phi_r0: double
+        :param Phi_theta0: Phase describing the initial polar position and velocity of the small compact object
+        :type Phi_theta0: double
+        :param df: Spacing of the frequency samples in Hertz. Default is None. If df is None, then one must specify values for frequencies or T.
+        :type df: double, optional
+        :param fmax: Maximum sampled frequency in Hertz. Default is None. If fmax is None, then one must specify values for frequencies or dt.
+        :type fmax: double, optional
+        :param frequencies: Array of frequency samples in Hertz. Default is None. This option overrides df and fmax.
+        :type frequencies: list[double] or ndarray[double], optional
+        :param dt: Spacing of time samples for corresponding time-domain waveform in seconds. Default is None. If None, dt is set to be 1/(2 fmax).
+        :type dt: double, optional
+        :param T: Duration of the observed waveform in years. Default is None. If None, T is set to be 1/df.
+        :type T: double, optional
+
+        :param pad_output: True returns the waveform for the full duration T years even if the system merges before T years has elasped
+        :type pad_output: bool, optional
+        :param select_modes: A list of tuples :math:`(l, m)` that select which modes to include in the waveform calculation
+        :type select_modes: list[tuple(double)] or ndarray[tuple(double)], optional
+        :param return_list: True returns the plus and cross polarizations of the waveform as separate ndarrays
+        :type return_list: bool, optional
+        
+        :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
+
+        """
+        if "T" in kwargs.keys():
+            T = kwargs["T"]
+        if "dt" in kwargs.keys():
+            dt = kwargs["dt"]
+        if "df" in kwargs.keys():
+            df = kwargs["df"]
+        if "fmax" in kwargs.keys():
+            fmax = kwargs["fmax"]
+        if "frequencies" in kwargs.keys():
+            frequencies = kwargs["frequencies"]
+
+        frequencies, dt, T = sort_frequency_and_time_sampling_arguments(df, fmax, frequencies, dt, T)
+
+        if "select_modes" in kwargs.keys():
+            lmodes = []
+            mmodes = []
+            for mode in kwargs["select_modes"]:
+                lmodes.append(mode[0])
+                mmodes.append(mode[1])
+            l = np.ascontiguousarray(lmodes)
+            m = np.ascontiguousarray(mmodes)
+            h = self.waveform_generator.waveform_harmonics(l, m, M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, **kwargs)
         else:
             h = self.waveform_generator.waveform(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
         return h

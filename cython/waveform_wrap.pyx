@@ -99,8 +99,8 @@ cdef extern from "fourier.hpp":
         void computeFourierWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double df, double T)
         void computeFourierWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double df, double T)
 
-        HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T)
-        HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions opts)
+        HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double T)
+        HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double T, HarmonicOptions opts)
 
         WaveformHarmonicOptions getWaveformHarmonicOptions()
         HarmonicOptions getHarmonicOptions()
@@ -424,14 +424,14 @@ cdef class WaveformFourierGeneratorPy:
     def step_number(self, double dt, double T):
         return self.hcpp.computeFrequencyStepNumber(dt, T)
 
-    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, pad_nmodes = False, **kwargs):
+    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double T, pad_nmodes = False, **kwargs):
         cdef HarmonicOptions hOpts
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
         if "max_samples" in kwargs.keys():
             hOpts.max_samples = kwargs["max_samples"]
 
-        cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts)
+        cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, T, hOpts)
         cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
         modeWrap.wrap(modescpp)
 
@@ -442,36 +442,25 @@ cdef class WaveformFourierGeneratorPy:
 
         return select_modes
 
-    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, bint include_zero_frequency = False, **kwargs):
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, bint include_zero_frequency = False, **kwargs):
         cdef int steps
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
 
-        if "df" in kwargs.keys():
-            df = kwargs["df"]
-
-        cdef double T_f
-        if abs(df) > 0.:
-            T_f = seconds_to_years(1/abs(df))
-        else:
-            T_f = T
-            df = 1/years_to_seconds(T_f)
-
-        if pad_output:
-            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
-        else:
-            timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
-
-        T = seconds_to_years(dt)*(timeSteps - 1)
-        steps = self.hcpp.computeFrequencyStepNumber(dt, T_f)
+        # cdef double T_f
+        # if abs(df) > 0.:
+        #     T_f = seconds_to_years(1/abs(df))
+        # else:
+        #     T_f = T
+        #     df = 1/years_to_seconds(T_f)
         
         if "pad_output" in kwargs.keys():
             pad_output = kwargs["pad_output"]
         if "return_list" in kwargs.keys():
             return_list = kwargs["return_list"]
-        if "include_zero_frequency" in kwargs.keys():
-            include_zero_frequency = kwargs["include_zero_frequency"]
+        # if "include_zero_frequency" in kwargs.keys():
+        #     include_zero_frequency = kwargs["include_zero_frequency"]
 
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
@@ -481,9 +470,21 @@ cdef class WaveformFourierGeneratorPy:
         if "num_threads" in kwargs.keys():
             wOpts.num_threads = kwargs["num_threads"]
 
-        steps_zero = steps
-        if include_zero_frequency:
-            steps_zero += 1
+        # if the user specifies a value for dt, then pick frequencies to align with DFT of TD signal
+        if dt > 0.:
+            if pad_output:
+                timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+            else:
+                timeSteps = self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
+            T = seconds_to_years(dt)*(timeSteps - 1)
+            if include_zero_frequency:
+                frequencies = np.fft.rfftfreq(timeSteps, d=dt)
+
+        if frequencies[0] == 0.:
+            frequencies = frequencies[1:] # throw away zero frequencies
+
+        steps = len(frequencies)
+        steps_zero = steps + 1 # of steps including zero frequency
 
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(2*steps, dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(2*steps, dtype=np.float64)
