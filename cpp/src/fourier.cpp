@@ -176,6 +176,11 @@ void WaveformFourierHarmonicGenerator::computeWaveformFourierHarmonics(WaveformC
     double omega_max = inspiral.getFinalFrequency();
 	double oisco = inspiral.getISCOFrequency();
 
+	// std::cout << "omega_min = " << omega_min << "\n";
+	// std::cout << "omega_max = " << omega_max << "\n";
+	// std::cout << "oisco = " << oisco << "\n";
+	// std::cout << "alpha_f = " << inspiral.getAlpha(inspiral.getSize() - 1) << "\n";
+
     double alpha_i = alpha_of_a_omega(a, omega_min);
     double phase_i = traj.phase(chi, alpha_i);
 	double time_i = traj.time(chi, alpha_i);
@@ -205,12 +210,12 @@ void WaveformFourierHarmonicGenerator::computeWaveformFourierHarmonics(WaveformC
 		freq_max_iter--;
 	}
 
-	int freq_iter_samples = freq_max_iter - freq_min_iter;
+	int freq_iter_samples = freq_max_iter - freq_min_iter + 1;
 
     #pragma omp parallel num_threads(num_threads)
     {
       int i, j, k;
-      double amp, modePhase, Phi, cPhi, sPhi, omega, alpha, dtdo, phase, t, deltaPhase;
+      double amp, modePhase, Phi, cPhi, sPhi, omega, alpha, dtdo, deltaPhase;
       // first we calculate all of the mode data
       #pragma omp for collapse(2)
       for(k = 0; k < freq_iter_samples; k++){
@@ -306,7 +311,7 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, doub
 	int imax = h.getSize();
   	int imaxf = imax/2;
 	double df;
-	double freq[imaxf];
+	Vector freq(imaxf, 0.);
 
 	for(int i = 0; i < imaxf; i ++){
 		df = frequencies[i];
@@ -317,13 +322,17 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, doub
 	wOpts.rescale *= scale_fourier_amplitude(mu, M, dist);
 
 	// omp_set_num_threads(16);
-	StopWatch watch;
+	// StopWatch watch;
 	// watch.start();
+	double Tmerge = _inspiralGen.computeTimeToMerger(a, mu/M, r0);
+	T = (T > Tmerge) ? Tmerge : T;
+	// std::cout << "T = " << T << "\n";
+	// std::cout << "Tmerge = " << Tmerge << "\n";
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, T/1000., T, wOpts.num_threads);
 	// watch.stop();
 	// watch.print();
 	// watch.reset();
-	computeWaveformFourierHarmonics(h, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, hOpts, wOpts.num_threads, freq, imaxf);
+	computeWaveformFourierHarmonics(h, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, hOpts, wOpts.num_threads, &freq[0], imaxf);
 	
 	double rescaleRe, rescaleIm;
 	rescaleRe = std::real(wOpts.rescale);
@@ -360,25 +369,27 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, int 
 
 	int imax = h.getSize();
   	int imaxf = imax/2;
-	double df;
-	double freq[imaxf];
+	double fi;
+	Vector freq(imaxf, 0.);
 
 	for(int i = 0; i < imaxf; i ++){
-		df = frequencies[i];
-		freq[i] = convertFrequency(df, M);
+		fi = frequencies[i];
+		freq[i] = convertFrequency(fi, M);
 	}
 	T = convertTime(years_to_seconds(T), M);
 	wOpts.rescale = polarization(qS, phiS, qK, phiK);
 	wOpts.rescale *= scale_fourier_amplitude(mu, M, dist);
 
 	// omp_set_num_threads(16);
-	StopWatch watch;
+	// StopWatch watch;
 	// watch.start();
+	double Tmerge = _inspiralGen.computeTimeToMerger(a, mu/M, r0);
+	T = (T > Tmerge) ? Tmerge : T;
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, T/1000., T, wOpts.num_threads);
 	// watch.stop();
 	// watch.print();
 	// watch.reset();
-	computeWaveformFourierHarmonics(h, l, m, modeNum, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, wOpts.num_threads, freq, imaxf);
+	computeWaveformFourierHarmonics(h, l, m, modeNum, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, wOpts.num_threads, &freq[0], imaxf);
 	
 	double rescaleRe, rescaleIm;
 	rescaleRe = std::real(wOpts.rescale);
@@ -386,8 +397,7 @@ void WaveformFourierGenerator::computeFourierWaveform(WaveformContainer &h, int 
 	// if the rescaling factor is purely real, then just rescale both polarizations by the same amplitude
 	// else, then we get a mixing of the plus and cross polarizations that gives us new polarization amplitudes
 	// watch.start();
-	int imax = h.getSize();
-  	int imaxf = imax/2;
+
 	#pragma omp parallel num_threads(wOpts.num_threads)
 	{
 		// total_td = omp_get_num_threads();
@@ -415,7 +425,7 @@ void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContain
 	int imax = h.getSize();
   	int imaxf = imax/2;
 	double df;
-	double freq[imaxf];
+	Vector freq(imaxf, 0.);
 
 	for(int i = 0; i < imaxf; i ++){
 		df = frequencies[i];
@@ -424,8 +434,10 @@ void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContain
 	T = convertTime(years_to_seconds(T), M);
 	WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
 
+	double Tmerge = _inspiralGen.computeTimeToMerger(a, mu/M, r0);
+	T = (T > Tmerge) ? Tmerge : T;
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, T/1000., T, opts.num_threads);
-	computeWaveformFourierHarmonics(h, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, getHarmonicOptions(), opts.num_threads, freq, imaxf);
+	computeWaveformFourierHarmonics(h, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, getHarmonicOptions(), opts.num_threads, &freq[0], imaxf);
 
 	double amplitude_correction = solar_mass_to_seconds(M);
 	#pragma omp parallel num_threads(opts.num_threads)
@@ -443,7 +455,7 @@ void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContain
 	int imax = h.getSize();
   	int imaxf = imax/2;
 	double df;
-	double freq[imaxf];
+	Vector freq(imaxf, 0.);
 
 	for(int i = 0; i < imaxf; i ++){
 		df = frequencies[i];
@@ -452,8 +464,10 @@ void WaveformFourierGenerator::computeFourierWaveformSourceFrame(WaveformContain
 	T = convertTime(years_to_seconds(T), M);
 	WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
 
+	double Tmerge = _inspiralGen.computeTimeToMerger(a, mu/M, r0);
+	T = (T > Tmerge) ? Tmerge : T;
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, T/1000., T, opts.num_threads);
-	computeWaveformFourierHarmonics(h, l, m, modeNum, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, opts.num_threads, freq, imaxf);
+	computeWaveformFourierHarmonics(h, l, m, modeNum, inspiral, _inspiralGen.getTrajectorySpline(), theta, phi - Phi_phi0, opts.num_threads, &freq[0], imaxf);
 
 	double amplitude_correction = solar_mass_to_seconds(M);
 	#pragma omp parallel num_threads(opts.num_threads)
