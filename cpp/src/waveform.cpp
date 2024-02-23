@@ -197,7 +197,8 @@ void WaveformHarmonicGenerator::computeWaveformHarmonic(WaveformContainer &h, in
 void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts){
   double plusY[modeNum];
   double crossY[modeNum];
-  double sYlm, sYlmMinus, mm;
+  double sYlm, sYlmMinus;
+  int mm;
   for(int i = 0; i < modeNum; i++){
     mm = abs(m[i]);
     if(opts.include_negative_m){
@@ -224,7 +225,8 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, i
 void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts){
   double plusY[modeNum];
   double crossY[modeNum];
-  double sYlm, sYlmMinus, mm;
+  double sYlm, sYlmMinus;
+  int mm;
   for(int i = 0; i < modeNum; i++){
     mm = abs(m[i]);
     if(opts.include_negative_m){
@@ -340,34 +342,27 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformHarmonicsContai
     }
 }
 
-// void WaveformHarmonicGenerator::computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts){
-//   double plusY[modeNum];
-//   double crossY[modeNum];
-//   double sYlm, sYlmMinus, mm;
-//   for(int i = 0; i < modeNum; i++){
-//     mm = abs(m[i]);
-//     if(m[i] > 0){
-//       sYlm = spin_weighted_spherical_harmonic(-2, l[i], mm, theta);
-//       plusY[i] = sYlm;
-//       crossY[i] = sYlm;
-//     }else if(m[i] < 0){
-//       sYlmMinus = pow(-1, l[i] + mm)*spin_weighted_spherical_harmonic(2, l[i], mm, theta);
-//       plusY[i] = sYlmMinus;
-//       crossY[i] = -sYlmMinus;
-//     }else{
-//       plusY[i] = 0.;
-//       crossY[i] = 0.;
-//     }
-//   }
-//   computeWaveformHarmonicsPhaseAmplitude(h, l, m, plusY, crossY, modeNum, inspiral, theta, phi, opts);
-// }
-
 void WaveformHarmonicGenerator::computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts){
+  double plusY[modeNum];
+  double crossY[modeNum];
+  double sYlm, sYlmMinus;
+  int mm;
+  for(int i = 0; i < modeNum; i++){
+    mm = abs(m[i]);
+    sYlm = spin_weighted_spherical_harmonic(-2, l[i], mm, theta);
+    sYlmMinus = pow(-1, mm)*spin_weighted_spherical_harmonic(2, l[i], mm, theta);
+    plusY[i] = sYlm;
+    crossY[i] = sYlmMinus;
+  }
+  computeWaveformHarmonicsPhaseAmplitude(h, l, m, plusY, crossY, modeNum, inspiral, theta, phi, opts);
+}
+
+void WaveformHarmonicGenerator::computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts){
     HarmonicSpline2D* Alms[modeNum];
 
     // first compute mode-dependent but not time-step dependent information and store
     for(int i = 0; i < modeNum; i++){
-      Alms[i] = _Alm.getPointer(l[i], int(m[i]));
+      Alms[i] = _Alm.getPointer(l[i], abs(m[i]));
     }
     double chi = chi_of_spin(inspiral.getSpin());
 
@@ -381,7 +376,7 @@ void WaveformHarmonicGenerator::computeWaveformHarmonicsPhaseAmplitude(WaveformH
     #pragma omp parallel num_threads(opts.num_threads)
     {
       int i, j;
-      double amp, modePhase, Phi;
+      double amp, modePhase, Phi, PhiNoShift;
       // first we calculate all of the mode data
       #pragma omp for collapse(2) schedule(static)
       for(j = 0; j < modeNum; j++){
@@ -390,9 +385,11 @@ void WaveformHarmonicGenerator::computeWaveformHarmonicsPhaseAmplitude(WaveformH
           amp = Alms[j]->amplitude(chi, inspiral.getAlpha(i));
           modePhase = Alms[j]->phase(chi, inspiral.getAlpha(i));
           Phi = modePhase - am*(inspiral.getPhase(i) - phi);
-          // ampVec[j + i*modeNum] = amp;
-          // phaseVec[j + i*modeNum] = Phi;
-          h.setTimeStep(j, i, amp, Phi);
+
+          // positive m-modes
+          h.setTimeStep(2*j, i, amp*plusY[j], Phi);
+          // negative m-modes
+          h.setTimeStep(2*j + 1, i, amp*crossY[j], - Phi - l[j]*M_PI);
         }
       }
 
@@ -620,7 +617,7 @@ void WaveformGenerator::computeWaveformPhaseAmplitude(WaveformHarmonicsContainer
 		double amp, phase;
 		#pragma omp for collapse(2)
 		for(i = 0; i < timeMax; i++){
-      for(j = 0; j < modeNum; j++){
+      for(j = 0; j < modeMax; j++){
         amp = h.getPlus(j, i);
         phase = h.getCross(j, i);
         h.setTimeStep(j, i, rescaleAmp*amp, rescalePhase + phase);

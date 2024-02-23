@@ -11,6 +11,13 @@ public:
   void computeWaveformFourierHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, int num_threads, double freq[], int fsamples, int include_negative_m = 1);
   void computeWaveformFourierHarmonics(WaveformContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, int num_threads, double freq[], int fsamples);
 
+  void computeWaveformFourierHarmonics(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, int num_threads, double freq[], int fsamples, int include_negative_m = 1);
+  void computeWaveformFourierHarmonics(WaveformHarmonicsContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, int num_threads, double freq[], int fsamples);
+
+  void computeWaveformFourierHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, int num_threads, double freq[], int fsamples);
+  void computeWaveformFourierHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, TrajectorySpline2D &traj, double theta, double phi, int num_threads, double freq[], int fsamples);
+
+
   HarmonicSelector& getModeSelector();
   HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta);
   HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta, HarmonicOptions opts);
@@ -36,9 +43,15 @@ public:
   
   void computeFourierWaveform(WaveformContainer &h, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double frequencies[], double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
   void computeFourierWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double frequencies[], double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
+
+  void computeFourierWaveform(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double frequencies[], double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
+
+  void computeFourierWaveformPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double frequencies[], double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
   
   void computeFourierWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double frequencies[], double T);
   void computeFourierWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double frequencies[], double T);
+
+  void computeFourierWaveformSourceFrame(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double frequencies[], double T);
 
   HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double T);
   HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double T, HarmonicOptions opts);
