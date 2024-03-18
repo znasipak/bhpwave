@@ -263,10 +263,10 @@ double InspiralContainer::getTime(int i){
 	return i*_dt;
 }
 double InspiralContainer::getFrequency(int i){
-	return omega_of_a_alpha(_a, _alpha[i]);
+	return omega_of_a_alpha(_a, fabs(_alpha[i]));
 }
 double InspiralContainer::getRadius(int i){
-	return kerr_geo_radius_circ(_a, omega_of_a_alpha(_a, _alpha[i]));
+	return kerr_geo_radius_circ(_a, omega_of_a_alpha(_a, fabs(_alpha[i])));
 }
 
 double InspiralContainer::getSpin(){
@@ -292,7 +292,7 @@ double InspiralContainer::getInitialFrequency(){
 }
 
 double InspiralContainer::getFinalFrequency(){
-  return omega_of_a_alpha(_a, _alpha[getSize() - 1], _oisco);
+  return omega_of_a_alpha(_a, fabs(_alpha[getSize() - 1]), _oisco);
 }
 
 double InspiralContainer::getFinalRadius(){
@@ -385,8 +385,14 @@ void InspiralGenerator::computeInspiral(InspiralContainer &inspiral, double chi,
 		#pragma omp for
 		for(int j = 1; j < steps; j++){
 			alpha = _traj.orbital_alpha(chi, t_i + dt*j);
-			phase = (_traj.phase_of_time(chi, t_i + dt*j) - phase_i)/massratio;
-			inspiral.setTimeStep(j, alpha, phase);
+			phase = _traj.phase_of_time(chi, t_i + dt*j);
+			if(alpha < 0. || isnan(alpha)){
+				alpha = 0.;
+			}
+			if(phase > 0. || isnan(phase)){
+				phase = 0.;
+			}
+			inspiral.setTimeStep(j, alpha, (phase - phase_i)/massratio);
 		}
 	}
 }

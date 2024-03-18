@@ -45,14 +45,42 @@ protected:
   int _owner_flag;
 };
 
+class WaveformHarmonicsContainer{
+public:
+  WaveformHarmonicsContainer(int modeNum, int timeSteps);
+  WaveformHarmonicsContainer(double *plus_ptr, double *cross_ptr, int modeNum, int timeSteps);
+  ~WaveformHarmonicsContainer();
+  void setTimeStep(int i, int j, double plus, double cross);
+  void addTimeStep(int i, int j, double plus, double cross);
+  void multiplyTimeStep(int i, int j, double plus, double cross);
+
+  double* getPlusPointer();
+  double* getCrossPointer();
+
+  double getPlus(int i, int j);
+  double getCross(int i, int j);
+
+  int getSize();
+  int getTimeSize();
+  int getModeSize();
+
+protected:
+  double *_plus;
+  double *_cross;
+  int _tsize;
+  int _msize;
+  int _owner_flag;
+};
+
 class WaveformHarmonicOptions{
 public:
-  WaveformHarmonicOptions(): rescale(1.), num_threads(omp_get_max_threads()), pad_output(0) {}
-  WaveformHarmonicOptions(double rescale, int num, int pad_output): rescale(rescale), num_threads(num), pad_output(pad_output) {}
+  WaveformHarmonicOptions(): rescale(1.), num_threads(omp_get_max_threads()), pad_output(0), include_negative_m(1) {}
+  WaveformHarmonicOptions(double rescale, int num, int pad_output, int include_negative_m): rescale(rescale), num_threads(num), pad_output(pad_output), include_negative_m(include_negative_m) {}
   
   Complex rescale;
   int num_threads;
   int pad_output;
+  int include_negative_m;
 };
 
 class WaveformHarmonicGenerator{
@@ -60,19 +88,24 @@ public:
   WaveformHarmonicGenerator(HarmonicAmplitudes &Alm, HarmonicOptions hOpts = HarmonicOptions(), WaveformHarmonicOptions wOpts = WaveformHarmonicOptions());
 
   WaveformContainer computeWaveformHarmonic(int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+  void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi);
+  void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+
   WaveformContainer computeWaveformHarmonics(int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+  void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+  void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, HarmonicOptions hOpts);
+  void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);  void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+  void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
 
   void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi);
-  void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi);
   void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi);
   void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi);
 
-  void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
-  void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, HarmonicOptions hOpts);
-  void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
-  void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
-  void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
-  void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+  void computeWaveformHarmonics(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+  void computeWaveformHarmonics(WaveformHarmonicsContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
+  
+  void computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);  
+  void computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
 
   HarmonicSelector& getModeSelector();
   HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta);
@@ -106,6 +139,11 @@ public:
 
   void computeWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T);
   void computeWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T);
+
+  void computeWaveform(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
+  void computeWaveformSourceFrame(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T);
+
+  void computeWaveformPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts);
 private:
   InspiralGenerator _inspiralGen;
 };
