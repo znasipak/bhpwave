@@ -6,7 +6,7 @@ from bhpwaveformcy import (WaveformHarmonicGeneratorPyWrapper,
                            InspiralGeneratorPy,
                            HarmonicAmplitudesPy)
 
-from trajectory.geodesic import A_MAX
+from bhpwave.trajectory.geodesic import A_MAX
 
 import os
 from bhpwave.constants import *
