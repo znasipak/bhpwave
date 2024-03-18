@@ -386,10 +386,10 @@ void InspiralGenerator::computeInspiral(InspiralContainer &inspiral, double chi,
 		for(int j = 1; j < steps; j++){
 			alpha = _traj.orbital_alpha(chi, t_i + dt*j);
 			phase = _traj.phase_of_time(chi, t_i + dt*j);
-			if(alpha < 0. || isnan(alpha)){
+			if(alpha < 0. || std::isnan(alpha)){
 				alpha = 0.;
 			}
-			if(phase > 0. || isnan(phase)){
+			if(phase > 0. || std::isnan(phase)){
 				phase = 0.;
 			}
 			inspiral.setTimeStep(j, alpha, (phase - phase_i)/massratio);
