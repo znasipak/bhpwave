@@ -6,6 +6,8 @@ from bhpwaveformcy import (WaveformHarmonicGeneratorPyWrapper,
                            InspiralGeneratorPy,
                            HarmonicAmplitudesPy)
 
+from trajectory.geodesic import A_MAX
+
 import os
 from bhpwave.constants import *
 import warnings
@@ -19,101 +21,31 @@ try:
 except:
     CPU_MAX = os.cpu_count()
 
-# class KerrCircularWaveformBase:
-#     """
-#     Base class that generates a gravitational waveform produced by an extreme-mass-ratio inspiral
-#     using the adiabatic approximation from black hole perturbation theory and the self-force formalism.
-#     The waveform is generated in units :math:`G = c = 1`, with time measured in units of :math:`M`,
-#     where :math:`M` is the mass of the more massive body. 
+def check_source_frame_parameters(a, x0, theta, phi, Phi_phi0):
+    assert np.abs(x0) == 1
+    assert np.abs(a) <= A_MAX
 
-#     Waveform generation is limited to quasi-circular inspirals in Kerr spacetime.
-    
-#     :param trajectory_data: a TrajectoryData class which holds interpolants of the relevant trajectory data
-#     :type trajectory_data: TrajectoryData or None, optional
-#     :param harmonic_data: a HarmonicAmplitudes class which holds interpolants of the harmonic mode amplitudes
-#     :type harmonic_data: HarmonicAmplitudes or None, optional
-#     :param num_threads: the number of threads used to evaluate the waveform
-#     :type num_threads: int or None, optional
-#     """
-#     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
-#         if num_threads is None:
-#             num_threads = CPU_MAX
-#         if trajectory_data is None:
-#             self.trajectory_data = TrajectoryDataPy(filename=traj_path, dealloc_flag=False)
-#         else:
-#             self.trajectory_data = trajectory_data.base_class
-#         if harmonic_data is None:
-#             self.harmonic_data = HarmonicAmplitudesPy(filebase=amplitude_path, dealloc_flag=False)
-#         else:
-#             self.harmonic_data = harmonic_data.base_class
+    if x0 < 0:
+        a = -a
+        x0 = -x0
+        theta = np.pi - theta
+        phi = -phi
+        Phi_phi0 = -Phi_phi0
 
-#         self.inspiral_generator = InspiralGeneratorPy(self.trajectory_data, num_threads=num_threads)
-#         waveform_kwargs = {
-#             "num_threads": num_threads
-#         }
-#         self.waveform_generator = WaveformHarmonicGeneratorPyWrapper(self.harmonic_data, waveform_kwargs=waveform_kwargs)
+    return a, x0, theta, phi, Phi_phi0
 
-#     def generate_base_waveform(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
-#         """
-#         Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\\times` measured in the
-#         solar system barycenter (SSB) frame
+def check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0):
+    assert np.abs(x0) == 1
+    assert np.abs(a) <= A_MAX
 
-#         :param massratio: dimensionless ratio between the smaller and larger masses of the binary
-#         :type massratio: double
-#         :param a: dimensionless spin of the massive black hole (MBH)
-#         :type a: double
-#         :param r0: initial orbital separation of the two objects
-#         :type r0: double
-#         :param dt: Spacing of time samples in units of mass of the MBH
-#         :type dt: double
-#         :param T: Duration of the waveform in units of mass of the MBH
-#         :type T: double
-#         :param theta: polar angle of the observor's sky location with respect to the MBH's spin vector
-#         :type theta: double
-#         :param phi: azimuthal angle of the observor's sky location
-#         :type phi: double
+    if x0 < 0:
+        a = -a
+        x0 = -x0
+        qK = np.pi - qK
+        phiK = np.pi + phiK
+        Phi_phi0 = np.pi + Phi_phi0
 
-#         :rtype: 1d-array[complex]
-#         """
-#         if "num_threads" in kwargs.keys():
-#             inspiral = self.inspiral_generator(massratio, a, r0, dt, T, num_threads=kwargs["num_threads"])
-#         else:
-#             inspiral = self.inspiral_generator(massratio, a, r0, dt, T)
-
-#         if "modes" in kwargs.keys():
-#             modes = np.array(kwargs["modes"])
-#             if np.array(kwargs["modes"]).shape[0] == 2:
-#                 h = self.waveform_generator(modes[0], modes[1], inspiral, theta, phi)
-#             else:
-#                 raise KeyError("modes key must be an array or list with dimension (2 x # of modes)")
-#         else:
-#             h = self.waveform_generator(inspiral, theta, phi)
-    
-#         return h.plus - 1.j*h.cross
-    
-#     def __call__(self, massratio, a, r0, dt, T, theta, phi, **kwargs):
-#         """
-#         Calculate the complex gravitational wave strain :math:`h = h_+ - i h_\\times` measured in the
-#         solar system barycenter (SSB) frame.
-
-#         :param massratio: dimensionless ratio between the smaller and larger masses of the binary
-#         :type massratio: double
-#         :param a: dimensionless spin of the massive black hole (MBH)
-#         :type a: double
-#         :param r0: initial orbital separation of the two objects
-#         :type r0: double
-#         :param dt: Spacing of time samples in units of mass of the MBH
-#         :type dt: double
-#         :param T: Duration of the waveform in units of mass of the MBH
-#         :type T: double
-#         :param theta: polar angle of the observor's sky location with respect to the MBH's spin vector
-#         :type theta: double
-#         :param phi: azimuthal angle of the observor's sky location
-#         :type phi: double
-
-#         :rtype: 1d-array[complex]
-#         """
-#         return self.generate_base_waveform(massratio, a, r0, dt, T, theta, phi, **kwargs)
+    return a, x0, qK, phiK, Phi_phi0
 
 class KerrCircularWaveform:
     """
@@ -176,6 +108,7 @@ class KerrCircularWaveform:
 
         :rtype: 1d-array[tuples(doubles)]
         """
+
         return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
 
     def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
@@ -219,6 +152,7 @@ class KerrCircularWaveform:
         :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
 
         """
+
         if "T" in kwargs.keys():
             T = kwargs["T"]
         if "dt" in kwargs.keys():
@@ -290,6 +224,7 @@ class KerrCircularWaveform:
         :rtype: 2d-array[complex] or list[two 2d-arrays[double]]
 
         """
+
         if "T" in kwargs.keys():
             T = kwargs["T"]
         if "dt" in kwargs.keys():
@@ -361,6 +296,7 @@ class KerrCircularWaveform:
         :rtype: 2d-array[complex] or list[two 2d-arrays[double]]
 
         """
+
         if "T" in kwargs.keys():
             T = kwargs["T"]
         if "dt" in kwargs.keys():
@@ -417,6 +353,7 @@ class KerrCircularWaveform:
         :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
 
         """
+
         if "T" in kwargs.keys():
             T = kwargs["T"]
         if "dt" in kwargs.keys():
@@ -512,6 +449,7 @@ class KerrWaveform(KerrCircularWaveform):
         :rtype: 1d-array[complex] or list[two 1d-arrays[double]]
 
         """
+        a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
         return super().__call__(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, **kwargs)
     
     def harmonics(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
@@ -563,6 +501,7 @@ class KerrWaveform(KerrCircularWaveform):
         :rtype: 2d-array[complex] or list[two 2d-arrays[double]]
 
         """
+        a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
         return super().harmonics(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, **kwargs)
     
     def harmonics_data(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
@@ -614,6 +553,7 @@ class KerrWaveform(KerrCircularWaveform):
         :rtype: 2d-array[complex] or list[two 2d-arrays[double]]
 
         """
+        a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
         return super().harmonics_data(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, **kwargs)
 
     
@@ -1104,6 +1044,7 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
         :rtype: list[two 1d-arrays[double]]
 
         """
+        a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
         return super().__call__(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
     
     def harmonics(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
@@ -1162,6 +1103,7 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
         :rtype: list[two 2d-arrays[double]]
 
         """
+        a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
         return super().harmonics(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
     
     def harmonics_data(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
@@ -1220,6 +1162,7 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
         :rtype: list[two 2d-arrays[double]]
 
         """
+        a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
         return super().harmonics_data(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
 
 def source_angles(qS, phiS, qK, phiK):
