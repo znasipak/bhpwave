@@ -115,6 +115,7 @@ const double& Matrix::operator()(int i, int j) const{
 ThreeTensor::ThreeTensor() {}
 ThreeTensor::ThreeTensor(int n): _nx(n), _ny(n), _nz(n), _A(n*n*n) {}
 ThreeTensor::ThreeTensor(int nx, int ny, int nz): _nx(nx), _ny(ny), _nz(nz), _A(nx*ny*nz) {}
+ThreeTensor::ThreeTensor(int nx, int ny, int nz, double *A): _nx(nx), _ny(ny), _nz(nz), _A(A, A + nx*ny*nz) {}
 ThreeTensor::ThreeTensor(int nx, int ny, int nz, Vector A): _nx(nx), _ny(ny), _nz(nz), _A(nx*ny*nz) {
 	if(A.size() == _A.size()){
 		_A = A;
@@ -630,9 +631,9 @@ TricubicSpline::TricubicSpline(double x0, double dx, int nx, double y0, double d
 	}else{
 		std::cout << "ERROR: Indices of vectors and matrices do not match \n";
 	}
-	for(int i = 0; i < 4; i++){
-		std::cout << (getSplineCoefficient(0, 0, 0, 0, 0, i)) << "\n";
-	}
+	// for(int i = 0; i < 4; i++){
+	// 	std::cout << (getSplineCoefficient(0, 0, 0, 0, 0, i)) << "\n";
+	// }
 }
 
 double TricubicSpline::evaluate(const double x, const double y, const double z){
@@ -718,41 +719,28 @@ void TricubicSpline::computeSplineCoefficients(ThreeTensor &f, int method){
 	std::vector<ThreeTensor> cijs(16, ThreeTensor(ny, nz, nx + 1));
 	for(int i = 0; i < nx + 1; i++){
 		z = f.row(i);
-		BicubicSpline spl(y0, dy, ny, z0, dz, nz, z, method);
+		BicubicSpline bspl(y0, dy, ny, z0, dz, nz, z, method);
 		for(int j = 0; j < ny; j++){
 			for(int k = 0; k < nz; k++){
 				for(int iy = 0; iy < 4; iy++){
 					for(int iz = 0; iz < 4; iz++){
-						cijs[4*iy + iz](j, k, i) = spl.getSplineCoefficient(j, k, iy, iz);
-						if(k == 0 && j == 0){
-							std::cout << iy << ", " << iz << "\n";
-							std::cout << cijs[4*iy + iz](j, k, i) << "\n";
-						}
+						cijs[4*iy + iz](j, k, i) = bspl.getSplineCoefficient(j, k, iy, iz);
 					}
 				}
 			}
 		}
 	}
 
-	std::cout << "Spline the splines \n";
 	Vector fx(nx + 1);
 	for(int j = 0; j < ny; j++){
 		for(int k = 0; k < nz; k++){
 			for(int iy = 0; iy < 4; iy++){
 				for(int iz = 0; iz < 4; iz++){
 					fx = cijs[4*iy + iz].rowcol(j, k);
-					if(j == 0 && k == 0){
-						std::cout << fx[0] << ", "  << fx[1] <<  ", " << fx[2] <<  "\n";
-						std::cout << iy << ", " << iz << "\n";
-						std::cout << cijs[4*iy + iz](j, k, 0) << ", "  << cijs[4*iy + iz](j, k, 1) <<  ", " << cijs[4*iy + iz](j, k, 2) <<  "\n";
-					}
 					CubicSpline spl(x0, dx, nx, fx);
 					for(int i = 0; i < nx; i++){
 						for(int ix = 0; ix < 4; ix++){
 							setSplineCoefficient(i, j, k, ix, iy, iz, spl.getSplineCoefficient(i, ix));
-							// if(j == 0 && k == 0){
-							// 	std::cout << spl.getSplineCoefficient(i, ix) << "\n";
-							// }
 						}
 					}
 				}
@@ -779,11 +767,11 @@ double TricubicSpline::evaluateInterval(int i, int j, int k, const double x, con
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 4; nn++){
-			yvec[l] = yvec[l]*ybar + zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + zvec[4*l + (3 - nn)];
 		}
 	}
 	for(int nn = 0; nn < 4; nn++){
-		result = result*xbar + yvec[nn];
+		result = result*xbar + yvec[3 - nn];
 	}
 
 	return result;
@@ -807,11 +795,11 @@ double TricubicSpline::evaluateDerivativeXInterval(int i, int j, int k, const do
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 4; nn++){
-			yvec[l] = yvec[l]*ybar + zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + zvec[4*l + (3 - nn)];
 		}
 	}
 	for(int nn = 0; nn < 3; nn++){
-		result = result*xbar + (3. - nn)*yvec[nn];
+		result = result*xbar + (3. - nn)*yvec[3 - nn];
 	}
 
 	return result;
@@ -835,11 +823,11 @@ double TricubicSpline::evaluateDerivativeYInterval(int i, int j, int k, const do
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 3; nn++){
-			yvec[l] = yvec[l]*ybar + (3. - nn)*zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + (3. - nn)*zvec[4*l + 3 - nn];
 		}
 	}
 	for(int nn = 0; nn < 4; nn++){
-		result = result*xbar + yvec[nn];
+		result = result*xbar + yvec[3 - nn];
 	}
 
 	return result;
@@ -863,11 +851,11 @@ double TricubicSpline::evaluateDerivativeZInterval(int i, int j, int k, const do
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 4; nn++){
-			yvec[l] = yvec[l]*ybar + zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + zvec[4*l + 3 - nn];
 		}
 	}
 	for(int nn = 0; nn < 4; nn++){
-		result = result*xbar + yvec[nn];
+		result = result*xbar + yvec[3 - nn];
 	}
 
 	return result;
@@ -891,11 +879,11 @@ double TricubicSpline::evaluateDerivativeXYInterval(int i, int j, int k, const d
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 3; nn++){
-			yvec[l] = yvec[l]*ybar + (3. - nn)*zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + (3. - nn)*zvec[4*l + 3 - nn];
 		}
 	}
 	for(int nn = 0; nn < 3; nn++){
-		result = result*xbar + (3. - nn)*yvec[nn];
+		result = result*xbar + (3. - nn)*yvec[3 - nn];
 	}
 
 	return result;
@@ -919,11 +907,11 @@ double TricubicSpline::evaluateDerivativeXZInterval(int i, int j, int k, const d
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 4; nn++){
-			yvec[l] = yvec[l]*ybar + zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + zvec[4*l + 3 - nn];
 		}
 	}
 	for(int nn = 0; nn < 3; nn++){
-		result = result*xbar + (3. - nn)*yvec[nn];
+		result = result*xbar + (3. - nn)*yvec[3 - nn];
 	}
 
 	return result;
@@ -947,11 +935,11 @@ double TricubicSpline::evaluateDerivativeYZInterval(int i, int j, int k, const d
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 3; nn++){
-			yvec[l] = yvec[l]*ybar + (3. - nn)*zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + (3. - nn)*zvec[4*l + 3 - nn];
 		}
 	}
 	for(int nn = 0; nn < 4; nn++){
-		result = result*xbar + yvec[nn];
+		result = result*xbar + yvec[3 - nn];
 	}
 
 	return result;
@@ -975,11 +963,11 @@ double TricubicSpline::evaluateDerivativeXXInterval(int i, int j, int k, const d
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 4; nn++){
-			yvec[l] = yvec[l]*ybar + zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + zvec[4*l + 3 - nn];
 		}
 	}
 	for(int nn = 0; nn < 2; nn++){
-		result = result*xbar + (3. - nn)*(2. - nn)*yvec[nn];
+		result = result*xbar + (3. - nn)*(2. - nn)*yvec[3 - nn];
 	}
 
 	return result;
@@ -1003,11 +991,11 @@ double TricubicSpline::evaluateDerivativeYYInterval(int i, int j, int k, const d
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 2; nn++){
-			yvec[l] = yvec[l]*ybar + (3. - nn)*(2. - nn)*zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + (3. - nn)*(2. - nn)*zvec[4*l + 3 - nn];
 		}
 	}
 	for(int nn = 0; nn < 4; nn++){
-		result = result*xbar + yvec[nn];
+		result = result*xbar + yvec[3 - nn];
 	}
 
 	return result;
@@ -1031,11 +1019,11 @@ double TricubicSpline::evaluateDerivativeZZInterval(int i, int j, int k, const d
 		}
 		yvec[l] = 0.;
 		for(int nn = 0; nn < 4; nn++){
-			yvec[l] = yvec[l]*ybar + zvec[4*l + nn];
+			yvec[l] = yvec[l]*ybar + zvec[4*l + 3 - nn];
 		}
 	}
 	for(int nn = 0; nn < 4; nn++){
-		result = result*xbar + yvec[nn];
+		result = result*xbar + yvec[3 - nn];
 	}
 
 	return result;
@@ -1118,7 +1106,7 @@ CubicSpline::CubicSpline(const Vector &x, const Vector &y, int method): dx(x[1] 
 CubicSpline::CubicSpline(double x0, double dx, int nx, Matrix cij): dx(dx), nintervals(nx), x0(x0), cij(cij) {}
 
 double CubicSpline::getSplineCoefficient(int i, int j){
-	return cij(i, j);
+	return cij(i, j)*pow(dx, j);
 }
 
 double CubicSpline::evaluate(const double x){

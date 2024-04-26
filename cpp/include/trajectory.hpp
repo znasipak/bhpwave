@@ -55,6 +55,8 @@ public:
   	double phase_of_a_omega(double a, double omega);
 	double phase_of_a_omega_derivative(double a, double omega);
   	double flux_of_a_omega(double a, double omega);
+	double flux_of_a_omega_derivative(double a, double omega);
+	double flux_of_a_derivative_omega(double a, double omega);
 
 	double orbital_frequency_time_derivative_from_flux(double chi, double alpha);
 	double orbital_frequency_time_derivative_from_flux_of_a_omega(double a, double omega);

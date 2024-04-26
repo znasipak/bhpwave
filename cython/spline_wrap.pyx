@@ -20,6 +20,7 @@ cdef extern from "spline.hpp":
         ThreeTensor()
         ThreeTensor(int nx)
         ThreeTensor(int nx, int ny, int nz)
+        ThreeTensor(int nx, int ny, int nz, double *A)
         ThreeTensor(int nx, int ny, int nz, vector[double] A)
         ThreeTensor(int nx, int ny, int nz, double val)
 
@@ -45,7 +46,6 @@ cdef extern from "spline.hpp":
         void set_value(int i, int j, int k, double val)
 
         double& operator()(int i, int j, int k)
-        const double& operator()(int i, int j, int k) const
 
     cdef cppclass CubicSpline:
         CubicSpline(double x0, double dx, const vector[double] &y, int method) except +
@@ -69,12 +69,11 @@ cdef extern from "spline.hpp":
         double derivative_yy(const double x, const double y)
         CubicSpline reduce_x(const double x)
         CubicSpline reduce_y(const double y)
+        double getSplineCoefficient(int i, int j, int nx, int ny)
 
     cdef cppclass TricubicSpline:
-        TricubicSpline(const vector[double] &x, const vector[double] &y, const vector[double] &z, ThreeTensor &f, int method) except +
+        # TricubicSpline(const vector[double] &x, const vector[double] &y, const vector[double] &z, ThreeTensor &f, int method) except +
         TricubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, ThreeTensor &f, int method) except +
-        TricubicSpline(const vector[double] &x, const vector[double] &y, const vector[double] &z, const vector[double] &f, int method) except +
-        TricubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, const vector[double] &f_vec, int method) except +
         double evaluate(const double x, const double y, const double z)
         double derivative_x(const double x, const double y, const double z)
         double derivative_y(const double x, const double y, const double z)
@@ -120,6 +119,9 @@ cdef class CyBicubicSpline:
                 mz.set_value(i, j, f[i, j])
         self.scpp = new BicubicSpline(x0, dx, nx, y0, dy, ny, mz, method)
 
+    def coefficient(self, int i, int j, int nx, int ny):
+        return self.scpp.getSplineCoefficient(i, j, nx, ny)
+    
     def eval(self, double x, double y):
         return self.scpp.evaluate(x, y)
 
@@ -142,14 +144,16 @@ cdef class CyTricubicSpline:
     cdef TricubicSpline *scpp
 
     def __init__(self, double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, np.ndarray[ndim=3, dtype=np.float64_t, mode='c'] f, int method):
-        # cdef Matrix mz = Matrix(nx + 1, ny + 1)
+        cdef ThreeTensor ftens = ThreeTensor(nx + 1, ny + 1, nz + 1, &f[0,0,0])
+        # cdef ThreeTensor ftens = ThreeTensor(nx + 1, ny + 1, nz + 1)
         # for i in range(nx + 1):
         #     for j in range(ny + 1):
-        #         mz.set_value(i, j, f[i, j])
-        cdef vector[double] fvec
-        fvec = vector[double](f.size)
-        fvec.assign(&f[0, 0, 0], &f[0, 0, 0] + f.size)
-        self.scpp = new TricubicSpline(x0, dx, nx, y0, dy, ny, z0, dz, nz, fvec, method)
+        #         for k in range(nz + 1):
+        #             ftens.set_value(i, j, k, f[i, j, k])
+        self.scpp = new TricubicSpline(x0, dx, nx, y0, dy, ny, z0, dz, nz, ftens, method)
+
+    def coefficient(self, int i, int j, int k, int nx, int ny, int nz):
+        return self.scpp.getSplineCoefficient(i, j, k, nx, ny, nz)
 
     def eval(self, double x, double y, double z):
         return self.scpp.evaluate(x, y, z)

@@ -64,6 +64,7 @@ public:
 	ThreeTensor(int nx);
 	ThreeTensor(int nx, int ny, int nz);
 	ThreeTensor(int nx, int ny, int nz, Vector A);
+	ThreeTensor(int nx, int ny, int nz, double *A);
 	ThreeTensor(int nx, int ny, int nz, double val);
 
 	int rows() const;

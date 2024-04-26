@@ -47,7 +47,7 @@ class CubicSpline:
     def coefficients(self):
         return np.array([[self.base.coefficient(i, j) for j in range(4)] for i in range(self.nx)])
 
-    def coefficient(self, i, j):
+    def coeff(self, i, j):
         return self.base.coefficient(i, j)
 
     def eval(self, x):
@@ -124,6 +124,9 @@ class BicubicSpline:
     
     def deriv_xy(self, x, y):
         return self.base.deriv_xy(x, y)
+    
+    def coeff(self, i, j, nx, ny):
+        return self.base.coefficient(i, j, nx, ny)
 
     def __call__(self, x, y):
         return self.base.eval(x, y)
@@ -206,6 +209,9 @@ class TricubicSpline:
     
     def deriv_yz(self, x, y, z):
         return self.base.deriv_yz(x, y, z)
+    
+    def coeff(self, i, j, k, nx, ny, nz):
+        return self.base.coefficient(i, j, k, nx, ny, nz)
 
     def __call__(self, x, y, z):
         return self.base.eval(x, y, z)

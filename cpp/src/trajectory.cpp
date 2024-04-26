@@ -102,6 +102,11 @@ double chi_of_spin(const double & a){
 	return pow((chi_of_spin_subfunc(a) - chi_of_spin_subfunc(A_MAX))/(chi_of_spin_subfunc(-A_MAX) - chi_of_spin_subfunc(A_MAX)), 0.5);
 }
 
+double chi_of_spin_derivative(const double & a){
+	double chia = chi_of_spin_subfunc(a);
+	return chi_of_spin(a)/(chi_of_spin_subfunc(A_MAX) - chia)/(6.*pow(chia, 2));
+}
+
 double alpha_of_a_omega(const double &, const double & omega, const double & oISCO){
 	if(fabs(oISCO - omega) < 1.e-13){return 0.;}
 	return pow(fabs(pow(oISCO, 1./3.) - pow(omega, 1./3.))/(pow(oISCO, 1./3.) - pow(OMEGA_MIN, 1./3.)), 0.5);
@@ -661,6 +666,10 @@ double TrajectorySpline2D::phase_of_a_omega_derivative(double a, double omega){
 
 double TrajectorySpline2D::flux_of_a_omega(double a, double omega){
   	return _flux_spline.evaluate(chi_of_spin(a), alpha_of_a_omega(a, omega))*normalize_energy_flux(omega);
+}
+
+double TrajectorySpline2D::flux_of_a_omega_derivative(double a, double omega){
+  	return chi_of_spin_derivative(a)*_flux_spline.derivative_x(chi_of_spin(a), alpha_of_a_omega(a, omega))*normalize_energy_flux(omega);
 }
 
 double TrajectorySpline2D::orbital_frequency_time_derivative_from_flux_of_a_omega(double a, double omega){
