@@ -2,8 +2,12 @@ from bhpwaveformcy import (TrajectoryDataPy,
                            InspiralContainerWrapper,
                            InspiralGeneratorPy)
 from bhpwave.constants import *
-from bhpwave.trajectory.geodesic import kerr_circ_geo_orbital_frequency
+from bhpwave.trajectory.geodesic import kerr_circ_geo_orbital_frequency, kerr_isco_frequency, kerr_circ_geo_radius
 import os
+
+from scipy.integrate import solve_ivp
+from scipy.optimize import root_scalar
+import numpy as np
 
 path_to_file = os.path.dirname(os.path.abspath(__file__))
 default_path = path_to_file + "/../data/trajectory.txt"
@@ -57,6 +61,92 @@ class InspiralGenerator:
         self.check_radius(a, r0)
 
         inspiralwrapper=self.inspiral_generator(massratio, a, r0, dtM, TM, num_threads)
+        inspiral = Inspiral(inspiralwrapper)
+
+        return inspiral
+    
+class IntegrateInspiralGeneratorBase:
+    """
+    A class for generating quasi-circular inspirals around a rotating massive black hole.
+    Once instantiated, the class can be called to generate inspiral data.
+
+    """
+    def __init__(self, Edot_norm = None):
+        self.Edot_norm = Edot_norm
+
+    def isco_radius(self, a):
+        return a
+
+    def omega_of_a_alpha(self, a, alpha):
+        return 0.
+
+    def chi_of_spin(self, a):
+        return (1. - a)**(1./3.)
+    
+    def alpha_of_omega(self, omega, oISCO):
+        return 0.
+    
+    def omega_of_a_r(self, a, r):
+        return 0.
+    
+    def omega_alpha_derivative(self, omega, oISCO):
+        return 0.
+    
+    def energy_omega_derivative(self, a, omega):
+        return 0.
+    
+    def pn_flux_noprefactor(self, omega):
+        return 0.
+
+    def _dJdTIntegrate(self, t, alphaVec, a, oISCO, *args):
+        alpha = alphaVec[0]
+        chi = self.chi_of_spin(a)
+        omega = self.omega_of_a_alpha(a, alpha)
+        dOmega_dAlpha = self.omega_alpha_derivative(omega, oISCO)
+        dE_dOmega = self.energy_omega_derivative(a, omega)
+        Edot = self.Edot_func(chi, alpha)*self.pn_flux_noprefactor(omega)
+        return np.array([1./(dE_dOmega*dOmega_dAlpha/Edot), omega])
+
+    def integrate_eom(self, M, mu, a, r0, dt, T, *args):
+        omega0 = self.omega_of_a_r(a, r0)
+        rISCO = self.isco_radius(a)
+        oISCO = self.omega_of_a_r(a, rISCO)
+        alpha0 = self.alpha_of_omega(omega0, oISCO)
+
+        t_array = np.linspace(0., T, int(T/dt + 1))
+        insp = solve_ivp(self._dJdTIntegrate, [t_array[0], t_array[-1]], [alpha0, 0.], args=(a, oISCO, *args), method='DOP853', t_eval=t_array, rtol=1.e-13, atol = 1.e-12)
+        alpha = insp.y[0]
+        Phi = insp.y[1]
+        inspiral = InspiralContainerWrapper(alpha.size)
+        inspiral.set_initial_conditions(a, mu/M, r0, dt)
+        for i in range(inspiral.timesteps):
+            inspiral.set_time_step(i, alpha[i], Phi[i])
+
+        return inspiral
+
+    def __call__(self, M, mu, a, r0, dt, T, *args):
+        """
+        Generates a quasi-circular inspiral of a point-particle around a rotating massive black hole.
+
+        :param M: the mass of the rotating massive black hole (in solar masses)
+        :type M: double
+        :param mu: the mass of the smaller compact object (in solar masses)
+        :type mu: double
+        :param r0: the initial Boyer-Lindquist radius of the small body
+        :type r0: double
+        :param dt: time step in seconds for sampling the trajectory
+        :type dt: double
+        :param T: duration of the inspiral in years
+        :type T: double
+
+        :return: A class object containing inspiral data
+        :rtype: Inspiral
+        """
+        massratio = mu/M
+        dtM = dt/(M*Modot_GC1_to_S)
+        TM = T*yr_MKS/(M*Modot_GC1_to_S)
+
+        inspiralwrapper = self.integrate_eom(M, mu, a, r0, dtM, TM, *args)
         inspiral = Inspiral(inspiralwrapper)
 
         return inspiral
@@ -143,95 +233,102 @@ class Inspiral:
     A class that holds inspiral output from the InspiralGenerator.
     """
     def __init__(self, inspiral_wrapper):
-        self.inspiral_data = inspiral_wrapper
+        self.data = inspiral_wrapper
 
     @property
     def size(self):
         """
         Size of the arrays within the Inspiral class. Equivalent to the number of time steps.
         """
-        return self.inspiral_data.size
+        return self.data.size
     
     @property
     def time(self):
         """
         Evolution of time
         """
-        return self.inspiral_data.time
+        return self.data.time
 
     @property
     def frequency(self):
         """
         Evolution of the orbital frequency
         """
-        return self.inspiral_data.frequency
+        return self.data.frequency
 
     @property
     def radius(self):
         """
         Evolution of the orbital radius
         """
-        return self.inspiral_data.radius
+        return self.data.radius
     
     @property
     def phase(self):
         """
         Evolution of the orbital phase
         """
-        return self.inspiral_data.phase
+        return self.data.phase
 
     @property
     def spin(self):
         """
         Black hole spin of the system
         """
-        return self.inspiral_data.spin
+        return self.data.spin
     
     @property
     def a(self):
         """
         Black hole spin of the system
         """
-        return self.inspiral_data.a
+        return self.data.a
     
     @property
     def massratio(self):
         """
         Mass ratio of the system
         """
-        return self.inspiral_data.massratio
+        return self.data.massratio
     
     @property
     def initialradius(self):
         """
         Initial orbital radius of the inspiral
         """
-        return self.inspiral_data.initialradius
+        return self.data.initialradius
 
     @property
     def initialfrequency(self):
         """
         Initial orbital frequency of the inspiral
         """
-        return self.inspiral_data.initialfrequency
+        return self.data.initialfrequency
 
     @property
     def iscofrequency(self):
         """
         Frequency of the innermost stable circular orbit for this spacetime
         """
-        return self.inspiral_data.iscofrequency
+        return self.data.iscofrequency
 
     @property
     def dt(self):
         """
         Size of the time steps in the inspiral
         """
-        return self.inspiral_data.dt
+        return self.data.dt
 
     @property
     def base_class(self):
         """
         Returns the base Cython class
         """
-        return self.inspiral_data
+        return self.data
+    
+    @property
+    def base(self):
+        """
+        Returns the base Cython class
+        """
+        return self.data

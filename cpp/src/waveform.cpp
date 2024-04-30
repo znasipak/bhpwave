@@ -178,6 +178,9 @@ void WaveformHarmonicGenerator::computeWaveformHarmonic(WaveformContainer &h, in
     double crossY = (sYlm - pow(-1, l + m)*sYlmMinus);
 
     int imax = inspiral.getSize();
+    double rescaleRe, rescaleIm;
+    rescaleRe = std::real(opts.rescale);
+    rescaleIm = std::imag(opts.rescale);
 
     #pragma omp parallel num_threads(opts.num_threads)
     {
@@ -189,7 +192,7 @@ void WaveformHarmonicGenerator::computeWaveformHarmonic(WaveformContainer &h, in
             Phi = modePhase - fmod(m*inspiral.getPhase(i), 2.*M_PI) + mphi_mod_2pi;
             hplus = amp*plusY*std::cos(Phi);
 			      hcross = -amp*crossY*std::sin(Phi);
-            h.addTimeStep(i, hplus, hcross);
+            h.addTimeStep(i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
         }
     }
 }
@@ -268,6 +271,9 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, i
     // and large arrays can lead to crashes. std::vector seems to work better here
     Vector hplus(modeNum*imax);
     Vector hcross(modeNum*imax);
+    double rescaleRe, rescaleIm;
+    rescaleRe = std::real(opts.rescale);
+    rescaleIm = std::imag(opts.rescale);
 
     #pragma omp parallel num_threads(opts.num_threads)
     {
@@ -292,6 +298,14 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, i
           h.addTimeStep(i, hplus[j + i*modeNum], hcross[j + i*modeNum]);
         }
       }
+      double hplus, hcross;
+
+      #pragma omp for
+      for(int i = 0; i < imax; i++){
+        hplus = h.getPlus(i);
+        hcross = h.getCross(i);
+        h.setTimeStep(i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
+      }
     }
 }
 
@@ -313,6 +327,9 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformHarmonicsContai
     // and large arrays can lead to crashes. std::vector seems to work better here
     // Vector hplus(modeNum*imax);
     // Vector hcross(modeNum*imax);
+    double rescaleRe, rescaleIm;
+    rescaleRe = std::real(opts.rescale);
+    rescaleIm = std::imag(opts.rescale);
 
     #pragma omp parallel num_threads(opts.num_threads)
     {
@@ -328,17 +345,9 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformHarmonicsContai
           Phi = modePhase - fmod(m[j]*inspiral.getPhase(i), twopi) + mphi_mod_2pi[j];
           hplus = amp*plusY[j]*std::cos(Phi);
           hcross = -amp*crossY[j]*std::sin(Phi);
-          h.setTimeStep(j, i, hplus, hcross);
+          h.setTimeStep(j, i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
         }
       }
-
-      // we then sum over the data and have it stored in the waveform container
-      // #pragma omp for schedule(static)
-      // for(int i = 0; i < imax; i++){
-      //   for(int j = 0; j < modeNum; j++){
-      //     h.addTimeStep(j, i, hplus[j + i*modeNum], hcross[j + i*modeNum]);
-      //   }
-      // }
     }
 }
 
@@ -372,6 +381,9 @@ void WaveformHarmonicGenerator::computeWaveformHarmonicsPhaseAmplitude(WaveformH
     // and large arrays can lead to crashes. std::vector seems to work better here
     // Vector ampVec(modeNum*imax);
     // Vector phaseVec(modeNum*imax);
+    double rescaleAmp, rescalePhase;
+    rescaleAmp = std::abs(opts.rescale);
+    rescalePhase = std::arg(opts.rescale);
 
     #pragma omp parallel num_threads(opts.num_threads)
     {
@@ -387,19 +399,11 @@ void WaveformHarmonicGenerator::computeWaveformHarmonicsPhaseAmplitude(WaveformH
           Phi = modePhase - am*(inspiral.getPhase(i) - phi);
 
           // positive m-modes
-          h.setTimeStep(2*j, i, amp*plusY[j], Phi);
+          h.setTimeStep(2*j, i, rescaleAmp*amp*plusY[j], rescalePhase + Phi);
           // negative m-modes
-          h.setTimeStep(2*j + 1, i, amp*crossY[j], - Phi - l[j]*M_PI);
+          h.setTimeStep(2*j + 1, i, rescaleAmp*amp*crossY[j], - Phi - l[j]*M_PI + rescalePhase);
         }
       }
-
-      // we then sum over the data and have it stored in the waveform container
-      // #pragma omp for schedule(static)
-      // for(int i = 0; i < imax; i++){
-      //   for(int j = 0; j < modeNum; j++){
-      //     h.addTimeStep(j, i, ampVec[j + i*modeNum], phaseVec[j + i*modeNum]);
-      //   }
-      // }
     }
 }
 
@@ -463,38 +467,8 @@ void WaveformGenerator::computeWaveform(WaveformContainer &h, double M, double m
 	wOpts.rescale = polarization(qS, phiS, qK, phiK);
 	wOpts.rescale *= scale_strain_amplitude(mu, dist);
 
-	// omp_set_num_threads(16);
-	StopWatch watch;
-	// watch.start();
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, wOpts.num_threads);
-	// watch.stop();
-	// watch.print();
-	// watch.reset();
 	computeWaveformHarmonics(h, inspiral, theta, phi - Phi_phi0, hOpts, wOpts);
-	
-	double rescaleRe, rescaleIm;
-	rescaleRe = std::real(wOpts.rescale);
-	rescaleIm = std::imag(wOpts.rescale);
-	// if the rescaling factor is purely real, then just rescale both polarizations by the same amplitude
-	// else, then we get a mixing of the plus and cross polarizations that gives us new polarization amplitudes
-	// watch.start();
-	int imax = h.getSize();
-	#pragma omp parallel num_threads(wOpts.num_threads)
-	{
-		// total_td = omp_get_num_threads();
-		int i;
-		double hplus, hcross;
-		#pragma omp for
-		for(i = 0; i < imax; i++){
-		// total_td_check = omp_get_num_threads();
-			hplus = h.getPlus(i);
-			hcross = h.getCross(i);
-			h.setTimeStep(i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
-		}
-	}
-	// watch.stop();
-	// watch.print();
-	// watch.reset();
 }
 
 void WaveformGenerator::computeWaveform(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
@@ -505,40 +479,8 @@ void WaveformGenerator::computeWaveform(WaveformContainer &h, int l[], int m[], 
 	wOpts.rescale = polarization(qS, phiS, qK, phiK);
 	wOpts.rescale *= scale_strain_amplitude(mu, dist);
 
-	// omp_set_num_threads(16);
-	// StopWatch watch;
-	// watch.start();
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, wOpts.num_threads);
-	// watch.stop();
-	// watch.print();
-	// watch.reset();
 	computeWaveformHarmonics(h, l, m, modeNum, inspiral, theta, phi - Phi_phi0, wOpts);
-	
-	double rescaleRe, rescaleIm;
-	rescaleRe = std::real(wOpts.rescale);
-	rescaleIm = std::imag(wOpts.rescale);
-  // std::cout << rescaleRe << "," << rescaleIm << "\n";
-	// if the rescaling factor is purely real, then just rescale both polarizations by the same amplitude
-	// else, then we get a mixing of the plus and cross polarizations that gives us new polarization amplitudes
-
-	// watch.start();
-	int imax = h.getSize();
-	#pragma omp parallel num_threads(wOpts.num_threads)
-	{
-		// total_td = omp_get_num_threads();
-		int i;
-		double hplus, hcross;
-		#pragma omp for
-		for(i = 0; i < imax; i++){
-		// total_td_check = omp_get_num_threads();
-			hplus = h.getPlus(i);
-			hcross = h.getCross(i);
-			h.setTimeStep(i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
-		}
-	}
-	// watch.stop();
-	// watch.print();
-	// watch.reset();
 }
 
 void WaveformGenerator::computeWaveform(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
@@ -549,42 +491,8 @@ void WaveformGenerator::computeWaveform(WaveformHarmonicsContainer &h, int l[], 
 	wOpts.rescale = polarization(qS, phiS, qK, phiK);
 	wOpts.rescale *= scale_strain_amplitude(mu, dist);
 
-	// omp_set_num_threads(16);
-	// StopWatch watch;
-	// watch.start();
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, wOpts.num_threads);
-	// watch.stop();
-	// watch.print();
-	// watch.reset();
 	computeWaveformHarmonics(h, l, m, modeNum, inspiral, theta, phi - Phi_phi0, wOpts);
-	
-	double rescaleRe, rescaleIm;
-	rescaleRe = std::real(wOpts.rescale);
-	rescaleIm = std::imag(wOpts.rescale);
-  // std::cout << rescaleRe << "," << rescaleIm << "\n";
-	// if the rescaling factor is purely real, then just rescale both polarizations by the same amplitude
-	// else, then we get a mixing of the plus and cross polarizations that gives us new polarization amplitudes
-
-	// watch.start();
-	int timeMax = h.getTimeSize();
-  int modeMax = h.getModeSize();
-	#pragma omp parallel num_threads(wOpts.num_threads)
-	{
-		// total_td = omp_get_num_threads();
-		int i, j;
-		double hplus, hcross;
-		#pragma omp for collapse(2)
-		for(i = 0; i < timeMax; i++){
-      for(j = 0; j < modeNum; j++){
-        hplus = h.getPlus(j, i);
-        hcross = h.getCross(j, i);
-        h.setTimeStep(j, i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
-      }
-    }
-	}
-	// watch.stop();
-	// watch.print();
-	// watch.reset();
 }
 
 void WaveformGenerator::computeWaveformPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts){
@@ -595,35 +503,8 @@ void WaveformGenerator::computeWaveformPhaseAmplitude(WaveformHarmonicsContainer
 	wOpts.rescale = polarization(qS, phiS, qK, phiK);
 	wOpts.rescale *= scale_strain_amplitude(mu, dist);
 
-	// omp_set_num_threads(16);
-	// StopWatch watch;
-	// watch.start();
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, wOpts.num_threads);
-	// watch.stop();
-	// watch.print();
-	// watch.reset();
 	computeWaveformHarmonicsPhaseAmplitude(h, l, m, modeNum, inspiral, theta, phi - Phi_phi0, wOpts);
-	
-	double rescaleAmp, rescalePhase;
-	rescaleAmp = std::abs(wOpts.rescale);
-	rescalePhase = std::arg(wOpts.rescale);
-
-	// watch.start();
-	int timeMax = h.getTimeSize();
-  int modeMax = h.getModeSize();
-	#pragma omp parallel num_threads(wOpts.num_threads)
-	{
-		int i, j;
-		double amp, phase;
-		#pragma omp for collapse(2)
-		for(i = 0; i < timeMax; i++){
-      for(j = 0; j < modeMax; j++){
-        amp = h.getPlus(j, i);
-        phase = h.getCross(j, i);
-        h.setTimeStep(j, i, rescaleAmp*amp, rescalePhase + phase);
-      }
-    }
-	}
 }
 
 HarmonicModeContainer WaveformGenerator::selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T){

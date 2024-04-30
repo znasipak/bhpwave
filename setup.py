@@ -5,14 +5,16 @@ from distutils.extension import Extension
 from Cython.Distutils import build_ext
 import numpy as np
 import sys
+import platform
 
 
 """
 For some reason, the libraries extension does not support extra compiler arguments. So
 instead, we pass them directly by changing the evironment variable CFLAGS
 """
-compiler_flags = ["-std=c++11", "-fopenmp", "-march=native"]
+compiler_flags = ["-std=c++11", "-march=native"]
 libraries = ["gsl", "gslcblas"]
+
 
 # set some flags and libraries depending on the system platform
 if sys.platform.startswith('win32'):
@@ -20,7 +22,9 @@ if sys.platform.startswith('win32'):
     libraries.append('gomp')
 elif sys.platform.startswith('darwin'):
     compiler_flags.append('-O2')
-    libraries.append('omp')
+    if platform.processor() != 'arm':
+        compiler_flags.append('-fopenmp')
+        libraries.append('omp')
 elif sys.platform.startswith('linux'):
     compiler_flags.append('-O2')
     libraries.append('gomp')
@@ -68,7 +72,7 @@ ext_modules = [swsh_ext, wave_ext]
 setup(
     name = "bhpwave",
     author = "Zach Nasipak",
-    version = "0.1.0",
+    version = "0.9.0",
     description = "Adiabatic EMRI waveform generator",
     ext_modules = cythonize(ext_modules, language_level = "3"),
     packages = ["bhpwave", "bhpwave.trajectory", "bhpwave.harmonics", "bhpwave.data"],

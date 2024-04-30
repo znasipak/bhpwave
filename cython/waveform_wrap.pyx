@@ -11,6 +11,9 @@ cdef extern from "waveform.hpp":
     double years_to_seconds(double years)
     double seconds_to_years(double seconds)
     double solar_mass_to_seconds(double mass)
+    double scale_strain_amplitude(double mu, double dist)
+    void sourceAngles(double &theta, double &phi, double qS, double phiS, double qK, double phiK);
+    cpp_complex polarization(double qS, double phiS, double qK, double phiK)
 
     cdef cppclass WaveformContainer:
         WaveformContainer(int timeSteps) except +
@@ -52,16 +55,34 @@ cdef extern from "waveform.hpp":
         int include_negative_m
 
     cdef cppclass WaveformHarmonicGenerator:
-        WaveformHarmonicGenerator(HarmonicAmplitudes &Alm, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts) except +
+        WaveformHarmonicGenerator(HarmonicAmplitudes &Alm, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
+
+        WaveformContainer computeWaveformHarmonic(int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
+        void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi) except +
+        void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
+
+        WaveformContainer computeWaveformHarmonics(int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts)
+        void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts)
+        void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, HarmonicOptions hOpts)
+        void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts) except +
+        
+        void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts)
+        void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
 
         void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi)
-        void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi)
-        void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi) except +
+        void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi)
+        void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi)
 
-        void computeWaveformHarmonics(WaveformContainer &h, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts)
-        void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts)
-        void computeWaveformHarmonics(WaveformContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
+        void computeWaveformHarmonics(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts)
+        void computeWaveformHarmonics(WaveformHarmonicsContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
         
+        void computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts)
+        void computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
+
+        HarmonicSelector& getModeSelector();
+        HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta)
+        HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta, HarmonicOptions opts) except +
+                
         WaveformHarmonicOptions getWaveformHarmonicOptions()
         HarmonicOptions getHarmonicOptions()
 
@@ -230,50 +251,50 @@ cdef class WaveformContainerWrapper:
         cdef double[::1] arr = <double [:self.size]>self.hcpp.getCrossPointer()
         return np.asarray(arr)
 
-cdef class WaveformHarmonicGeneratorPyWrapper:
-    cdef WaveformHarmonicGenerator *hcpp
-    cdef int modeCheck
+# cdef class WaveformHarmonicGeneratorPy:
+#     cdef WaveformHarmonicGenerator *hcpp
+#     cdef int modeCheck
 
-    def __cinit__(self, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
-        cdef WaveformHarmonicOptions wOpts
-        cdef HarmonicOptions hOpts
+#     def __cinit__(self, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
+#         cdef WaveformHarmonicOptions wOpts
+#         cdef HarmonicOptions hOpts
 
-        if "check_modes" in harmonic_kwargs.keys():
-            self.modeCheck = harmonic_kwargs["check_modes"]
-        else:
-            self.modeCheck = 0
+#         if "check_modes" in harmonic_kwargs.keys():
+#             self.modeCheck = harmonic_kwargs["check_modes"]
+#         else:
+#             self.modeCheck = 0
         
-        if "eps" in harmonic_kwargs.keys():
-            hOpts.epsilon = harmonic_kwargs["eps"]
-        if "max_samples" in harmonic_kwargs.keys():
-            hOpts.max_samples = harmonic_kwargs["max_samples"]
+#         if "eps" in harmonic_kwargs.keys():
+#             hOpts.epsilon = harmonic_kwargs["eps"]
+#         if "max_samples" in harmonic_kwargs.keys():
+#             hOpts.max_samples = harmonic_kwargs["max_samples"]
         
-        if "num_threads" in waveform_kwargs.keys():
-            wOpts.num_threads = waveform_kwargs["num_threads"]
-        if "pad_output" in waveform_kwargs.keys():
-            wOpts.pad_output = waveform_kwargs["pad_output"]
+#         if "num_threads" in waveform_kwargs.keys():
+#             wOpts.num_threads = waveform_kwargs["num_threads"]
+#         if "pad_output" in waveform_kwargs.keys():
+#             wOpts.pad_output = waveform_kwargs["pad_output"]
 
-        self.hcpp = new WaveformHarmonicGenerator(dereference(Alm.harmonicscpp), hOpts, wOpts)
+#         self.hcpp = new WaveformHarmonicGenerator(dereference(Alm.harmonicscpp), hOpts, wOpts)
 
-    def __dealloc__(self):
-        del self.hcpp
+#     def __dealloc__(self):
+#         del self.hcpp
  
-    cdef evaluate_harmonics(self, np.ndarray[ndim = 1, dtype = int, mode='c'] lmodes, np.ndarray[ndim = 1, dtype = int, mode='c'] mmodes, InspiralContainerWrapper inspiral, double theta, double phi):
-        cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
-        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &lmodes[0], &mmodes[0], lmodes.shape[0], dereference(inspiral.inspiralcpp), theta, phi)
-        return h
+#     cdef evaluate_harmonics(self, np.ndarray[ndim = 1, dtype = int, mode='c'] lmodes, np.ndarray[ndim = 1, dtype = int, mode='c'] mmodes, InspiralContainerWrapper inspiral, double theta, double phi):
+#         cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
+#         self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &lmodes[0], &mmodes[0], lmodes.shape[0], dereference(inspiral.inspiralcpp), theta, phi)
+#         return h
 
-    def __call__(self, l, m, InspiralContainerWrapper inspiral, double theta, double phi):
-        cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
-        if isinstance(l, list) or isinstance(m, list):
-            l = np.array(l, dtype=np.int32)
-            m = np.array(m, dtype=np.int32)
-        if isinstance(l, np.ndarray) and isinstance(m, np.ndarray):
-            assert (l.shape == m.shape), "Shapes of {}, {} for lmodes and mmodes are incompatible".format(l.shape, m.shape)
-            return self.evaluate_harmonics(l, m, inspiral, theta, phi)
-        else:
-            self.hcpp.computeWaveformHarmonic(dereference(h.hcpp), l, m, dereference(inspiral.inspiralcpp), theta, phi)
-        return h
+#     def __call__(self, l, m, InspiralContainerWrapper inspiral, double theta, double phi):
+#         cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
+#         if isinstance(l, list) or isinstance(m, list):
+#             l = np.array(l, dtype=np.int32)
+#             m = np.array(m, dtype=np.int32)
+#         if isinstance(l, np.ndarray) and isinstance(m, np.ndarray):
+#             assert (l.shape == m.shape), "Shapes of {}, {} for lmodes and mmodes are incompatible".format(l.shape, m.shape)
+#             return self.evaluate_harmonics(l, m, inspiral, theta, phi)
+#         else:
+#             self.hcpp.computeWaveformHarmonic(dereference(h.hcpp), l, m, dereference(inspiral.inspiralcpp), theta, phi)
+#         return h
 
 
 cdef class WaveformGeneratorPy:
@@ -1088,3 +1109,441 @@ cdef class WaveformFourierGeneratorPy:
         crossComplex[steps-steps_no_zero:] += cross[:steps_no_zero]
 
         return [plusComplex, crossComplex]
+
+# Custom
+
+cdef class WaveformNoInspiralGeneratorPy:
+    cdef WaveformHarmonicGenerator *hcpp
+    cdef int modeCheck
+
+    def __cinit__(self, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
+        cdef WaveformHarmonicOptions wOpts
+        cdef HarmonicOptions hOpts
+
+        if "check_modes" in harmonic_kwargs.keys():
+            self.modeCheck = harmonic_kwargs["check_modes"]
+        else:
+            self.modeCheck = 0
+        
+        if "eps" in harmonic_kwargs.keys():
+            hOpts.epsilon = harmonic_kwargs["eps"]
+        if "max_samples" in harmonic_kwargs.keys():
+            hOpts.max_samples = harmonic_kwargs["max_samples"]
+        
+        if "num_threads" in waveform_kwargs.keys():
+            wOpts.num_threads = waveform_kwargs["num_threads"]
+        if "pad_output" in waveform_kwargs.keys():
+            wOpts.pad_output = waveform_kwargs["pad_output"]
+
+        self.hcpp = new WaveformHarmonicGenerator(dereference(Alm.harmonicscpp), hOpts, wOpts)
+
+    def __dealloc__(self):
+        del self.hcpp
+ 
+    cdef evaluate_harmonics(self, np.ndarray[ndim = 1, dtype = int, mode='c'] lmodes, np.ndarray[ndim = 1, dtype = int, mode='c'] mmodes, InspiralContainerWrapper inspiral, double theta, double phi):
+        cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
+        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &lmodes[0], &mmodes[0], lmodes.shape[0], dereference(inspiral.inspiralcpp), theta, phi)
+        return h
+
+    def __call__(self, l, m, InspiralContainerWrapper inspiral, double theta, double phi):
+        cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
+        if isinstance(l, list) or isinstance(m, list):
+            l = np.array(l, dtype=np.int32)
+            m = np.array(m, dtype=np.int32)
+        if isinstance(l, np.ndarray) and isinstance(m, np.ndarray):
+            assert (l.shape == m.shape), "Shapes of {}, {} for lmodes and mmodes are incompatible".format(l.shape, m.shape)
+            return self.evaluate_harmonics(l, m, inspiral, theta, phi)
+        else:
+            self.hcpp.computeWaveformHarmonic(dereference(h.hcpp), l, m, dereference(inspiral.inspiralcpp), theta, phi)
+        return h
+
+
+cdef class WaveformHarmonicGeneratorPy:
+    cdef WaveformHarmonicGenerator *hcpp
+
+    def __cinit__(self, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
+        cdef WaveformHarmonicOptions wOpts
+        cdef HarmonicOptions hOpts
+        
+        if "eps" in harmonic_kwargs.keys():
+            hOpts.epsilon = harmonic_kwargs["eps"]
+        if "max_samples" in harmonic_kwargs.keys():
+            hOpts.max_samples = harmonic_kwargs["max_samples"]
+        
+        if "num_threads" in waveform_kwargs.keys():
+            wOpts.num_threads = waveform_kwargs["num_threads"]
+        if "pad_output" in waveform_kwargs.keys():
+            wOpts.pad_output = waveform_kwargs["pad_output"]
+        if "include_negative_m" in waveform_kwargs.keys():
+            wOpts.include_negative_m = waveform_kwargs["include_negative_m"]
+
+        self.hcpp = new WaveformHarmonicGenerator(dereference(Alm.harmonicscpp), hOpts, wOpts)
+
+    def __dealloc__(self):
+        del self.hcpp
+
+    def select_modes(self, InspiralContainerWrapper inspiral, double qS, double phiS, double qK, double phiK, pad_nmodes = False, **kwargs):
+        cdef HarmonicOptions hOpts
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        cdef double theta
+        cdef double phi
+        sourceAngles(theta, phi, qS, phiS, qK, phiK)
+
+        cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(dereference(inspiral.inspiralcpp), theta, hOpts)
+        cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
+        modeWrap.wrap(modescpp)
+
+        if pad_nmodes:
+            select_modes = list(zip(modeWrap.lmodes, modeWrap.mmodes, 0*modeWrap.mmodes))
+        else:
+            select_modes = list(zip(modeWrap.lmodes, modeWrap.mmodes))
+
+        return select_modes
+
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = inspiral.timesteps
+        
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+        if "include_negative_m" in kwargs.keys():
+            wOpts.include_negative_m = kwargs["include_negative_m"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        cdef double theta
+        cdef double phi
+        sourceAngles(theta, phi, qS, phiS, qK, phiK)
+        wOpts.rescale = polarization(qS, phiS, qK, phiK)
+        wOpts.rescale *= scale_strain_amplitude(mu, dist)
+        
+        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &l[0], &m[0], l.shape[0], dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0, wOpts)
+        if return_list:
+            return [plus, cross]
+
+        # cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = -1.j*cross
+        # waveform = -1.j*cross
+        waveform += plus
+
+        return waveform
+
+    def waveform_harmonics_grid(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+        cdef int timeSteps
+        cdef int modeNum = l.shape[0]
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = inspiral.timesteps
+        
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+        if "include_negative_m" in kwargs.keys():
+            wOpts.include_negative_m = kwargs["include_negative_m"]
+
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] plus = np.zeros((modeNum, timeSteps), dtype=np.float64)
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] cross = np.zeros((modeNum, timeSteps), dtype=np.float64)
+        cdef WaveformHarmonicsContainerNumpyWrapper h = WaveformHarmonicsContainerNumpyWrapper(plus, cross)
+        
+        cdef double theta
+        cdef double phi
+        sourceAngles(theta, phi, qS, phiS, qK, phiK)
+        wOpts.rescale = polarization(qS, phiS, qK, phiK)
+        wOpts.rescale *= scale_strain_amplitude(mu, dist)
+
+        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0, wOpts)
+        if return_list:
+            return [plus, cross]
+
+        cdef np.ndarray[ndim = 2, dtype = np.complex128_t, mode='c'] waveform = -1.j*cross
+        waveform += plus
+
+        return waveform
+
+    def waveform_select_harmonics_grid(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = inspiral.timesteps
+        
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+        if "include_negative_m" in kwargs.keys():
+            wOpts.include_negative_m = kwargs["include_negative_m"]
+
+        cdef double theta
+        cdef double phi
+        sourceAngles(theta, phi, qS, phiS, qK, phiK)
+
+        cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(dereference(inspiral.inspiralcpp), theta, hOpts)
+        cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
+        modeWrap.wrap(modescpp)
+        # cdef np.ndarray[ndim = 1, dtype = np.int32_t, mode='c'] l = modeWrap.lmodes
+        # cdef np.ndarray[ndim = 1, dtype = np.int32_t, mode='c'] m = modeWrap.mmodes
+        cdef int[::1] l = modeWrap.lmodes.data
+        cdef int[::1] m = modeWrap.mmodes.data
+        cdef int modeNum = len(l)
+
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] plus = np.zeros((modeNum, timeSteps), dtype=np.float64)
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] cross = np.zeros((modeNum, timeSteps), dtype=np.float64)
+        cdef WaveformHarmonicsContainerNumpyWrapper h = WaveformHarmonicsContainerNumpyWrapper(plus, cross)
+        
+        wOpts.rescale = polarization(qS, phiS, qK, phiK)
+        wOpts.rescale *= scale_strain_amplitude(mu, dist)
+
+        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0, wOpts)
+        if return_list:
+            return [plus, cross]
+
+        # cdef np.ndarray[ndim = 2, dtype = np.complex128_t, mode='c'] waveform = np.empty((modeNum, timeSteps), dtype=np.complex128)
+        cdef np.ndarray[ndim = 2, dtype = np.complex128_t, mode='c'] waveform = -1.j*cross
+        waveform += plus
+
+        return waveform
+
+    def waveform_harmonics_phase_amplitude(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+        cdef int timeSteps
+        cdef int modeNum = l.shape[0]
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = inspiral.timesteps
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+        if "include_negative_m" in kwargs.keys():
+            wOpts.include_negative_m = kwargs["include_negative_m"]
+
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] amp = np.zeros((modeNum, timeSteps), dtype=np.float64)
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] phase = np.zeros((modeNum, timeSteps), dtype=np.float64)
+        cdef WaveformHarmonicsContainerNumpyWrapper h = WaveformHarmonicsContainerNumpyWrapper(amp, phase)
+        
+        cdef double theta
+        cdef double phi
+        sourceAngles(theta, phi, qS, phiS, qK, phiK)
+        wOpts.rescale = polarization(qS, phiS, qK, phiK)
+        wOpts.rescale *= scale_strain_amplitude(mu, dist)
+
+        self.hcpp.computeWaveformHarmonicsPhaseAmplitude(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0, wOpts)
+        return [amp, phase]
+
+    def waveform_select_harmonics_phase_amplitude(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = inspiral.timesteps
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+        if "include_negative_m" in kwargs.keys():
+            wOpts.include_negative_m = kwargs["include_negative_m"]
+
+        cdef double theta
+        cdef double phi
+        sourceAngles(theta, phi, qS, phiS, qK, phiK)
+
+        cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(dereference(inspiral.inspiralcpp), theta, hOpts)
+        cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
+        modeWrap.wrap(modescpp)
+
+        cdef int[::1] l = modeWrap.lmodes.data
+        cdef int[::1] m = modeWrap.mmodes.data
+        cdef int modeNum = len(l)
+
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] amp = np.zeros((2*modeNum, timeSteps), dtype=np.float64)
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] phase = np.zeros((2*modeNum, timeSteps), dtype=np.float64)
+        cdef WaveformHarmonicsContainerNumpyWrapper h = WaveformHarmonicsContainerNumpyWrapper(amp, phase)
+        
+        wOpts.rescale = polarization(qS, phiS, qK, phiK)
+        wOpts.rescale *= scale_strain_amplitude(mu, dist)
+
+        self.hcpp.computeWaveformHarmonicsPhaseAmplitude(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0, wOpts)
+        return [amp, phase]
+    
+    def waveform(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = inspiral.timesteps
+
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+        if "include_negative_m" in kwargs.keys():
+            wOpts.include_negative_m = kwargs["include_negative_m"]
+        # cdef WaveformContainerWrapper h = WaveformContainerWrapper(timeSteps)
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        cdef double theta
+        cdef double phi
+        sourceAngles(theta, phi, qS, phiS, qK, phiK)
+
+        cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(dereference(inspiral.inspiralcpp), theta, hOpts)
+        cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
+        modeWrap.wrap(modescpp)
+
+        cdef int[::1] l = modeWrap.lmodes.data
+        cdef int[::1] m = modeWrap.mmodes.data
+        cdef int modeNum = len(l)
+        
+        wOpts.rescale = polarization(qS, phiS, qK, phiK)
+        wOpts.rescale *= scale_strain_amplitude(mu, dist)
+
+        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0, wOpts)
+
+        if return_list:
+            return [plus, cross]
+    
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
+        waveform = -1.j*cross
+        waveform += plus
+
+        return waveform
+
+    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, InspiralContainerWrapper inspiral, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = inspiral.timesteps
+        
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+        if "include_negative_m" in kwargs.keys():
+            wOpts.include_negative_m = kwargs["include_negative_m"]
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        self.hcpp.computeWaveformHarmonicsSourceFrame(dereference(h.hcpp), &l[0], &m[0], l.shape[0], dereference(inspiral.inspiralcpp), theta, phi, Phi_phi0, dt, T)
+        if return_list:
+            return [plus, cross]
+
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
+        waveform = -1.j*cross
+        waveform += plus
+
+        return waveform
+
+    def waveform_source_frame(self, InspiralContainerWrapper inspiral, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+        cdef int timeSteps
+        cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
+        cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
+        if pad_output:
+            timeSteps = self.hcpp.computeTimeStepNumber(dt, T)
+        else:
+            timeSteps = inspiral.timesteps
+        
+        if "return_list" in kwargs.keys():
+            return_list = kwargs["return_list"]
+
+        if "eps" in kwargs.keys():
+            hOpts.epsilon = kwargs["eps"]
+        if "max_samples" in kwargs.keys():
+            hOpts.max_samples = kwargs["max_samples"]
+
+        if "num_threads" in kwargs.keys():
+            wOpts.num_threads = kwargs["num_threads"]
+        if "include_negative_m" in kwargs.keys():
+            wOpts.include_negative_m = kwargs["include_negative_m"]
+
+        cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(dereference(inspiral.inspiralcpp), theta, hOpts)
+        cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
+        modeWrap.wrap(modescpp)
+
+        cdef int[::1] l = modeWrap.lmodes.data
+        cdef int[::1] m = modeWrap.mmodes.data
+        cdef int modeNum = len(l)
+
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] plus = np.zeros(timeSteps, dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
+        cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
+
+        self.hcpp.computeWaveformHarmonicsSourceFrame(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi, Phi_phi0, dt, T)
+        if return_list:
+            return [plus, cross]
+
+        cdef np.ndarray[ndim = 1, dtype = np.complex128_t, mode='c'] waveform = np.empty(timeSteps, dtype=np.complex128)
+        waveform = -1.j*cross
+        waveform += plus
+
+        return waveform

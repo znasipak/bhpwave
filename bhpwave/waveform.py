@@ -1,5 +1,5 @@
 import numpy as np
-from bhpwaveformcy import (WaveformHarmonicGeneratorPyWrapper,
+from bhpwaveformcy import (WaveformHarmonicGeneratorPy,
                            WaveformFourierGeneratorPy,
                            WaveformGeneratorPy,
                            TrajectoryDataPy,
@@ -7,6 +7,8 @@ from bhpwaveformcy import (WaveformHarmonicGeneratorPyWrapper,
                            HarmonicAmplitudesPy)
 
 from bhpwave.trajectory.geodesic import A_MAX
+from bhpwave.trajectory.inspiral import TrajectoryData
+from bhpwave.harmonics.amplitudes import HarmonicAmplitudes
 
 import os
 from bhpwave.constants import *
@@ -47,6 +49,47 @@ def check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0):
 
     return a, x0, qK, phiK, Phi_phi0
 
+class KerrCircularWaveformCustomTrajectory:
+    def __init__(self, trajectory_class, harmonic_data, waveform_kwargs):
+        self.waveform_generator = WaveformHarmonicGeneratorPy(harmonic_data, waveform_kwargs)
+        self.inspiral_generator = trajectory_class
+
+    def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.select_modes(inspiral.data, qS, phiS, qK, phiK, **kwargs)
+    
+    def waveform_harmonics(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.waveform_harmonics(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    
+    def waveform(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.waveform_harmonics(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    
+    def waveform_harmonics_grid(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.waveform_harmonics_grid(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    
+    def waveform_select_harmonics_grid(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_grid(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    
+    def waveform_harmonics_phase_amplitude(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    
+    def waveform_select_harmonics_phase_amplitude(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    
+    def waveform_source_frame_harmonics(self, l, m, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, inspiral.data, theta, phi, Phi_phi0, dt, T, **kwargs)
+    
+    def waveform_source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(inspiral.data, theta, phi, Phi_phi0, dt, T, **kwargs)
+
 class KerrCircularWaveform:
     """
     Class that generates the gravitational waveform produced by an extreme-mass-ratio inspiral
@@ -64,22 +107,34 @@ class KerrCircularWaveform:
     :type num_threads: int or None, optional
     """
     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
+        self.custom_inspiral_flag = False
         if num_threads is None:
             num_threads = CPU_MAX
         if trajectory_data is None:
             self.trajectory_data = TrajectoryDataPy(filename=traj_path, dealloc_flag=False)
         else:
-            self.trajectory_data = trajectory_data.base_class
+            if isinstance(trajectory_data, TrajectoryData):
+                self.trajectory_data = trajectory_data.base_class
+            else:
+                self.custom_inspiral_flag = True
+                self.trajectory_data = trajectory_data
+            
         if harmonic_data is None:
             self.harmonic_data = HarmonicAmplitudesPy(filebase=amplitude_path, dealloc_flag=False)
         else:
-            self.harmonic_data = harmonic_data.base_class
+            if isinstance(harmonic_data, HarmonicAmplitudes):
+                self.harmonic_data = harmonic_data.base_class
+            else:
+                raise ValueError("Wrong type for harmonic_data. Must be an instance of the HarmonicAmplitudes class.")
 
         waveform_kwargs = {
             "num_threads": num_threads
         }
 
-        self.waveform_generator = WaveformGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
+        if self.custom_inspiral_flag:
+            self.waveform_generator = KerrCircularWaveformCustomTrajectory(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
+        else:
+            self.waveform_generator = WaveformGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
 
     def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
         """
@@ -1317,3 +1372,6 @@ def frequencies(dt, T):
     """
     samples = int(T*yr_MKS/dt + 1)
     return np.fft.rfftfreq(samples, d=dt)
+
+
+## Custom Classes ##

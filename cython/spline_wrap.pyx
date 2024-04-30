@@ -40,6 +40,7 @@ cdef extern from "spline.hpp":
         vector[double] colslc(int j, int k)
         Matrix slc(int k)
 
+        void resize(int nx, int ny, int nz)
         void reshape(int nx, int ny, int nz)
         ThreeTensor reshaped(int nx, int ny, int nz) const
 
@@ -145,6 +146,7 @@ cdef class CyTricubicSpline:
 
     def __init__(self, double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, np.ndarray[ndim=3, dtype=np.float64_t, mode='c'] f, int method):
         cdef ThreeTensor ftens = ThreeTensor(nx + 1, ny + 1, nz + 1, &f[0,0,0])
+        # cdef ThreeTensor cijk = ThreeTensor(nx + 1, ny + 1, 64*(nz + 1))
         # cdef ThreeTensor ftens = ThreeTensor(nx + 1, ny + 1, nz + 1)
         # for i in range(nx + 1):
         #     for j in range(ny + 1):

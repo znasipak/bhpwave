@@ -148,13 +148,16 @@ class TricubicSpline:
     :param f: Function values corresponding to the grid points x, y, z
     :type f: 3d-array[double]
     """
-    def __init__(self, x, y, z, f, bc = "E(3)"):
+    def __init__(self, x, y, z, f, bc = "E(3)", mem_flag = True):
         self.boundary_conditions_dict = cubic_spline_bc_dict
         self.available_boundary_conditions = self.boundary_conditions_dict.keys()
         assert isinstance(x, np.ndarray)
         assert isinstance(y, np.ndarray)
         assert isinstance(f, np.ndarray)
         assert (x.shape[0], y.shape[0], z.shape[0]) == (f.shape[0], f.shape[1], f.shape[2]), "Shapes of arrays {}, {}, {}, and {} do not match".format(x.shape, y.shape, z.shape, f.shape)
+        if mem_flag:
+            if f.size*64 > 2**31:
+                return MemoryError("Spline size exceeds 2^31. Set mem_flag to False to create spline at risk of internal memory errors.")
 
         self.x0 = x[0]
         self.y0 = y[0]

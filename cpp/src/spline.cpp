@@ -209,6 +209,13 @@ Matrix ThreeTensor::slc(int k){
 	return slc;
 }
 
+void ThreeTensor::resize(int nx, int ny, int nz){
+	_nx = nx;
+	_ny = ny;
+	_nz = nz;
+	_A.resize(nx*ny*nz);
+}
+
 void ThreeTensor::reshape(int nx, int ny, int nz){
 	_nx = nx;
 	_ny = ny;

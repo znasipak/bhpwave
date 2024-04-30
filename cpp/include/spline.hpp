@@ -83,6 +83,7 @@ public:
 	Vector colslc(int j, int k);
 	Matrix slc(int k);
 
+	void resize(int nx, int ny, int nz);
 	void reshape(int nx, int ny, int nz);
 	ThreeTensor reshaped(int nx, int ny, int nz) const;
 
