@@ -60,35 +60,35 @@ class KerrCircularWaveformCustomTrajectory:
     
     def waveform_harmonics(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
-        return self.waveform_generator.waveform_harmonics(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_harmonics(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
     
     def waveform(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
-        return self.waveform_generator.waveform(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
     
     def waveform_harmonics_grid(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
-        return self.waveform_generator.waveform_harmonics_grid(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_harmonics_grid(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
     
     def waveform_select_harmonics_grid(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
-        return self.waveform_generator.waveform_select_harmonics_grid(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_grid(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
     
     def waveform_harmonics_phase_amplitude(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
-        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
     
     def waveform_select_harmonics_phase_amplitude(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
-        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
     
     def waveform_source_frame_harmonics(self, l, m, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, *args, **kwargs):
         inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
-        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, inspiral.data, theta, phi, Phi_phi0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, inspiral.data, theta, phi, Phi_phi0, dt, T, **kwargs)
     
     def waveform_source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, *args, **kwargs):
         inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
-        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(inspiral.data, theta, phi, Phi_phi0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(inspiral.data, theta, phi, Phi_phi0, dt, T, **kwargs)
 
 class KerrCircularWaveform:
     """
