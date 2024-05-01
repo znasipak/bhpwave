@@ -54,41 +54,41 @@ class KerrCircularWaveformCustomTrajectory:
         self.waveform_generator = WaveformHarmonicGeneratorPy(harmonic_data, waveform_kwargs)
         self.inspiral_generator = trajectory_class
 
-    def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
+    def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
         return self.waveform_generator.select_modes(inspiral.data, qS, phiS, qK, phiK, **kwargs)
     
-    def waveform_harmonics(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
-        return self.waveform_generator.waveform_harmonics(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    def waveform_harmonics(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_harmonics(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
     
-    def waveform(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
-        return self.waveform_generator.waveform_harmonics(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    def waveform(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
     
-    def waveform_harmonics_grid(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
-        return self.waveform_generator.waveform_harmonics_grid(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    def waveform_harmonics_grid(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_harmonics_grid(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
     
-    def waveform_select_harmonics_grid(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
-        return self.waveform_generator.waveform_select_harmonics_grid(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    def waveform_select_harmonics_grid(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_grid(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
     
-    def waveform_harmonics_phase_amplitude(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
-        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    def waveform_harmonics_phase_amplitude(self, l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
     
-    def waveform_select_harmonics_phase_amplitude(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
-        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+    def waveform_select_harmonics_phase_amplitude(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(mu, inspiral.data, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
     
-    def waveform_source_frame_harmonics(self, l, m, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
-        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, inspiral.data, theta, phi, Phi_phi0, dt, T, **kwargs)
+    def waveform_source_frame_harmonics(self, l, m, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, inspiral.data, theta, phi, Phi_phi0, dt, T, *args, **kwargs)
     
-    def waveform_source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs):
-        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, **kwargs)
-        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(inspiral.data, theta, phi, Phi_phi0, dt, T, **kwargs)
+    def waveform_source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, *args, **kwargs):
+        inspiral = self.inspiral_generator(M, mu, a, r0, dt, T, *args, **kwargs)
+        return self.waveform_generator.waveform_select_harmonics_phase_amplitude(inspiral.data, theta, phi, Phi_phi0, dt, T, *args, **kwargs)
 
 class KerrCircularWaveform:
     """
@@ -136,7 +136,7 @@ class KerrCircularWaveform:
         else:
             self.waveform_generator = WaveformGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
 
-    def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
+    def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         """
         Selects the harmonic modes that are used for calculating the waveform
 
@@ -164,9 +164,9 @@ class KerrCircularWaveform:
         :rtype: 1d-array[tuples(doubles)]
         """
 
-        return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+        return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
 
-    def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
+    def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         """
         Calculate the complex gravitational wave strain
 
@@ -233,12 +233,12 @@ class KerrCircularWaveform:
                     mmodes.append(mode[1])
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
-            h = self.waveform_generator.waveform_harmonics(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
         else:
-            h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
         return h
     
-    def harmonics(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
+    def harmonics(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         """
         Calculate the spin-weighted spherical harmonic modes of the gravitational wave strain
 
@@ -305,12 +305,12 @@ class KerrCircularWaveform:
                     mmodes.append(mode[1])
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
-            h = self.waveform_generator.waveform_harmonics_grid(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics_grid(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
         else:
-            h = self.waveform_generator.waveform_select_harmonics_grid(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_select_harmonics_grid(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
         return h
     
-    def harmonics_data(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
+    def harmonics_data(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs):
         """
         Calculate the amplitudes and phases of the spin-weighted spherical harmonic (l, m)-modes of the gravitational wave strain. The
         function returns mode data for both positive and negative m-modes. Given a list of modes [(l_1, m_1), (l_2, m_2), ... , (l_N, m_N)]
@@ -368,12 +368,12 @@ class KerrCircularWaveform:
                     warnings.warn("Warning: Only keeping modes in select_modes with m > 0.")
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
-            h = self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
         else:
-            h = self.waveform_generator.waveform_select_harmonics_phase_amplitude(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_select_harmonics_phase_amplitude(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
         return h
     
-    def source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt=10., T=1., **kwargs):
+    def source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt=10., T=1., *args, **kwargs):
         """
         Calculate the scaled gravitational wave strain :math:`r\\times h/\\mu` in the source frame
 
@@ -434,9 +434,9 @@ class KerrCircularWaveform:
                     mmodes.append(mode[1])
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
-            h = self.waveform_generator.waveform_harmonics_source_frame(l, m, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics_source_frame(l, m, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, *args, **kwargs)
         else:
-            h = self.waveform_generator.waveform_source_frame(M, mu, a, r0, theta, phi, Phi_phi0, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_source_frame(M, mu, a, r0, theta, phi, Phi_phi0, dt, T, *args, **kwargs)
         return h
 
 class KerrWaveform(KerrCircularWaveform):
@@ -455,7 +455,7 @@ class KerrWaveform(KerrCircularWaveform):
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional  
     """
-    def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
+    def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., *args, **kwargs):
         """
         Calculate the gravitational wave strain
 
@@ -505,9 +505,9 @@ class KerrWaveform(KerrCircularWaveform):
 
         """
         a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
-        return super().__call__(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, **kwargs)
+        return super().__call__(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
     
-    def harmonics(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
+    def harmonics(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., *args, **kwargs):
         """
         Calculate the spin-weighted spherical harmonic modes of the gravitational wave strain
 
@@ -557,9 +557,9 @@ class KerrWaveform(KerrCircularWaveform):
 
         """
         a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
-        return super().harmonics(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, **kwargs)
+        return super().harmonics(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
     
-    def harmonics_data(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
+    def harmonics_data(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., *args, **kwargs):
         """
         Calculate the amplitudes and phases of the spin-weighted spherical harmonic (l, m)-modes of the gravitational wave strain. The
         function returns mode data for both positive and negative m-modes. Given a list of modes [(l_1, m_1), (l_2, m_2), ... , (l_N, m_N)]
@@ -609,7 +609,7 @@ class KerrWaveform(KerrCircularWaveform):
 
         """
         a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
-        return super().harmonics_data(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, **kwargs)
+        return super().harmonics_data(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, *args, **kwargs)
 
     
 class KerrCircularFrequencyWaveform:
@@ -645,7 +645,7 @@ class KerrCircularFrequencyWaveform:
         }
         self.waveform_generator = WaveformFourierGeneratorPy(self.trajectory_data, self.harmonic_data, waveform_kwargs=waveform_kwargs)
 
-    def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, T = 1., **kwargs):
+    def select_modes(self, M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, T, **kwargs):
         """
         Selects the harmonic modes that are used for calculating the waveform
 
@@ -672,9 +672,9 @@ class KerrCircularFrequencyWaveform:
 
         :rtype: 1d-array[tuples(doubles)]
         """
-        return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, T, **kwargs)
+        return self.waveform_generator.select_modes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, T, *args, **kwargs)
 
-    def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
+    def __call__(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, df = None, fmax = None, frequencies = None, **kwargs):
         """
         Calculate the Fourier transform of the plus and cross polarizations of the gravitational wave strain
 
@@ -757,12 +757,12 @@ class KerrCircularFrequencyWaveform:
                     mmodes.append(mode[1])
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
-            h = self.waveform_generator.waveform_harmonics(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, *args, **kwargs)
         else:
-            h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, **kwargs)
+            h = self.waveform_generator.waveform(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, *args, **kwargs)
         return h
     
-    def harmonics(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
+    def harmonics(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, df = None, fmax = None, frequencies = None, **kwargs):
         """
         Calculate the spin-weighted spherical harmonic (l, m)-modes of the
         Fourier transform of the plus and cross polarizations of the gravitational wave strain
@@ -843,12 +843,12 @@ class KerrCircularFrequencyWaveform:
                     mmodes.append(mode[1])
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
-            h = self.waveform_generator.waveform_harmonics_grid(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics_grid(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, *args, **kwargs)
         else:
-            h = self.waveform_generator.waveform_select_harmonics_grid(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_select_harmonics_grid(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, *args, **kwargs)
         return h
     
-    def harmonics_data(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
+    def harmonics_data(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, df = None, fmax = None, frequencies = None, **kwargs):
         """
         Calculate the phases and amplitudes for the spin-weighted spherical harmonic (l, m)-modes of the
         Fourier transform of the plus and cross polarizations of the gravitational wave strain. The
@@ -922,12 +922,12 @@ class KerrCircularFrequencyWaveform:
                     warnings.warn("Warning: Only keeping modes in select_modes with m > 0.")
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
-            h = self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, *args, **kwargs)
         else:
-            h = self.waveform_generator.waveform_select_harmonics_phase_amplitude(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_select_harmonics_phase_amplitude(M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, frequencies, dt, T, *args, **kwargs)
         return h
     
-    def source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
+    def source_frame(self, M, mu, a, r0, theta, phi, Phi_phi0, dt, T, df = None, fmax = None, frequencies = None, **kwargs):
         """
         Calculate the Fourier transform of the plus and cross polarizations of the
         scaled gravitational wave strain :math:`r\\times h/\\mu` in the source frame
@@ -988,9 +988,9 @@ class KerrCircularFrequencyWaveform:
                 mmodes.append(mode[1])
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
-            h = self.waveform_generator.waveform_harmonics_source_frame(l, m, M, mu, a, r0, theta, phi, Phi_phi0, frequencies, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_harmonics_source_frame(l, m, M, mu, a, r0, theta, phi, Phi_phi0, frequencies, dt, T, *args, **kwargs)
         else:
-            h = self.waveform_generator.waveform_source_frame(M, mu, a, r0, theta, phi, Phi_phi0, frequencies, dt, T, **kwargs)
+            h = self.waveform_generator.waveform_source_frame(M, mu, a, r0, theta, phi, Phi_phi0, frequencies, dt, T, *args, **kwargs)
         return h
     
 def sort_frequency_and_time_sampling_arguments(df, fmax, frequencies, dt, T):
@@ -1044,7 +1044,7 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
     :param num_threads: the number of threads used to evaluate the waveform
     :type num_threads: int or None, optional  
     """
-    def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
+    def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt, T, df = None, fmax = None, frequencies = None, **kwargs):
         """
         Calculate the Fourier transform of the plus and cross polarizations of the gravitational wave strain
 
@@ -1100,9 +1100,9 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
 
         """
         a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
-        return super().__call__(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
+        return super().__call__(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
     
-    def harmonics(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
+    def harmonics(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt, T, df = None, fmax = None, frequencies = None, **kwargs):
         """
         Calculate the spin-weighted spherical harmonic (l, m)-modes of the
         Fourier transform of the plus and cross polarizations of the gravitational wave strain
@@ -1159,9 +1159,9 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
 
         """
         a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
-        return super().harmonics(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
+        return super().harmonics(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
     
-    def harmonics_data(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
+    def harmonics_data(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt, T, df = None, fmax = None, frequencies = None, **kwargs):
         """
         Calculate the phases and amplitudes for spin-weighted spherical harmonic (l, m)-modes of the
         Fourier transform of the plus and cross polarizations of the gravitational wave strain
@@ -1218,7 +1218,7 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
 
         """
         a, x0, qK, phiK, Phi_phi0 = check_ssb_frame_parameters(a, x0, qK, phiK, Phi_phi0)
-        return super().harmonics_data(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
+        return super().harmonics_data(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
 
 def source_angles(qS, phiS, qK, phiK):
     """

@@ -87,6 +87,8 @@ class WaveformHarmonicGenerator{
 public:
   WaveformHarmonicGenerator(HarmonicAmplitudes &Alm, HarmonicOptions hOpts = HarmonicOptions(), WaveformHarmonicOptions wOpts = WaveformHarmonicOptions());
 
+  int computeTimeStepNumber(double dt, double T);
+
   WaveformContainer computeWaveformHarmonic(int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);
   void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi);
   void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts);

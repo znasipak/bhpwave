@@ -7,3 +7,6 @@ yr_MKS = 31558149.763545603 # s (sidereal year)
 Modot_GC1_to_S = GM_MKS/c_MKS**3
 Modot_GC1_to_M = GM_MKS/c_MKS**2
 Modot_GC1_to_PC = Modot_GC1_to_M/pc_MKS
+
+A_MAX = 0.9999
+OMEGA_MIN = 2.e-3

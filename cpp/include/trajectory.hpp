@@ -98,6 +98,7 @@ public:
 	void setInspiralInitialConditions(double a, double massratio, double r0, double dt);
 	void setTimeStep(int i, double alpha, double phase);
 	void setTimeStep(int i, double alpha, double phase, double dtdo);
+	void setTimeSteps(double* alpha, double* phase);
 	
 	const Vector& getAlpha() const;
 	const Vector& getPhase() const;

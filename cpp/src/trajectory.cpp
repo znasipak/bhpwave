@@ -243,6 +243,17 @@ void InspiralContainer::setTimeStep(int i, double alpha, double phase, double dt
   _phase[i] = phase;
 }
 
+void InspiralContainer::setTimeSteps(double* alpha, double* phase){
+  #pragma omp parallel
+    {
+		#pragma omp for
+		for(int i = 0; i < getSize(); i++){
+			_alpha[i] = alpha[i];
+			_phase[i] = phase[i];
+		}
+	}
+}
+
 const Vector& InspiralContainer::getAlpha() const{
   return _alpha;
 }
@@ -343,7 +354,6 @@ void InspiralGenerator::computeInitialConditions(double &chi, double &omega_i, d
 
 void InspiralGenerator::computeInspiral(InspiralContainer &inspiral, double chi, double omega_i, double alpha_i, double t_i, double massratio, double dt, int num_threads){
 	int steps = inspiral.getSize();
-	double a = inspiral.getSpin();
 	dt *= massratio; // need to rescale by massratio to get in terms of "slow time"
 
 	double phase_i = _traj.phase_of_time(chi, t_i);

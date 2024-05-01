@@ -13,7 +13,7 @@ cdef extern from "waveform.hpp":
     double solar_mass_to_seconds(double mass)
     double scale_strain_amplitude(double mu, double dist)
     void sourceAngles(double &theta, double &phi, double qS, double phiS, double qK, double phiK);
-    cpp_complex polarization(double qS, double phiS, double qK, double phiK)
+    cpp_complex[double] polarization(double qS, double phiS, double qK, double phiK)
 
     cdef cppclass WaveformContainer:
         WaveformContainer(int timeSteps) except +
@@ -57,6 +57,7 @@ cdef extern from "waveform.hpp":
     cdef cppclass WaveformHarmonicGenerator:
         WaveformHarmonicGenerator(HarmonicAmplitudes &Alm, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
 
+        int computeTimeStepNumber(double dt, double T)
         WaveformContainer computeWaveformHarmonic(int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
         void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi) except +
         void computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
@@ -79,7 +80,7 @@ cdef extern from "waveform.hpp":
         void computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts)
         void computeWaveformHarmonicsPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], double plusY[], double crossY[], int modeNum, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts) except +
 
-        HarmonicSelector& getModeSelector();
+        HarmonicSelector& getModeSelector()
         HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta)
         HarmonicModeContainer selectModes(InspiralContainer &inspiral, double theta, HarmonicOptions opts) except +
                 
@@ -251,52 +252,6 @@ cdef class WaveformContainerWrapper:
         cdef double[::1] arr = <double [:self.size]>self.hcpp.getCrossPointer()
         return np.asarray(arr)
 
-# cdef class WaveformHarmonicGeneratorPy:
-#     cdef WaveformHarmonicGenerator *hcpp
-#     cdef int modeCheck
-
-#     def __cinit__(self, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
-#         cdef WaveformHarmonicOptions wOpts
-#         cdef HarmonicOptions hOpts
-
-#         if "check_modes" in harmonic_kwargs.keys():
-#             self.modeCheck = harmonic_kwargs["check_modes"]
-#         else:
-#             self.modeCheck = 0
-        
-#         if "eps" in harmonic_kwargs.keys():
-#             hOpts.epsilon = harmonic_kwargs["eps"]
-#         if "max_samples" in harmonic_kwargs.keys():
-#             hOpts.max_samples = harmonic_kwargs["max_samples"]
-        
-#         if "num_threads" in waveform_kwargs.keys():
-#             wOpts.num_threads = waveform_kwargs["num_threads"]
-#         if "pad_output" in waveform_kwargs.keys():
-#             wOpts.pad_output = waveform_kwargs["pad_output"]
-
-#         self.hcpp = new WaveformHarmonicGenerator(dereference(Alm.harmonicscpp), hOpts, wOpts)
-
-#     def __dealloc__(self):
-#         del self.hcpp
- 
-#     cdef evaluate_harmonics(self, np.ndarray[ndim = 1, dtype = int, mode='c'] lmodes, np.ndarray[ndim = 1, dtype = int, mode='c'] mmodes, InspiralContainerWrapper inspiral, double theta, double phi):
-#         cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
-#         self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &lmodes[0], &mmodes[0], lmodes.shape[0], dereference(inspiral.inspiralcpp), theta, phi)
-#         return h
-
-#     def __call__(self, l, m, InspiralContainerWrapper inspiral, double theta, double phi):
-#         cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
-#         if isinstance(l, list) or isinstance(m, list):
-#             l = np.array(l, dtype=np.int32)
-#             m = np.array(m, dtype=np.int32)
-#         if isinstance(l, np.ndarray) and isinstance(m, np.ndarray):
-#             assert (l.shape == m.shape), "Shapes of {}, {} for lmodes and mmodes are incompatible".format(l.shape, m.shape)
-#             return self.evaluate_harmonics(l, m, inspiral, theta, phi)
-#         else:
-#             self.hcpp.computeWaveformHarmonic(dereference(h.hcpp), l, m, dereference(inspiral.inspiralcpp), theta, phi)
-#         return h
-
-
 cdef class WaveformGeneratorPy:
     cdef WaveformGenerator *hcpp
 
@@ -324,7 +279,7 @@ cdef class WaveformGeneratorPy:
     def time_step_number(self, double M, double mu, double a, double r0, double dt, double T):
         return self.hcpp.computeTimeStepNumber(M, mu, a, r0, dt, T)
 
-    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, pad_nmodes = False, **kwargs):
+    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, pad_nmodes = False, *args, **kwargs):
         cdef HarmonicOptions hOpts
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
@@ -342,7 +297,7 @@ cdef class WaveformGeneratorPy:
 
         return select_modes
 
-    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -381,7 +336,7 @@ cdef class WaveformGeneratorPy:
 
         return waveform
 
-    def waveform_harmonics_grid(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics_grid(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef int modeNum = l.shape[0]
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
@@ -420,7 +375,7 @@ cdef class WaveformGeneratorPy:
 
         return waveform
 
-    def waveform_select_harmonics_grid(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_select_harmonics_grid(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -467,7 +422,7 @@ cdef class WaveformGeneratorPy:
 
         return waveform
 
-    def waveform_harmonics_phase_amplitude(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+    def waveform_harmonics_phase_amplitude(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, *args, **kwargs):
         cdef int timeSteps
         cdef int modeNum = l.shape[0]
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
@@ -497,7 +452,7 @@ cdef class WaveformGeneratorPy:
         self.hcpp.computeWaveformPhaseAmplitude(dereference(h.hcpp), &l[0], &m[0], modeNum, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
         return [amp, phase]
 
-    def waveform_select_harmonics_phase_amplitude(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+    def waveform_select_harmonics_phase_amplitude(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -534,7 +489,7 @@ cdef class WaveformGeneratorPy:
         self.hcpp.computeWaveformPhaseAmplitude(dereference(h.hcpp), &l[0], &m[0], modeNum, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
         return [amp, phase]
     
-    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -574,7 +529,7 @@ cdef class WaveformGeneratorPy:
 
         return waveform
 
-    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -612,7 +567,7 @@ cdef class WaveformGeneratorPy:
 
         return waveform
 
-    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -677,7 +632,7 @@ cdef class WaveformFourierGeneratorPy:
     def step_number(self, double dt, double T):
         return self.hcpp.computeFrequencyStepNumber(dt, T)
 
-    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double T, pad_nmodes = False, **kwargs):
+    def select_modes(self, double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double T, pad_nmodes = False, *args, **kwargs):
         cdef HarmonicOptions hOpts
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
@@ -695,7 +650,7 @@ cdef class WaveformFourierGeneratorPy:
 
         return select_modes
 
-    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int steps
         cdef int steps_no_zero
         cdef int timeSteps
@@ -745,7 +700,7 @@ cdef class WaveformFourierGeneratorPy:
         
         return [plusComplex, crossComplex]
 
-    def waveform_harmonics_grid(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics_grid(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int steps
         cdef int steps_no_zero
         cdef int timeSteps
@@ -796,7 +751,7 @@ cdef class WaveformFourierGeneratorPy:
         
         return [plusComplex, crossComplex]
 
-    def waveform_select_harmonics_grid(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_select_harmonics_grid(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int steps
         cdef int steps_no_zero
         cdef int timeSteps
@@ -855,7 +810,7 @@ cdef class WaveformFourierGeneratorPy:
         
         return [plusComplex, crossComplex]
 
-    def waveform_harmonics_phase_amplitude(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics_phase_amplitude(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int steps
         cdef int steps_no_zero
         cdef int timeSteps
@@ -904,7 +859,7 @@ cdef class WaveformFourierGeneratorPy:
         
         return [amp, phase]
 
-    def waveform_select_harmonics_phase_amplitude(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_select_harmonics_phase_amplitude(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int steps
         cdef int steps_no_zero
         cdef int timeSteps
@@ -960,7 +915,7 @@ cdef class WaveformFourierGeneratorPy:
         
         return [amp, phase]
 
-    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+    def waveform(self, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list = False, *args, **kwargs):
         cdef int steps
         cdef int steps_no_zero
         cdef int timeSteps
@@ -1010,7 +965,7 @@ cdef class WaveformFourierGeneratorPy:
 
         return [plusComplex, crossComplex]
     
-    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list = False, *args, **kwargs):
         cdef int steps
         cdef int steps_no_zero
         cdef int timeSteps
@@ -1060,7 +1015,7 @@ cdef class WaveformFourierGeneratorPy:
 
         return [plusComplex, crossComplex]
     
-    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+    def waveform_source_frame(self, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double[::1] frequencies, double dt, double T, bint pad_output = False, bint return_list = False, *args, **kwargs):
         cdef int steps
         cdef int steps_no_zero
         cdef int timeSteps
@@ -1111,53 +1066,6 @@ cdef class WaveformFourierGeneratorPy:
         return [plusComplex, crossComplex]
 
 # Custom
-
-cdef class WaveformNoInspiralGeneratorPy:
-    cdef WaveformHarmonicGenerator *hcpp
-    cdef int modeCheck
-
-    def __cinit__(self, HarmonicAmplitudesPy Alm, dict harmonic_kwargs = {}, dict waveform_kwargs = {}):
-        cdef WaveformHarmonicOptions wOpts
-        cdef HarmonicOptions hOpts
-
-        if "check_modes" in harmonic_kwargs.keys():
-            self.modeCheck = harmonic_kwargs["check_modes"]
-        else:
-            self.modeCheck = 0
-        
-        if "eps" in harmonic_kwargs.keys():
-            hOpts.epsilon = harmonic_kwargs["eps"]
-        if "max_samples" in harmonic_kwargs.keys():
-            hOpts.max_samples = harmonic_kwargs["max_samples"]
-        
-        if "num_threads" in waveform_kwargs.keys():
-            wOpts.num_threads = waveform_kwargs["num_threads"]
-        if "pad_output" in waveform_kwargs.keys():
-            wOpts.pad_output = waveform_kwargs["pad_output"]
-
-        self.hcpp = new WaveformHarmonicGenerator(dereference(Alm.harmonicscpp), hOpts, wOpts)
-
-    def __dealloc__(self):
-        del self.hcpp
- 
-    cdef evaluate_harmonics(self, np.ndarray[ndim = 1, dtype = int, mode='c'] lmodes, np.ndarray[ndim = 1, dtype = int, mode='c'] mmodes, InspiralContainerWrapper inspiral, double theta, double phi):
-        cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
-        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &lmodes[0], &mmodes[0], lmodes.shape[0], dereference(inspiral.inspiralcpp), theta, phi)
-        return h
-
-    def __call__(self, l, m, InspiralContainerWrapper inspiral, double theta, double phi):
-        cdef WaveformContainerWrapper h = WaveformContainerWrapper(inspiral.timesteps)
-        if isinstance(l, list) or isinstance(m, list):
-            l = np.array(l, dtype=np.int32)
-            m = np.array(m, dtype=np.int32)
-        if isinstance(l, np.ndarray) and isinstance(m, np.ndarray):
-            assert (l.shape == m.shape), "Shapes of {}, {} for lmodes and mmodes are incompatible".format(l.shape, m.shape)
-            return self.evaluate_harmonics(l, m, inspiral, theta, phi)
-        else:
-            self.hcpp.computeWaveformHarmonic(dereference(h.hcpp), l, m, dereference(inspiral.inspiralcpp), theta, phi)
-        return h
-
-
 cdef class WaveformHarmonicGeneratorPy:
     cdef WaveformHarmonicGenerator *hcpp
 
@@ -1182,7 +1090,7 @@ cdef class WaveformHarmonicGeneratorPy:
     def __dealloc__(self):
         del self.hcpp
 
-    def select_modes(self, InspiralContainerWrapper inspiral, double qS, double phiS, double qK, double phiK, pad_nmodes = False, **kwargs):
+    def select_modes(self, InspiralContainerWrapper inspiral, double qS, double phiS, double qK, double phiK, pad_nmodes = False, *args, **kwargs):
         cdef HarmonicOptions hOpts
         if "eps" in kwargs.keys():
             hOpts.epsilon = kwargs["eps"]
@@ -1204,7 +1112,7 @@ cdef class WaveformHarmonicGeneratorPy:
 
         return select_modes
 
-    def waveform_harmonics(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -1247,7 +1155,7 @@ cdef class WaveformHarmonicGeneratorPy:
 
         return waveform
 
-    def waveform_harmonics_grid(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics_grid(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef int modeNum = l.shape[0]
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
@@ -1289,7 +1197,7 @@ cdef class WaveformHarmonicGeneratorPy:
 
         return waveform
 
-    def waveform_select_harmonics_grid(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_select_harmonics_grid(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -1341,7 +1249,7 @@ cdef class WaveformHarmonicGeneratorPy:
 
         return waveform
 
-    def waveform_harmonics_phase_amplitude(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+    def waveform_harmonics_phase_amplitude(self, int[::1] l, int[::1] m, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, *args, **kwargs):
         cdef int timeSteps
         cdef int modeNum = l.shape[0]
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
@@ -1374,7 +1282,7 @@ cdef class WaveformHarmonicGeneratorPy:
         self.hcpp.computeWaveformHarmonicsPhaseAmplitude(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0, wOpts)
         return [amp, phase]
 
-    def waveform_select_harmonics_phase_amplitude(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
+    def waveform_select_harmonics_phase_amplitude(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -1415,7 +1323,7 @@ cdef class WaveformHarmonicGeneratorPy:
         self.hcpp.computeWaveformHarmonicsPhaseAmplitude(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0, wOpts)
         return [amp, phase]
     
-    def waveform(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, **kwargs):
+    def waveform(self, double mu, InspiralContainerWrapper inspiral, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list = False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -1468,7 +1376,7 @@ cdef class WaveformHarmonicGeneratorPy:
 
         return waveform
 
-    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, InspiralContainerWrapper inspiral, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_harmonics_source_frame(self, int[::1] l, int[::1] m, InspiralContainerWrapper inspiral, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -1494,7 +1402,7 @@ cdef class WaveformHarmonicGeneratorPy:
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
 
-        self.hcpp.computeWaveformHarmonicsSourceFrame(dereference(h.hcpp), &l[0], &m[0], l.shape[0], dereference(inspiral.inspiralcpp), theta, phi, Phi_phi0, dt, T)
+        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &l[0], &m[0], l.shape[0], dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0)
         if return_list:
             return [plus, cross]
 
@@ -1504,7 +1412,7 @@ cdef class WaveformHarmonicGeneratorPy:
 
         return waveform
 
-    def waveform_source_frame(self, InspiralContainerWrapper inspiral, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, **kwargs):
+    def waveform_source_frame(self, InspiralContainerWrapper inspiral, double theta, double phi, double Phi_phi0, double dt, double T, bint pad_output = False, bint return_list=False, *args, **kwargs):
         cdef int timeSteps
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
@@ -1538,7 +1446,7 @@ cdef class WaveformHarmonicGeneratorPy:
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
 
-        self.hcpp.computeWaveformHarmonicsSourceFrame(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi, Phi_phi0, dt, T)
+        self.hcpp.computeWaveformHarmonics(dereference(h.hcpp), &l[0], &m[0], modeNum, dereference(inspiral.inspiralcpp), theta, phi - Phi_phi0)
         if return_list:
             return [plus, cross]
 

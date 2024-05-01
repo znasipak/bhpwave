@@ -46,6 +46,7 @@ cdef extern from "trajectory.hpp":
         InspiralContainer(int inspiralSteps)
         void setInspiralInitialConditions(double a, double massratio, double r0, double dt)
         void setTimeStep(int i, double alpha, double phase)
+        void setTimeSteps(double* alpha, double* phase)
 
         const vector[double]& getAlpha() const
         const vector[double]& getPhase() const
@@ -140,6 +141,9 @@ cdef class InspiralContainerWrapper:
 
     def set_time_step(self, int i, double alpha, double phase):
         self.inspiralcpp.setTimeStep(i, alpha, phase)
+
+    def set_time_steps(self, np.ndarray[ndim = 1, dtype = np.float64_t, mode="c"] alpha, np.ndarray[ndim = 1, dtype = np.float64_t, mode="c"] phase):
+        self.inspiralcpp.setTimeSteps(&alpha[0], &phase[0])
     
     @property
     def timesteps(self):
@@ -263,7 +267,7 @@ cdef class TrajectoryDataPy:
     def flux(self, double a, omega):
         if isinstance(omega, np.ndarray):
             return self.flux_parallel(a, omega)
-        elif type(omega) is float:
+        elif type(omega) is float or type(omega) is np.float64:
             return self.trajcpp.flux_of_a_omega(a, omega)
         else:
             raise TypeError("Frequency must be a float of numpy array")

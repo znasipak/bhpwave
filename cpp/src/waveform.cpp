@@ -133,6 +133,10 @@ int WaveformContainer::getSize(){
 
 WaveformHarmonicGenerator::WaveformHarmonicGenerator(HarmonicAmplitudes &Alm, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts): _Alm(Alm), _mode_selector(Alm, hOpts), _opts(wOpts) {}
 
+int WaveformHarmonicGenerator::computeTimeStepNumber(double dt, double T){
+	return years_to_seconds(T)/dt + 1;
+}
+
 WaveformContainer WaveformHarmonicGenerator::computeWaveformHarmonic(int l, int m, InspiralContainer &inspiral, double theta, double phi, WaveformHarmonicOptions opts){
 	WaveformContainer h(inspiral.getSize());
 	computeWaveformHarmonic(h, l, m, inspiral, theta, phi, opts);
@@ -157,7 +161,6 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, I
 	HarmonicModeContainer modes = _mode_selector.selectModes(inspiral, theta, hOpts);
 	computeWaveformHarmonics(h, modes.lmodes.data(), modes.mmodes.data(), modes.plusY.data(), modes.crossY.data(), modes.lmodes.size(), inspiral, theta, phi, wOpts);
 }
-
 
 void WaveformHarmonicGenerator::computeWaveformHarmonic(WaveformContainer &h, int l, int m, InspiralContainer &inspiral, double theta, double phi){
 	computeWaveformHarmonic(h, l, m, inspiral, theta, phi, _opts);
