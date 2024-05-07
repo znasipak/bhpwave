@@ -103,11 +103,11 @@ cdef extern from "waveform.hpp":
         HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T)
         HarmonicModeContainer selectModes(double M, double mu, double a, double r0, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions opts)
 
-        void computeWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T)
-        void computeWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T)
+        void computeWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, WaveformHarmonicOptions wOpts)
+        void computeWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, WaveformHarmonicOptions wOpts)
 
         void computeWaveform(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
-        void computeWaveformSourceFrame(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T)
+        void computeWaveformSourceFrame(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, WaveformHarmonicOptions wOpts)
 
         void computeWaveformPhaseAmplitude(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, HarmonicOptions hOpts, WaveformHarmonicOptions wOpts)
 
@@ -557,7 +557,7 @@ cdef class WaveformGeneratorPy:
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
         
-        self.hcpp.computeWaveformSourceFrame(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, theta, phi, Phi_phi0, dt, T)
+        self.hcpp.computeWaveformSourceFrame(dereference(h.hcpp), &l[0], &m[0], l.shape[0], M, mu, a, r0, theta, phi, Phi_phi0, dt, T, wOpts)
         if return_list:
             return [plus, cross]
 
@@ -595,7 +595,7 @@ cdef class WaveformGeneratorPy:
         cdef np.ndarray[ndim = 1, dtype = np.float64_t, mode='c'] cross = np.zeros(timeSteps, dtype=np.float64)
         cdef WaveformContainerNumpyWrapper h = WaveformContainerNumpyWrapper(plus, cross)
 
-        self.hcpp.computeWaveformSourceFrame(dereference(h.hcpp), M, mu, a, r0, theta, phi, Phi_phi0, dt, T)
+        self.hcpp.computeWaveformSourceFrame(dereference(h.hcpp), M, mu, a, r0, theta, phi, Phi_phi0, dt, T, wOpts)
         if return_list:
             return [plus, cross]
 

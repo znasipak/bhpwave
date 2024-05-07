@@ -263,8 +263,9 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, i
 
     // first compute mode-dependent but not time-step dependent information and store
     for(int i = 0; i < modeNum; i++){
-      mphi_mod_2pi[i] = fmod(m[i]*phi, twopi);
-      Alms[i] = _Alm.getPointer(l[i], m[i]);
+      int mm = abs(m[i]);
+      mphi_mod_2pi[i] = fmod(mm*phi, twopi);
+      Alms[i] = _Alm.getPointer(l[i], mm);
     }
     double chi = chi_of_spin(inspiral.getSpin());
 
@@ -281,14 +282,15 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformContainer &h, i
     #pragma omp parallel num_threads(opts.num_threads)
     {
       int i, j;
-      double amp, modePhase, Phi;
+      double amp, modePhase, Phi, mm;
       // first we calculate all of the mode data
       #pragma omp for collapse(2) schedule(static)
       for(j = 0; j < modeNum; j++){
         for(i = 0; i < imax; i++){
+          mm = fabs(m[j]);
           amp = Alms[j]->amplitude(chi, inspiral.getAlpha(i));
           modePhase = Alms[j]->phase(chi, inspiral.getAlpha(i));
-          Phi = modePhase - fmod(m[j]*inspiral.getPhase(i), twopi) + mphi_mod_2pi[j];
+          Phi = modePhase - fmod(mm*inspiral.getPhase(i), twopi) + mphi_mod_2pi[j];
           hplus[j + i*modeNum] = amp*plusY[j]*std::cos(Phi);
           hcross[j + i*modeNum] = -amp*crossY[j]*std::sin(Phi);
         }
@@ -319,8 +321,9 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformHarmonicsContai
 
     // first compute mode-dependent but not time-step dependent information and store
     for(int i = 0; i < modeNum; i++){
-      mphi_mod_2pi[i] = fmod(m[i]*phi, twopi);
-      Alms[i] = _Alm.getPointer(l[i], m[i]);
+      int mm = abs(m[i]);
+      mphi_mod_2pi[i] = fmod(mm*phi, twopi);
+      Alms[i] = _Alm.getPointer(l[i], mm);
     }
     double chi = chi_of_spin(inspiral.getSpin());
 
@@ -337,15 +340,16 @@ void WaveformHarmonicGenerator::computeWaveformHarmonics(WaveformHarmonicsContai
     #pragma omp parallel num_threads(opts.num_threads)
     {
       int i, j;
-      double amp, modePhase, Phi;
+      double amp, modePhase, Phi, mm;
       double hplus, hcross;
       // first we calculate all of the mode data
       #pragma omp for collapse(2) schedule(static)
       for(j = 0; j < modeNum; j++){
         for(i = 0; i < imax; i++){
+          mm = fabs(m[j]);
           amp = Alms[j]->amplitude(chi, inspiral.getAlpha(i));
           modePhase = Alms[j]->phase(chi, inspiral.getAlpha(i));
-          Phi = modePhase - fmod(m[j]*inspiral.getPhase(i), twopi) + mphi_mod_2pi[j];
+          Phi = modePhase - fmod(mm*inspiral.getPhase(i), twopi) + mphi_mod_2pi[j];
           hplus = amp*plusY[j]*std::cos(Phi);
           hcross = -amp*crossY[j]*std::sin(Phi);
           h.setTimeStep(j, i, rescaleRe*hplus + rescaleIm*hcross, rescaleRe*hcross - rescaleIm*hplus);
@@ -525,28 +529,28 @@ HarmonicModeContainer WaveformGenerator::selectModes(double M, double mu, double
 	return WaveformHarmonicGenerator::selectModes(inspiral, theta, opts);
 }
 
-void WaveformGenerator::computeWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T){
+void WaveformGenerator::computeWaveformSourceFrame(WaveformContainer &h, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, WaveformHarmonicOptions opts){
 	dt = convertTime(dt, M);
 	T = convertTime(years_to_seconds(T), M);
-	WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
+	// WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
 
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, opts.num_threads);
 	computeWaveformHarmonics(h, inspiral, theta, phi - Phi_phi0, opts);
 }
 
-void WaveformGenerator::computeWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T){
+void WaveformGenerator::computeWaveformSourceFrame(WaveformContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, WaveformHarmonicOptions opts){
 	dt = convertTime(dt, M);
 	T = convertTime(years_to_seconds(T), M);
-	WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
+	// WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
 
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, opts.num_threads);
 	computeWaveformHarmonics(h, l, m, modeNum, inspiral, theta, phi - Phi_phi0, opts);
 }
 
-void WaveformGenerator::computeWaveformSourceFrame(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T){
+void WaveformGenerator::computeWaveformSourceFrame(WaveformHarmonicsContainer &h, int l[], int m[], int modeNum, double M, double mu, double a, double r0, double theta, double phi, double Phi_phi0, double dt, double T, WaveformHarmonicOptions opts){
 	dt = convertTime(dt, M);
 	T = convertTime(years_to_seconds(T), M);
-	WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
+	// WaveformHarmonicOptions opts = getWaveformHarmonicOptions();
 
 	InspiralContainer inspiral = _inspiralGen.computeInspiral(a, mu/M, r0, dt, T, opts.num_threads);
 	computeWaveformHarmonics(h, l, m, modeNum, inspiral, theta, phi - Phi_phi0, opts);
