@@ -426,8 +426,7 @@ cdef class WaveformGeneratorPy:
         cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts)
         cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
         modeWrap.wrap(modescpp)
-        # cdef np.ndarray[ndim = 1, dtype = np.int32_t, mode='c'] l = modeWrap.lmodes
-        # cdef np.ndarray[ndim = 1, dtype = np.int32_t, mode='c'] m = modeWrap.mmodes
+
         cdef int[::1] l = modeWrap.lmodes.data
         cdef int[::1] m = modeWrap.mmodes.data
         cdef int modeNum = len(l)
