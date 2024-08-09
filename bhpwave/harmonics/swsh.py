@@ -3,8 +3,8 @@ import numpy as np
 
 def Yslm(s, l, m, theta, phi):
     """The spin-weighted spherical harmonics 
-    ${}_s Y_{lm}(\\theta, \\phi) = {}_s P_{lm}(\\cos\\theta)e^{im\\phi}$,
-    where ${}_s P_{lm}(z)$ are the spin-weighted Legendre polynomials.
+    :math:`{}_s Y_{lm}(\\theta, \\phi) = {}_s P_{lm}(\\cos\\theta)e^{im\\phi}`,
+    where :math:`{}_s P_{lm}(z)` are the spin-weighted Legendre polynomials.
 
     Parameters
     ----------
@@ -22,7 +22,7 @@ def Yslm(s, l, m, theta, phi):
     return YslmCy(s, l, m, theta)*np.exp(1.j*m*phi)
 
 def Pslm(s, l, m, z):
-    """The spin-weighted Legendre function ${}_s P_{lm}(z)$.
+    """The spin-weighted Legendre function :math:`{}_s P_{lm}(z)`.
 
     Parameters
     ----------
@@ -33,7 +33,7 @@ def Pslm(s, l, m, z):
     m : int
         azimuthal mode number
     z : double or array[double]
-        argument $-1 \\leq z \\leq 1$
+        argument :math:`-1 \\leq z \\leq 1`
     """
     theta = np.arccos(z)
     return YslmCy(s, l, m, theta)

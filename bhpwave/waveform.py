@@ -57,11 +57,11 @@ class KerrCircularWaveform:
 
     Parameters
     ----------
-    trajectory_data : TrajectoryData or None (optional)
+    trajectory_data : TrajectoryData or None, optional
         TrajectoryData class which holds interpolants of the relevant trajectory data
-    harmonic_data : HarmonicAmplitudes or None (optional)
+    harmonic_data : HarmonicAmplitudes or None, optional
         HarmonicAmplitudes class which holds interpolants of the harmonic mode amplitudes
-    num_threads: int or None (optional)
+    num_threads: int or None, optional
         Number of threads used to evaluate the waveform
     """
     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
@@ -108,7 +108,7 @@ class KerrCircularWaveform:
             azimuthal angle of the Kerr spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years
 
 
@@ -145,20 +145,20 @@ class KerrCircularWaveform:
             azimuthal angle of the Kerr spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples in seconds
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -225,20 +225,20 @@ class KerrCircularWaveform:
             azimuthal angle of the Kerr spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples in seconds
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -280,9 +280,9 @@ class KerrCircularWaveform:
         return h
     
     def harmonics_data(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T=1., **kwargs):
-        """Calculate the amplitudes and phases of the spin-weighted spherical harmonic (l, m)-modes of the gravitational wave strain. The
-        function returns mode data for both positive and negative m-modes. Given a list of modes [(l_1, m_1), (l_2, m_2), ... , (l_N, m_N)]
-        the function returns data in the order [(l_1, m_1), (l_1, -m_1), (l_2, m_2), (l_2, -m_2), ..., (l_N, m_N), (l_N, -m_N)].
+        """Calculate the amplitudes and phases of the spin-weighted spherical harmonic :math:`(l, m)`-modes of the gravitational wave strain. The
+        function returns mode data for both positive and negative m-modes. Given a list of modes :math:`[(l_1, m_1), (l_2, m_2), \dots , (l_N, m_N)]`
+        the function returns data in the order :math:`[(l_1, m_1), (l_1, -m_1), (l_2, m_2), (l_2, -m_2), \dots, (l_N, m_N), (l_N, -m_N)]`.
 
         Parameters
         ----------
@@ -307,18 +307,18 @@ class KerrCircularWaveform:
             azimuthal angle of the Kerr spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples in seconds
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation. Only positive m-modes
             are used.
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
 
@@ -372,20 +372,20 @@ class KerrCircularWaveform:
             spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples in seconds. Default is 10 seconds.
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years. Default is 1 year.
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -436,13 +436,13 @@ class KerrWaveform(KerrCircularWaveform):
 
     Parameters
     ----------
-    trajectory_data : TrajectoryData or None (optional)
+    trajectory_data : TrajectoryData or None, optional
         a TrajectoryData class which holds interpolants of the relevant
         trajectory data
-    harmonic_data : HarmonicAmplitudes or None (optional)
+    harmonic_data : HarmonicAmplitudes or None, optional
         a HarmonicAmplitudes class which holds interpolants of the
         harmonic mode amplitudes
-    num_threads : int or None (optional)
+    num_threads : int or None, optional
         the number of threads used to evaluate the waveform
     """
     def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
@@ -481,20 +481,20 @@ class KerrWaveform(KerrCircularWaveform):
         Phi_theta0 : double
             Phase describing the initial polar position and velocity of
             the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples in seconds
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -543,20 +543,20 @@ class KerrWaveform(KerrCircularWaveform):
         Phi_theta0 : double
             Phase describing the initial polar position and velocity of
             the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples in seconds
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -571,8 +571,8 @@ class KerrWaveform(KerrCircularWaveform):
     
     def harmonics_data(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T=1., **kwargs):
         """Calculate the amplitudes and phases of the spin-weighted spherical harmonic (l, m)-modes of the gravitational wave strain. The
-        function returns mode data for both positive and negative m-modes. Given a list of modes [(l_1, m_1), (l_2, m_2), ... , (l_N, m_N)]
-        the function returns data in the order [(l_1, m_1), (l_1, -m_1), (l_2, m_2), (l_2, -m_2), ..., (l_N, m_N), (l_N, -m_N)].
+        function returns mode data for both positive and negative m-modes. Given a list of modes :math:`[(l_1, m_1), (l_2, m_2), \dots , (l_N, m_N)]`
+        the function returns data in the order :math:`[(l_1, m_1), (l_1, -m_1), (l_2, m_2), (l_2, -m_2), \dots, (l_N, m_N), (l_N, -m_N)]`.
 
         Parameters
         ----------
@@ -607,18 +607,18 @@ class KerrWaveform(KerrCircularWaveform):
         Phi_theta0 : double
             Phase describing the initial polar position and velocity of
             the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples in seconds
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation. Only positive m-modes
             are used.
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
 
@@ -642,13 +642,13 @@ class KerrCircularFrequencyWaveform:
 
     Parameters
     ----------
-    trajectory_data : TrajectoryData or None (optional)
+    trajectory_data : TrajectoryData or None, optional
         a TrajectoryData class which holds interpolants of the relevant
         trajectory data
-    harmonic_data : HarmonicAmplitudes or None (optional)
+    harmonic_data : HarmonicAmplitudes or None, optional
         a HarmonicAmplitudes class which holds interpolants of the
         harmonic mode amplitudes
-    num_threads : int or None (optional)
+    num_threads : int or None, optional
         the number of threads used to evaluate the waveform
     """
     def __init__(self, trajectory_data=None, harmonic_data=None, num_threads=None):
@@ -692,7 +692,7 @@ class KerrCircularFrequencyWaveform:
             azimuthal angle of the Kerr spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        T : double (optional)
+        T : double, optional
             Duration of the waveform in years
 
 
@@ -728,39 +728,39 @@ class KerrCircularFrequencyWaveform:
             azimuthal angle of the Kerr spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples for corresponding time-domain
             waveform in seconds. Default is 10. This option is only
             considered if df, fmax, and frequencies are None.
-        T : double (optional)
+        T : double, optional
             Duration of the observed waveform in years. Default is 1. If
             None, T is set to be 1/df.
-        df : double (optional)
+        df : double, optional
             Spacing of the frequency samples in Hertz. Default is None.
             If df is None, then one must specify values for frequencies
             or T.
-        fmax : double (optional)
+        fmax : double, optional
             Maximum sampled frequency in Hertz. Default is None. If fmax
             is None, then one must specify values for frequencies or dt.
-        frequencies : list[double] or ndarray[double] (optional)
+        frequencies : list[double] or ndarray[double], optional
             Array of frequency samples in Hertz. Default is None. This
             option overrides df and fmax.
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
-        eps : double (optional)
+        eps : double, optional
             The tolerance to include modes that are subdominant to the
             power in the (2,2)-mode.
-        max_samples : double (optional)
+        max_samples : double, optional
 
 
         Returns
@@ -806,7 +806,7 @@ class KerrCircularFrequencyWaveform:
         return h
     
     def harmonics(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
-        """Calculate the spin-weighted spherical harmonic (l, m)-modes of the
+        """Calculate the spin-weighted spherical harmonic :math:`(l, m)`-modes of the
         Fourier transform of the plus and cross polarizations of the gravitational wave strain
 
         Parameters
@@ -832,33 +832,33 @@ class KerrCircularFrequencyWaveform:
             azimuthal angle of the Kerr spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples for corresponding time-domain
             waveform in seconds. Default is 10. This option is only
             considered if df, fmax, and frequencies are None.
-        T : double (optional)
+        T : double, optional
             Duration of the observed waveform in years. Default is 1. If
             None, T is set to be 1/df.
-        df : double (optional)
+        df : double, optional
             Spacing of the frequency samples in Hertz. Default is None.
             If df is None, then one must specify values for frequencies
             or T.
-        fmax : double (optional)
+        fmax : double, optional
             Maximum sampled frequency in Hertz. Default is None. If fmax
             is None, then one must specify values for frequencies or dt.
-        frequencies : list[double] or ndarray[double] (optional)
+        frequencies : list[double] or ndarray[double], optional
             Array of frequency samples in Hertz. Default is None. This
             option overrides df and fmax.
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -907,10 +907,10 @@ class KerrCircularFrequencyWaveform:
         return h
     
     def harmonics_data(self, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
-        """Calculate the phases and amplitudes for the spin-weighted spherical harmonic (l, m)-modes of the
+        """Calculate the phases and amplitudes for the spin-weighted spherical harmonic :math:`(l, m)`-modes of the
         Fourier transform of the plus and cross polarizations of the gravitational wave strain. The
-        function returns mode data for both positive and negative m-modes. Given a list of modes [(l_1, m_1), (l_2, m_2), ... , (l_N, m_N)]
-        the function returns data in the order [(l_1, m_1), (l_1, -m_1), (l_2, m_2), (l_2, -m_2), ..., (l_N, m_N), (l_N, -m_N)].
+        function returns mode data for both positive and negative m-modes. Given a list of modes :math:`[(l_1, m_1), (l_2, m_2), \dots , (l_N, m_N)]`
+        the function returns data in the order :math:`[(l_1, m_1), (l_1, -m_1), (l_2, m_2), (l_2, -m_2), \dots, (l_N, m_N), (l_N, -m_N)]`.
 
         Parameters
         ----------
@@ -935,33 +935,33 @@ class KerrCircularFrequencyWaveform:
             azimuthal angle of the Kerr spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples for corresponding time-domain
             waveform in seconds. Default is 10. This option is only
             considered if df, fmax, and frequencies are None.
-        T : double (optional)
+        T : double, optional
             Duration of the observed waveform in years. Default is 1. If
             None, T is set to be 1/df.
-        df : double (optional)
+        df : double, optional
             Spacing of the frequency samples in Hertz. Default is None.
             If df is None, then one must specify values for frequencies
             or T.
-        fmax : double (optional)
+        fmax : double, optional
             Maximum sampled frequency in Hertz. Default is None. If fmax
             is None, then one must specify values for frequencies or dt.
-        frequencies : list[double] or ndarray[double] (optional)
+        frequencies : list[double] or ndarray[double], optional
             Array of frequency samples in Hertz. Default is None. This
             option overrides df and fmax.
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -1023,30 +1023,30 @@ class KerrCircularFrequencyWaveform:
             spin vector
         Phi_phi0 : double
             Initial azimuthal position of the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples for corresponding time-domain
             waveform in seconds. Default is 10. If None, dt is set to be
             1/(2 fmax).
-        T : double (optional)
+        T : double, optional
             Duration of the observed waveform in years. Default is 1. If
             None, T is set to be 1/df.
-        df : double (optional)
+        df : double, optional
             Spacing of the frequency samples in Hertz. Default is None.
             If df is None, then one must specify values for frequencies
             or T.
-        fmax : double (optional)
+        fmax : double, optional
             Maximum sampled frequency in Hertz. Default is None. If fmax
             is None, then one must specify values for frequencies or dt.
-        frequencies : list[double] or ndarray[double] (optional)
+        frequencies : list[double] or ndarray[double], optional
             Array of frequency samples in Hertz. Default is None. This
             option overrides df and fmax.
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
 
@@ -1127,13 +1127,13 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
 
     Parameters
     ----------
-    trajectory_data : TrajectoryData or None (optional)
+    trajectory_data : TrajectoryData or None, optional
         a TrajectoryData class which holds interpolants of the relevant
         trajectory data
-    harmonic_data : HarmonicAmplitudes or None (optional)
+    harmonic_data : HarmonicAmplitudes or None, optional
         a HarmonicAmplitudes class which holds interpolants of the
         harmonic mode amplitudes
-    num_threads : int or None (optional)
+    num_threads : int or None, optional
         the number of threads used to evaluate the waveform
     """
     def __call__(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
@@ -1172,33 +1172,33 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
         Phi_theta0 : double
             Phase describing the initial polar position and velocity of
             the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples for corresponding time-domain
             waveform in seconds. Default is 10. If None, dt is set to be
             1/(2 fmax).
-        T : double (optional)
+        T : double, optional
             Duration of the observed waveform in years. Default is 1. If
             None, T is set to be 1/df.
-        df : double (optional)
+        df : double, optional
             Spacing of the frequency samples in Hertz. Default is None.
             If df is None, then one must specify values for frequencies
             or T.
-        fmax : double (optional)
+        fmax : double, optional
             Maximum sampled frequency in Hertz. Default is None. If fmax
             is None, then one must specify values for frequencies or dt.
-        frequencies : list[double] or ndarray[double] (optional)
+        frequencies : list[double] or ndarray[double], optional
             Array of frequency samples in Hertz. Default is None. This
             option overrides df and fmax.
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -1212,7 +1212,7 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
         return super().__call__(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
     
     def harmonics(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
-        """Calculate the spin-weighted spherical harmonic (l, m)-modes of the
+        """Calculate the spin-weighted spherical harmonic :math:`(l, m)`-modes of the
         Fourier transform of the plus and cross polarizations of the gravitational wave strain
 
         Parameters
@@ -1248,33 +1248,33 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
         Phi_theta0 : double
             Phase describing the initial polar position and velocity of
             the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples for corresponding time-domain
             waveform in seconds. Default is 10. If None, dt is set to be
             1/(2 fmax).
-        T : double (optional)
+        T : double, optional
             Duration of the observed waveform in years. Default is 1. If
             None, T is set to be 1/df.
-        df : double (optional)
+        df : double, optional
             Spacing of the frequency samples in Hertz. Default is None.
             If df is None, then one must specify values for frequencies
             or T.
-        fmax : double (optional)
+        fmax : double, optional
             Maximum sampled frequency in Hertz. Default is None. If fmax
             is None, then one must specify values for frequencies or dt.
-        frequencies : list[double] or ndarray[double] (optional)
+        frequencies : list[double] or ndarray[double], optional
             Array of frequency samples in Hertz. Default is None. This
             option overrides df and fmax.
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
@@ -1288,7 +1288,7 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
         return super().harmonics(M, mu, a, p0, dist, qS, phiS, qK, phiK, Phi_phi0, dt = dt, T = T, df = df, fmax = fmax, frequencies = frequencies, **kwargs)
     
     def harmonics_data(self, M, mu, a, p0, e0, x0, dist, qS, phiS, qK, phiK, Phi_phi0, Phi_r0, Phi_theta0, dt=10., T = 1., df = None, fmax = None, frequencies = None, **kwargs):
-        """Calculate the phases and amplitudes for spin-weighted spherical harmonic (l, m)-modes of the
+        """Calculate the phases and amplitudes for spin-weighted spherical harmonic :math:`(l, m)`-modes of the
         Fourier transform of the plus and cross polarizations of the gravitational wave strain
 
         Parameters
@@ -1324,33 +1324,33 @@ class KerrFrequencyWaveform(KerrCircularFrequencyWaveform):
         Phi_theta0 : double
             Phase describing the initial polar position and velocity of
             the small compact object
-        dt : double (optional)
+        dt : double, optional
             Spacing of time samples for corresponding time-domain
             waveform in seconds. Default is 10. If None, dt is set to be
             1/(2 fmax).
-        T : double (optional)
+        T : double, optional
             Duration of the observed waveform in years. Default is 1. If
             None, T is set to be 1/df.
-        df : double (optional)
+        df : double, optional
             Spacing of the frequency samples in Hertz. Default is None.
             If df is None, then one must specify values for frequencies
             or T.
-        fmax : double (optional)
+        fmax : double, optional
             Maximum sampled frequency in Hertz. Default is None. If fmax
             is None, then one must specify values for frequencies or dt.
-        frequencies : list[double] or ndarray[double] (optional)
+        frequencies : list[double] or ndarray[double], optional
             Array of frequency samples in Hertz. Default is None. This
             option overrides df and fmax.
-        pad_output : bool (optional)
+        pad_output : bool, optional
             True returns the waveform for the full duration T years even
             if the system merges before T years has elasped
-        select_modes : list[tuple(double)] or ndarray[tuple(double)] (optional)
+        select_modes : list[tuple(double)] or ndarray[tuple(double)], optional
             A list of tuples :math:`(l, m)` that select which modes to
             include in the waveform calculation
-        return_list : bool (optional)
+        return_list : bool, optional
             True returns the plus and cross polarizations of the
             waveform as separate ndarrays
-        include_negative_m : bool (optional)
+        include_negative_m : bool, optional
             True returns the sum of the positive and negative m-modes
             for each mode in select_modes
 
