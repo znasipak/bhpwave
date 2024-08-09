@@ -342,7 +342,7 @@ class KerrCircularWaveform:
                     lmodes.append(mode[0])
                     mmodes.append(mode[1])
                 else:
-                    warnings.warn("Warning: Only keeping modes in select_modes with m > 0.")
+                    warnings.warn("Warning: Only keeping modes in select_modes with m > 0. Set include_negative_m = False to keep m < 0 modes.")
             l = np.ascontiguousarray(lmodes, dtype=np.intc)
             m = np.ascontiguousarray(mmodes, dtype=np.intc)
             h = self.waveform_generator.waveform_harmonics_phase_amplitude(l, m, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, **kwargs)
