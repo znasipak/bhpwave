@@ -13,3 +13,4 @@ dependencies:
   - sphinx-book-theme
   - nbsphinx
   - ipykernel
+  - myst-nb
