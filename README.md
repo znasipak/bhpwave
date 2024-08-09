@@ -2,7 +2,7 @@
 [![Read the article](https://img.shields.io/badge/PDF-latest-blue.svg?style=flat)](https://github.com/znasipak/bhpwave-article/raw/gh-action-result/pdflatex/ms.pdf)
 [![DOI](https://img.shields.io/badge/arXiv-2310.19706-B31B1B)](https://doi.org/10.48550/arXiv.2310.19706)
 [![DOI](https://img.shields.io/badge/PhysRevD-109.044020-purple)](https://doi.org/10.1103/PhysRevD.109.044020)
-[![Static Badge](https://img.shields.io/badge/znasipak-bhpwave-article-blue?logo=Github)](https://github.com/znasipak/bhpwave-article)
+[![DOI](https://img.shields.io/badge/znasipak-bhpwave--article-blue?logo=Github)](https://github.com/znasipak/bhpwave-article)
 
 An adiabatic waveform generator using black hole perturbation theory
 
