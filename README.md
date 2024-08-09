@@ -1,4 +1,5 @@
 # bhpwave
+[![Documentation Status](https://readthedocs.org/projects/bhpwave/badge/?version=latest)](https://bhpwave.readthedocs.io/en/latest/?badge=latest)
 [![Read the article](https://img.shields.io/badge/PDF-latest-blue.svg?style=flat)](https://github.com/znasipak/bhpwave-article/raw/gh-action-result/pdflatex/ms.pdf)
 [![DOI](https://img.shields.io/badge/arXiv-2310.19706-B31B1B)](https://doi.org/10.48550/arXiv.2310.19706)
 [![DOI](https://img.shields.io/badge/PhysRevD-109.044020-purple)](https://doi.org/10.1103/PhysRevD.109.044020)
@@ -8,7 +9,7 @@ An adiabatic waveform generator using black hole perturbation theory
 
 `bhpwave` generates gravitational waveforms of extreme-mass-ratio inspirals (EMRIs) using the adiabatic approximation of black hole perturbation theory. The model is restricted to binaries in which the small body is undergoing a quasi-circular, equatorial inspiral into a rotating massive black hole. Details and applications of
 the `bhpwave` model can be found on [Physical Review D](https://doi.org/10.1103/PhysRevD.109.044020), [arXiv](https://doi.org/10.48550/arXiv.2310.19706), and the Github
-repository [bhpwave-article](https://github.com/znasipak/bhpwave-article).
+repository [bhpwave-article](https://github.com/znasipak/bhpwave-article). Detailed documentation is provided [here](https://bhpwave.readthedocs.io/en/latest/).
 
 # Installation
 
