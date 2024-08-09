@@ -2,34 +2,38 @@ from bhpswshcy import Yslm as YslmCy
 import numpy as np
 
 def Yslm(s, l, m, theta, phi):
-    """
-    The spin-weighted spherical harmonics
+    """The spin-weighted spherical harmonics 
+    ${}_s Y_{lm}(\\theta, \\phi) = {}_s P_{lm}(\\cos\\theta)e^{im\\phi}$,
+    where ${}_s P_{lm}(z)$ are the spin-weighted Legendre polynomials.
 
-    :param s: spin-weight
-    :type s: int
-    :param l: polar mode number
-    :type l: int
-    :param m: azimuthal mode number
-    :type m: int
-    :param theta: polar angle 
-    :type theta: double or array[double]
-    :param phi: azimuthal angle
-    :type phi: double or array[double]
+    Parameters
+    ----------
+    s : int
+        spin-weight
+    l : int
+        polar mode number
+    m : int
+        azimuthal mode number
+    theta : double or array[double]
+        polar angle
+    phi : double or array[double]
+        azimuthal angle
     """
     return YslmCy(s, l, m, theta)*np.exp(1.j*m*phi)
 
 def Pslm(s, l, m, z):
-    """
-    The spin-weighted Legendre function
+    """The spin-weighted Legendre function ${}_s P_{lm}(z)$.
 
-    :param s: spin-weight
-    :type s: int
-    :param l: polar mode number
-    :type l: int
-    :param m: azimuthal mode number
-    :type m: int
-    :param z: argument :math:`-1 \\leq z \\leq 1`
-    :type z: double or array[double]
+    Parameters
+    ----------
+    s : int
+        spin-weight
+    l : int
+        polar mode number
+    m : int
+        azimuthal mode number
+    z : double or array[double]
+        argument $-1 \\leq z \\leq 1$
     """
     theta = np.arccos(z)
     return YslmCy(s, l, m, theta)
