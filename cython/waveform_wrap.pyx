@@ -426,8 +426,7 @@ cdef class WaveformGeneratorPy:
         cdef HarmonicModeContainer modescpp = self.hcpp.selectModes(M, mu, a, r0, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts)
         cdef HarmonicModeContainerWrapper modeWrap = HarmonicModeContainerWrapper()
         modeWrap.wrap(modescpp)
-        # cdef np.ndarray[ndim = 1, dtype = np.int32_t, mode='c'] l = modeWrap.lmodes
-        # cdef np.ndarray[ndim = 1, dtype = np.int32_t, mode='c'] m = modeWrap.mmodes
+
         cdef int[::1] l = modeWrap.lmodes.data
         cdef int[::1] m = modeWrap.mmodes.data
         cdef int modeNum = len(l)
@@ -448,7 +447,7 @@ cdef class WaveformGeneratorPy:
 
     def waveform_harmonics_phase_amplitude(self, int[::1] l, int[::1] m, double M, double mu, double a, double r0, double dist, double qS, double phiS, double qK, double phiK, double Phi_phi0, double dt, double T, bint pad_output = False, **kwargs):
         cdef int timeSteps
-        cdef int modeNum = l.shape[0]
+        cdef int modeNum = len(l)
         cdef WaveformHarmonicOptions wOpts = self.hcpp.getWaveformHarmonicOptions()
         cdef HarmonicOptions hOpts = self.hcpp.getHarmonicOptions()
         if pad_output:
@@ -469,8 +468,8 @@ cdef class WaveformGeneratorPy:
         if "include_negative_m" in kwargs.keys():
             wOpts.include_negative_m = kwargs["include_negative_m"]
 
-        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] amp = np.zeros((modeNum, timeSteps), dtype=np.float64)
-        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] phase = np.zeros((modeNum, timeSteps), dtype=np.float64)
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] amp = np.zeros((2*modeNum, timeSteps), dtype=np.float64)
+        cdef np.ndarray[ndim = 2, dtype = np.float64_t, mode='c'] phase = np.zeros((2*modeNum, timeSteps), dtype=np.float64)
         cdef WaveformHarmonicsContainerNumpyWrapper h = WaveformHarmonicsContainerNumpyWrapper(amp, phase)
         
         self.hcpp.computeWaveformPhaseAmplitude(dereference(h.hcpp), &l[0], &m[0], modeNum, M, mu, a, r0, dist, qS, phiS, qK, phiK, Phi_phi0, dt, T, hOpts, wOpts)
