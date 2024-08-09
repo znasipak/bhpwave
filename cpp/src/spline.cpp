@@ -1116,7 +1116,7 @@ CubicSpline::CubicSpline(const Vector &x, const Vector &y, int method): dx(x[1] 
 CubicSpline::CubicSpline(double x0, double dx, int nx, Matrix cij): dx(dx), nintervals(nx), x0(x0), cij(cij) {}
 
 double CubicSpline::getSplineCoefficient(int i, int j){
-	return cij(i, j)*pow(dx, j);
+	return cij(i, j)*std::pow(dx, j);
 }
 
 double CubicSpline::evaluate(const double x){
