@@ -9,7 +9,7 @@ A_MAX = 0.9999
 
 def kerr_circ_geo_radius(a, omega):
     """Calculates the Boyer-Lindquist radius of a circular geodesic with orbital
-    frequency `omega` in a Kerr spacetime paramtrized by the Kerr spin `a`
+    frequency :code:`omega` in a Kerr spacetime paramtrized by the Kerr spin :code:`a`
 
     Parameters
     ----------
@@ -26,7 +26,7 @@ def kerr_circ_geo_radius(a, omega):
 
 def kerr_circ_geo_orbital_frequency(a, r):
     """Calculates the orbital frequency of a circular geodesic with Boyer-Lindquist radius
-    `r` in a Kerr spacetime paramtrized by the Kerr spin `a`
+    :code:`r` in a Kerr spacetime paramtrized by the Kerr spin :code:`a`
 
     Parameters
     ----------
@@ -44,7 +44,7 @@ def kerr_circ_geo_orbital_frequency(a, r):
 
 def kerr_isco_radius(a):
     """Calculates the Boyer-Lindquist radius of the innermost stable circular orbit (ISCO)
-    in a Kerr spacetime paramtrized by the Kerr spin `a`
+    in a Kerr spacetime paramtrized by the Kerr spin :code:`a`
 
     Parameters
     ----------
@@ -63,7 +63,7 @@ def kerr_isco_radius(a):
 
 def kerr_isco_frequency(a):
     """Calculates the orbital frequency of the innermost stable circular orbit (ISCO)
-    in a Kerr spacetime paramtrized by the Kerr spin `a`
+    in a Kerr spacetime paramtrized by the Kerr spin :code:`a`
 
     Parameters
     ----------

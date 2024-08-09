@@ -49,9 +49,9 @@ class CubicSpline:
     @property
     def coefficients(self):
         """
-        The 2D array of spline coefficients with dimensions (nx, 4).
-        Data are ordered so that the element at index (i, mx)
-        returns the same value as coeffs(i, mx)
+        The 2D array of spline coefficients with dimensions :code:`(nx, 4)`.
+        Data are ordered so that the element at index :code:`(i, mx)`
+        returns the same value as :code:`coeffs(i, mx)`
 
         Returns
         -------
@@ -308,7 +308,7 @@ class BicubicSpline:
         Returns the spline coefficients :math:`c_{ij}^{(m_x,m_y)}` defined by the
         spline :math:`f_{ij}`
 
-        ..math::
+        .. math::
             f_{ij}(x, y) = \\sum_{m_x=0}^3 \\sum_{m_y=0}^3 c_{ij}^{(m_x,m_y)}(x-x_i)^{m_x}(y-y_j)^{m_y}
 
         Parameters
@@ -596,7 +596,7 @@ class TricubicSpline:
         spline :math:`f_{ijk}:math:`
 
         .. math::
-            f_{ijk}(x, y, z) = \\sum_{m_x=0}^3 \\sum_{m_y=0}^3 \\sum_{m_z=0}^3 c_{ijk}^{(m_x,m_y,m_z)}(x-x_i)^{m_x}(y-y_j)^{m_y}(z-z_k)^(m_z)
+            f_{ijk}(x, y, z) = \\sum_{m_x=0}^3 \\sum_{m_y=0}^3 \\sum_{m_z=0}^3 c_{ijk}^{(m_x,m_y,m_z)}(x-x_i)^{m_x}(y-y_j)^{m_y}(z-z_k)^{m_z}
 
         Parameters
         ----------
@@ -621,9 +621,9 @@ class TricubicSpline:
     
     def coefficients(self):
         """
-        The 3D array of spline coefficients with dimensions (nx, ny, 64*nz).
-        Data are ordered so that the element at index (i, j, k, 4*(4*(4*k + mx) + my) + mz)
-        returns the same value as coeffs(i, j, k, mx, my, mz)
+        The 3D array of spline coefficients with dimensions :code:`(nx, ny, 64*nz)`.
+        Data are ordered so that the element at index :code:`(i, j, k, 4*(4*(4*k + mx) + my) + mz)`
+        returns the same value as :code:`coeffs(i, j, k, mx, my, mz)`
 
         Returns
         -------
