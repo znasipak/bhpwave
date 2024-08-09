@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "omp.h"
 #include <chrono>
+#include <cmath>
 
 class StopWatch{
 public:
