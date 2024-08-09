@@ -254,19 +254,32 @@ cdef class TrajectoryDataPy:
     def time_of_chi_alpha(self, double chi, double alpha):
         return self.trajcpp.time(chi, alpha)
 
-    cdef flux_parallel(self, double a, np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] omega):
+    def flux_parallel_frequency(self, double a, np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] omega):
         cdef np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] flux = np.empty(omega.shape[0], dtype=np.float64)
         cdef np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] anp = a*np.ones(omega.shape[0], dtype=np.float64)
-        self.trajcpp.flux_of_a_omega(&flux[0], &anp[0], &omega[0], omega.shape[0], 0)
+        self.trajcpp.flux_of_a_omega(&flux[0], &anp[0], &omega[0], flux.shape[0], 0)
+        return flux
+
+    def flux_parallel_spin(self, np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] a, double omega):
+        cdef np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] flux = np.empty(a.shape[0], dtype=np.float64)
+        cdef np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] onp = omega*np.ones(a.shape[0], dtype=np.float64)
+        self.trajcpp.flux_of_a_omega(&flux[0], &a[0], &onp[0], flux.shape[0], 0)
+        return flux
+
+    def flux_parallel(self, np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] a, np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] omega):
+        assert a.shape[0] == omega.shape[0]
+        cdef np.ndarray[ndim = 1, dtype=np.float64_t, mode='c'] flux = np.empty(a.shape[0], dtype=np.float64)
+        self.trajcpp.flux_of_a_omega(&flux[0], &a[0], &omega[0], flux.shape[0], 0)
         return flux
 
     def flux(self, double a, omega):
-        if isinstance(omega, np.ndarray):
-            return self.flux_parallel(a, omega)
-        elif type(omega) is float:
-            return self.trajcpp.flux_of_a_omega(a, omega)
-        else:
-            raise TypeError("Frequency must be a float of numpy array")
+        # if isinstance(omega, np.ndarray):
+        #     return self.flux_parallel(a, omega)
+        # elif type(omega) is float:
+        #     return self.trajcpp.flux_of_a_omega(a, omega)
+        # else:
+        #     raise TypeError("Frequency must be a float or numpy array")
+        return self.trajcpp.flux_of_a_omega(a, omega)
 
     def orbital_frequency(self, double a, double t):
         return self.trajcpp.orbital_frequency(a, t)

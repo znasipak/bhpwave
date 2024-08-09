@@ -8,43 +8,52 @@ OMEGA_MIN = 2.e-3
 A_MAX = 0.9999
 
 def kerr_circ_geo_radius(a, omega):
-    """
-    Calculates the Boyer-Lindquist radius of a circular geodesic with orbital
+    """Calculates the Boyer-Lindquist radius of a circular geodesic with orbital
     frequency `omega` in a Kerr spacetime paramtrized by the Kerr spin `a`
 
-    :param a: Kerr spin parameter
-    :type a: double or array
-    :param omega: orbital frequency
-    :type omega: double or array
+    Parameters
+    ----------
+    a : double or array
+        Kerr spin parameter
+    omega : double or array
+        orbital frequency
 
-    :rtype: double or array
+    Returns
+    -------
+    double or array
     """
     return (abs(omega)*(1. - a*omega)/(omega**2))**(2./3.)
 
 def kerr_circ_geo_orbital_frequency(a, r):
-    """
-    Calculates the orbital frequency of a circular geodesic with Boyer-Lindquist radius
+    """Calculates the orbital frequency of a circular geodesic with Boyer-Lindquist radius
     `r` in a Kerr spacetime paramtrized by the Kerr spin `a`
 
-    :param a: Kerr spin parameter
-    :type a: double or array
-    :param r: orbital radius
-    :type r: double or array
+    Parameters
+    ----------
+    a : double or array
+        Kerr spin parameter
+    r : double or array
+        orbital radius
 
-    :rtype: double or array
+    Returns
+    -------
+    double or array
     """
     v = 1./np.sqrt(r)
     return pow(v, 3)/(1 + a*pow(v, 3))
 
 def kerr_isco_radius(a):
-    """
-    Calculates the Boyer-Lindquist radius of the innermost stable circular orbit (ISCO)
+    """Calculates the Boyer-Lindquist radius of the innermost stable circular orbit (ISCO)
     in a Kerr spacetime paramtrized by the Kerr spin `a`
 
-    :param a: Kerr spin parameter
-    :type a: double or array
+    Parameters
+    ----------
+    a : double or array
+        Kerr spin parameter
 
-    :rtype: double or array
+    Returns
+    -------
+    double or array
     """
     sgnX = np.sign(a)
     z1 = 1 + pow(1 - a*a, 1./3.)*(pow(1 - a, 1./3.) + pow(1 + a, 1./3.))
@@ -53,14 +62,17 @@ def kerr_isco_radius(a):
     return 3 + z2 - sgnX*np.sqrt((3. - z1)*(3. + z1 + 2.*z2))
 
 def kerr_isco_frequency(a):
-    """
-    Calculates the orbital frequency of the innermost stable circular orbit (ISCO)
+    """Calculates the orbital frequency of the innermost stable circular orbit (ISCO)
     in a Kerr spacetime paramtrized by the Kerr spin `a`
 
-    :param a: Kerr spin parameter
-    :type a: double or array
+    Parameters
+    ----------
+    a : double or array
+        Kerr spin parameter
 
-    :rtype: double or array
+    Returns
+    -------
+    double or array
     """
     rISCO = kerr_isco_radius(a)
     return kerr_circ_geo_orbital_frequency(a, rISCO)

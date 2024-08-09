@@ -16,7 +16,14 @@ release = '0.1.0'
 
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
-              "nbsphinx"]
+              "myst_nb",
+              "sphinx.ext.viewcode",
+              "sphinx.ext.napoleon",]
+napoleon_use_ivar = True
+myst_enable_extensions = ["dollarmath", "amsmath"]
+nb_execution_mode = "off"
+autosummary_generate = True
+myst_dmath_double_inline = True
 
 templates_path = ['_templates']
 exclude_patterns = []

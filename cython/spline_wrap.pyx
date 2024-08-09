@@ -47,6 +47,8 @@ cdef extern from "spline.hpp":
 
         double& operator()(int i, int j, int k)
 
+        vector[double] data()
+
     cdef cppclass CubicSpline:
         CubicSpline(double x0, double dx, const vector[double] &y, int method) except +
         CubicSpline(const vector[double] &x, const vector[double] &y, int method) except +
@@ -86,6 +88,7 @@ cdef extern from "spline.hpp":
         double derivative_zz(const double x, const double y, const double z)
 
         double getSplineCoefficient(int i, int j, int k, int nx, int ny, int nz)
+        ThreeTensor getSplineCoefficients()
 
 cdef class CyCubicSpline:
     cdef CubicSpline *scpp
@@ -142,18 +145,27 @@ cdef class CyBicubicSpline:
 
 cdef class CyTricubicSpline:
     cdef TricubicSpline *scpp
+    cdef int nx
+    cdef int ny
+    cdef int nz
 
     def __init__(self, double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, np.ndarray[ndim=3, dtype=np.float64_t, mode='c'] f, int method):
-        cdef ThreeTensor ftens = ThreeTensor(nx + 1, ny + 1, nz + 1, &f[0,0,0])
-        # cdef ThreeTensor ftens = ThreeTensor(nx + 1, ny + 1, nz + 1)
-        # for i in range(nx + 1):
-        #     for j in range(ny + 1):
-        #         for k in range(nz + 1):
-        #             ftens.set_value(i, j, k, f[i, j, k])
+        cdef int fnx, fny, fnz
+        fnx = f.shape[0]
+        fny = f.shape[1]
+        fnz = f.shape[2]
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
+        cdef ThreeTensor ftens = ThreeTensor(fnx, fny, fnz, &f[0,0,0])
         self.scpp = new TricubicSpline(x0, dx, nx, y0, dy, ny, z0, dz, nz, ftens, method)
 
     def coefficient(self, int i, int j, int k, int nx, int ny, int nz):
         return self.scpp.getSplineCoefficient(i, j, k, nx, ny, nz)
+
+    def coefficients(self):
+        cdef np.ndarray[ndim=3, dtype=np.float64_t, mode='c'] cijk = np.asarray(self.scpp.getSplineCoefficients().data()).reshape(self.nx, self.ny, 64*self.nz)
+        return cijk
 
     def eval(self, double x, double y, double z):
         return self.scpp.evaluate(x, y, z)

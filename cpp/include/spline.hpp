@@ -91,6 +91,8 @@ public:
 	double& operator()(int i, int j, int k);
 	const double& operator()(int i, int j, int k) const;
 
+	Vector data();
+
 private:
 	int _nx;
 	int _ny;
@@ -193,6 +195,7 @@ public:
 	// BicubicSpline reduce_z(const double z);
 
 	double getSplineCoefficient(int i, int j, int k, int nx, int ny, int nz);
+	ThreeTensor getSplineCoefficients();
 
 private:
 	double evaluateInterval(int i, int j, int k, const double x, const double y, const double z);

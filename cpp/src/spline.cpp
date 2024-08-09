@@ -230,6 +230,10 @@ const double& ThreeTensor::operator()(int i, int j, int k) const{
 	return _A[(i*_ny + j)*_nz + k];
 }
 
+Vector ThreeTensor::data(){
+	return _A;
+}
+
 //////////////////////////////////////////////////////////////////
 //////////////            StopWatch Class         ////////////////
 //////////////////////////////////////////////////////////////////
@@ -618,6 +622,8 @@ TricubicSpline::TricubicSpline(const Vector &x, const Vector &y, const Vector &z
 TricubicSpline::TricubicSpline(double x0, double dx, int nx, double y0, double dy, int ny, double z0, double dz, int nz, ThreeTensor &f, int method): dx(dx), dy(dy), dz(dz), nx(nx), ny(ny), nz(nz), x0(x0), y0(y0), z0(z0), cijk(nx, ny, 64*nz) {
 	if(nx + 1 == f.rows() && ny + 1 == f.cols() && nz + 1 == f.slcs()){
 		computeSplineCoefficients(f, method);
+	}else if(nx == f.rows() && ny == f.cols() && 64*nz == f.slcs()){
+		cijk = f;
 	}else{
 		std::cout << "ERROR: Indices of vectors and matrices do not match \n";
 	}
@@ -1060,6 +1066,10 @@ int TricubicSpline::findZInterval(const double z){
 		return 0;
 	}
 	return i;
+}
+
+ThreeTensor TricubicSpline::getSplineCoefficients(){
+	return cijk;
 }
 
 
