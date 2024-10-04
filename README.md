@@ -73,4 +73,10 @@ and to remove the `build/` and `bhpwave.egg-info` directories before trying to r
 
 # License
 
-This package is provided under the MIT license but links to GPL-licensed libraries. Thus, one can redistribute the code under an MIT-compatible but GPL-incompatible license only by removing the GPL-dependent libraries. Otherwise, the the entire software package (code + dependencies) falls under the GPL license. 
+This package is provided under the MIT license but links to GPL-licensed libraries. 
+
+## Licensing Consequences
+[!WARNING]  
+The following is not legal advice.
+
+To the best of the authors' knowledge, one can redistribute the code under an MIT-compatible but GPL-incompatible license only by removing the GPL-dependent libraries. Otherwise, the the entire software package (code + dependencies) falls under the GPL license. Please note that this is not
